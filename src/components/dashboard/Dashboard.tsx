@@ -1,0 +1,169 @@
+import React from 'react';
+import { 
+  Users, 
+  Calendar, 
+  CheckCircle, 
+  AlertCircle, 
+  TrendingUp,
+  Activity,
+  Pill,
+  TestTube
+} from 'lucide-react';
+import { mockAnalytics } from '../../data/mockData';
+
+export const Dashboard: React.FC = () => {
+  const analytics = mockAnalytics;
+
+  const StatCard: React.FC<{
+    title: string;
+    value: string;
+    icon: React.ComponentType<any>;
+    trend?: string;
+    color: string;
+  }> = ({ title, value, icon: Icon, trend, color }) => (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-gray-600 text-sm font-medium">{title}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+          {trend && (
+            <div className="flex items-center mt-2">
+              <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
+              <span className="text-sm text-green-600 font-medium">{trend}</span>
+            </div>
+          )}
+        </div>
+        <div className={`p-3 rounded-lg ${color}`}>
+          <Icon className="w-6 h-6 text-white" />
+        </div>
+      </div>
+    </div>
+  );
+
+  const TopItemsList: React.FC<{
+    title: string;
+    items: { name: string; count: number }[];
+    icon: React.ComponentType<any>;
+  }> = ({ title, items, icon: Icon }) => (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="flex items-center space-x-2 mb-4">
+        <Icon className="w-5 h-5 text-blue-600" />
+        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+      </div>
+      <div className="space-y-3">
+        {items.map((item, index) => (
+          <div key={index} className="flex items-center justify-between">
+            <span className="text-gray-700">{item.name}</span>
+            <div className="flex items-center space-x-2">
+              <div className="w-16 bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full"
+                  style={{ width: `${(item.count / Math.max(...items.map(i => i.count))) * 100}%` }}
+                ></div>
+              </div>
+              <span className="text-sm font-medium text-gray-900 w-6">{item.count}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-1">Welcome back, Dr. Wilson. Here's your hospital overview.</p>
+        </div>
+        <div className="text-right">
+          <p className="text-sm text-gray-500">Today's Date</p>
+          <p className="text-lg font-semibold text-gray-900">
+            {new Date().toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Daily Appointments"
+          value={analytics.dailyAppointments.toString()}
+          icon={Calendar}
+          trend="+12% from yesterday"
+          color="bg-blue-500"
+        />
+        <StatCard
+          title="Total Patients"
+          value={analytics.totalPatients.toLocaleString()}
+          icon={Users}
+          trend="+5% from last month"
+          color="bg-green-500"
+        />
+        <StatCard
+          title="Completed Consultations"
+          value={analytics.completedConsultations.toString()}
+          icon={CheckCircle}
+          color="bg-purple-500"
+        />
+        <StatCard
+          title="Pending Payments"
+          value={analytics.pendingPayments.toString()}
+          icon={AlertCircle}
+          color="bg-orange-500"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TopItemsList
+          title="Top Symptoms Today"
+          items={analytics.topSymptoms}
+          icon={Activity}
+        />
+        <TopItemsList
+          title="Common Diagnoses"
+          items={analytics.topDiagnoses}
+          icon={CheckCircle}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TopItemsList
+          title="Prescribed Medications"
+          items={analytics.topMedications}
+          icon={Pill}
+        />
+        <TopItemsList
+          title="Lab Tests Ordered"
+          items={analytics.labTests}
+          icon={TestTube}
+        />
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Overview</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="text-center">
+            <p className="text-gray-600 text-sm">Today's Revenue</p>
+            <p className="text-2xl font-bold text-green-600">${analytics.revenue.today.toLocaleString()}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-gray-600 text-sm">This Month</p>
+            <p className="text-2xl font-bold text-blue-600">${analytics.revenue.thisMonth.toLocaleString()}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-gray-600 text-sm">Growth Rate</p>
+            <div className="flex items-center justify-center space-x-1">
+              <TrendingUp className="w-5 h-5 text-green-500" />
+              <p className="text-2xl font-bold text-green-600">{analytics.revenue.trend}%</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
