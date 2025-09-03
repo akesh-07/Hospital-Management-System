@@ -34,7 +34,7 @@ export const PatientRegistration: React.FC = () => {
       });
 
       setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+      
 
       // reset form
       setFormData({
