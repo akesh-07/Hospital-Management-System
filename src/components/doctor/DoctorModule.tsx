@@ -9,10 +9,40 @@ import {
   Upload,
   Bot,
   ChevronRight,
-  Activity
+  Activity,
+  ArrowLeft
 } from 'lucide-react';
 
-export const DoctorModule: React.FC = () => {
+// Import the Patient interface from PatientQueue
+interface Patient {
+  id: string;
+  uhid: string;
+  fullName: string;
+  age: number;
+  dateOfBirth: string;
+  gender: "Male" | "Female" | "Other";
+  contactNumber: string;
+  email: string;
+  address: string;
+  abhaId?: string;
+  patientType: "OPD" | "IPD" | "Emergency";
+  visitType: "Appointment" | "Walk-in";
+  paymentMethod: "Cash" | "Card" | "Insurance" | "Online";
+  consultationPackage: string;
+  preferredLanguage: string;
+  doctorAssigned: string;
+  chronicConditions: string[];
+  waitTime?: number;
+  status: "Waiting" | "In Progress" | "Completed";
+  createdAt: string;
+}
+
+interface DoctorModuleProps {
+  selectedPatient: Patient | null;
+  onBack: () => void;
+}
+
+export const DoctorModule: React.FC<DoctorModuleProps> = ({ selectedPatient, onBack }) => {
   const [activeTab, setActiveTab] = useState<'history' | 'vitals' | 'examination' | 'investigations' | 'prescriptions'>('history');
   const [consultation, setConsultation] = useState({
     symptoms: [] as string[],
@@ -25,24 +55,21 @@ export const DoctorModule: React.FC = () => {
     notes: ''
   });
 
-  const [selectedPatient] = useState({
-    name: 'John Doe',
-    uhid: 'HMS001',
-    age: 45,
-    gender: 'Male',
-    vitals: {
-      bp: '140/90',
-      pulse: 88,
-      temp: 98.6,
-      spo2: 98,
-      weight: 75,
-      height: 170
-    },
-    history: [
-      { date: '2024-01-10', diagnosis: 'Hypertension', doctor: 'Dr. Smith' },
-      { date: '2024-01-05', diagnosis: 'Diabetes Checkup', doctor: 'Dr. Wilson' }
-    ]
-  });
+  // Mock vitals data - in real app, this would be fetched from the database
+  const mockVitals = {
+    bp: '120/80',
+    pulse: 72,
+    temp: 98.6,
+    spo2: 98,
+    weight: 70,
+    height: 165
+  };
+
+  // Mock history data - in real app, this would be fetched from the database
+  const mockHistory = [
+    { date: '2024-08-15', diagnosis: 'Routine Checkup', doctor: 'Dr. Smith' },
+    { date: '2024-07-10', diagnosis: 'Hypertension Follow-up', doctor: 'Dr. Wilson' }
+  ];
 
   const commonSymptoms = [
     'Fever', 'Cough', 'Headache', 'Back Pain', 'Muscle Spasm', 
@@ -116,11 +143,39 @@ export const DoctorModule: React.FC = () => {
     </div>
   );
 
+  // If no patient is selected, show error state
+  if (!selectedPatient) {
+    return (
+      <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Stethoscope className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Patient Selected</h2>
+          <p className="text-gray-600 mb-4">Please select a patient from the queue to begin consultation.</p>
+          <button
+            onClick={onBack}
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Queue</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
+            <button
+              onClick={onBack}
+              className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back to Queue</span>
+            </button>
+            <div className="h-6 w-px bg-gray-300"></div>
             <Stethoscope className="w-8 h-8 text-blue-600" />
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Doctor Consultation</h1>
@@ -130,11 +185,15 @@ export const DoctorModule: React.FC = () => {
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-blue-600" />
+                <span className="text-blue-600 font-medium text-sm">
+                  {selectedPatient.fullName?.split(" ").map(n => n[0]).join("")}
+                </span>
               </div>
               <div>
-                <p className="font-semibold text-gray-900">{selectedPatient.name}</p>
-                <p className="text-sm text-gray-600">{selectedPatient.uhid} • {selectedPatient.age}Y • {selectedPatient.gender}</p>
+                <p className="font-semibold text-gray-900">{selectedPatient.fullName}</p>
+                <p className="text-sm text-gray-600">
+                  {selectedPatient.uhid} • {selectedPatient.age}Y • {selectedPatient.gender}
+                </p>
               </div>
             </div>
           </div>
@@ -151,9 +210,47 @@ export const DoctorModule: React.FC = () => {
         {activeTab === 'history' && (
           <div className="space-y-6">
             <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Patient Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <p className="text-sm text-gray-600">Contact Number</p>
+                  <p className="font-medium text-gray-900">{selectedPatient.contactNumber}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Address</p>
+                  <p className="font-medium text-gray-900">{selectedPatient.address}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Visit Type</p>
+                  <p className="font-medium text-gray-900">{selectedPatient.visitType}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Payment Method</p>
+                  <p className="font-medium text-gray-900">{selectedPatient.paymentMethod}</p>
+                </div>
+              </div>
+              
+              {selectedPatient.chronicConditions && selectedPatient.chronicConditions.length > 0 && (
+                <div className="mb-6">
+                  <p className="text-sm text-gray-600 mb-2">Chronic Conditions</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedPatient.chronicConditions.map((condition, index) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full"
+                      >
+                        {condition}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Previous Consultations</h3>
               <div className="space-y-3">
-                {selectedPatient.history.map((item, index) => (
+                {mockHistory.map((item, index) => (
                   <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div>
                       <p className="font-medium text-gray-900">{item.diagnosis}</p>
@@ -175,12 +272,12 @@ export const DoctorModule: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-6">Current Vitals</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
               {Object.entries({
-                'Blood Pressure': selectedPatient.vitals.bp,
-                'Pulse': `${selectedPatient.vitals.pulse} bpm`,
-                'Temperature': `${selectedPatient.vitals.temp}°F`,
-                'SPO₂': `${selectedPatient.vitals.spo2}%`,
-                'Weight': `${selectedPatient.vitals.weight} kg`,
-                'Height': `${selectedPatient.vitals.height} cm`
+                'Blood Pressure': mockVitals.bp,
+                'Pulse': `${mockVitals.pulse} bpm`,
+                'Temperature': `${mockVitals.temp}°F`,
+                'SPO₂': `${mockVitals.spo2}%`,
+                'Weight': `${mockVitals.weight} kg`,
+                'Height': `${mockVitals.height} cm`
               }).map(([key, value]) => (
                 <div key={key} className="text-center">
                   <p className="text-sm text-gray-600 mb-1">{key}</p>
