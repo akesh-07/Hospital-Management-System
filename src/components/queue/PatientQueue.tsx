@@ -11,6 +11,7 @@ import {
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../../firebase";
 import { VitalsAssessment } from "../vitals/VitalsAssessment";
+import { DoctorModule } from "../doctor/DoctorModule"; // Import DoctorModule
 
 // ✅ Patient interface
 export interface Patient {
@@ -54,6 +55,8 @@ const PatientQueue: React.FC = () => {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showVitals, setShowVitals] = useState(false);
   const [vitalsPatient, setVitalsPatient] = useState<Patient | null>(null);
+  const [showDoctor, setShowDoctor] = useState(false);
+  const [doctorPatient, setDoctorPatient] = useState<Patient | null>(null);
 
   // 🔥 Fetch patients from Firestore
   useEffect(() => {
@@ -78,10 +81,23 @@ const PatientQueue: React.FC = () => {
     setShowVitals(true);
   };
 
+  // Handle doctor button click
+  const handleDoctorClick = (patient: Patient, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDoctorPatient(patient);
+    setShowDoctor(true);
+  };
+
   // Handle back from vitals
   const handleBackFromVitals = () => {
     setShowVitals(false);
     setVitalsPatient(null);
+  };
+
+  // Handle back from doctor module
+  const handleBackFromDoctor = () => {
+    setShowDoctor(false);
+    setDoctorPatient(null);
   };
 
   // ✅ Patient Card Component
@@ -169,10 +185,7 @@ const PatientQueue: React.FC = () => {
             Vitals
           </button>
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              alert(`Doctor view for ${patient.fullName}`);
-            }}
+            onClick={(e) => handleDoctorClick(patient, e)}
             className="flex-1 px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
           >
             Doctor
@@ -188,6 +201,16 @@ const PatientQueue: React.FC = () => {
       <VitalsAssessment 
         selectedPatient={vitalsPatient} 
         onBack={handleBackFromVitals}
+      />
+    );
+  }
+
+  // ✅ If Doctor module selected, show it directly with patient data
+  if (showDoctor) {
+    return (
+      <DoctorModule 
+        selectedPatient={doctorPatient} 
+        onBack={handleBackFromDoctor}
       />
     );
   }
