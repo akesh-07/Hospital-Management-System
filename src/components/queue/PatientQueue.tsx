@@ -6,14 +6,11 @@ import {
   Clock,
   Phone,
   Tag,
-  Play,
-  Pause,
-  Car as IdCard, // ⚠️ You probably want "IdCard" instead of Car
-  Upload,
-  StickyNote,
+  Car as IdCard, // ⚠️ Rename if needed: use "IdCard" instead of Car
 } from "lucide-react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../../firebase";
+import { VitalsAssessment } from "../vitals/VitalsAssessment";
 
 // ✅ Patient interface
 export interface Patient {
@@ -141,11 +138,34 @@ const PatientQueue: React.FC = () => {
       </div>
 
       <div className="mt-3 pt-3 border-t border-gray-100">
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between text-sm mb-3">
           <span className="text-gray-600">
             Dr. {patient.doctorAssigned || "Not Assigned"}
           </span>
           <span className="text-gray-600">{patient.paymentMethod}</span>
+        </div>
+
+        {/* ✅ Action Buttons */}
+        <div className="flex gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              <VitalsAssessment />
+              console.log("hgfg");
+            }}
+            className="flex-1 px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200"
+          >
+            Vitals
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              alert(`Doctor view for ${patient.fullName}`);
+            }}
+            className="flex-1 px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+          >
+            Doctor
+          </button>
         </div>
       </div>
     </div>
