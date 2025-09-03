@@ -6,7 +6,7 @@ import {
   Clock,
   Phone,
   Tag,
-  Car as IdCard, // ⚠️ Rename if needed: use "IdCard" instead of Car
+  Car as IdCard, // ⚠️ using IdCard
 } from "lucide-react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../../firebase";
@@ -52,6 +52,8 @@ const getStatusColor = (status: Patient["status"]) => {
 const PatientQueue: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [showVitals, setShowVitals] = useState(false);
+  const [vitalsPatient, setVitalsPatient] = useState<Patient | null>(null);
 
   // 🔥 Fetch patients from Firestore
   useEffect(() => {
@@ -68,6 +70,19 @@ const PatientQueue: React.FC = () => {
 
     return () => unsubscribe();
   }, []);
+
+  // Handle vitals button click
+  const handleVitalsClick = (patient: Patient, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setVitalsPatient(patient);
+    setShowVitals(true);
+  };
+
+  // Handle back from vitals
+  const handleBackFromVitals = () => {
+    setShowVitals(false);
+    setVitalsPatient(null);
+  };
 
   // ✅ Patient Card Component
   const PatientCard: React.FC<{ patient: Patient }> = ({ patient }) => (
@@ -148,11 +163,7 @@ const PatientQueue: React.FC = () => {
         {/* ✅ Action Buttons */}
         <div className="flex gap-2">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              <VitalsAssessment />
-              console.log("hgfg");
-            }}
+            onClick={(e) => handleVitalsClick(patient, e)}
             className="flex-1 px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200"
           >
             Vitals
@@ -170,6 +181,16 @@ const PatientQueue: React.FC = () => {
       </div>
     </div>
   );
+
+  // ✅ If Vitals page selected, show it directly with patient data
+  if (showVitals) {
+    return (
+      <VitalsAssessment 
+        selectedPatient={vitalsPatient} 
+        onBack={handleBackFromVitals}
+      />
+    );
+  }
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -222,6 +243,10 @@ const PatientQueue: React.FC = () => {
                 <div>
                   <span className="font-medium text-gray-700">Address:</span>
                   <p className="text-gray-600 mt-1">{selectedPatient.address}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Doctor Assigned:</span>
+                  <p className="text-gray-600 mt-1">Dr. {selectedPatient.doctorAssigned || "Not Assigned"}</p>
                 </div>
                 <div>
                   <span className="font-medium text-gray-700">Chronic Conditions:</span>
