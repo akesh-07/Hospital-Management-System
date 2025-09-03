@@ -8,34 +8,35 @@ import {
   Tag,
   Play,
   Pause,
-  Car as IdCard,
+  Car as IdCard, // ⚠️ You probably want "IdCard" instead of Car
   Upload,
   StickyNote,
 } from "lucide-react";
 import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "../../firebase"; // adjust if your firebase.ts path differs
+import { db } from "../../firebase";
 
-// Match your formData structure
+// ✅ Patient interface
 export interface Patient {
   id: string;
+  uhid: string;
   fullName: string;
-  age: string;
+  age: number;
   dateOfBirth: string;
-  gender: string;
+  gender: "Male" | "Female" | "Other";
   contactNumber: string;
   email: string;
   address: string;
-  abhaId: string;
-  patientType: string;
-  visitType: string;
-  paymentMethod: string;
+  abhaId?: string;
+  patientType: "OPD" | "IPD" | "Emergency";
+  visitType: "Appointment" | "Walk-in";
+  paymentMethod: "Cash" | "Card" | "Insurance" | "Online";
   consultationPackage: string;
   preferredLanguage: string;
   doctorAssigned: string;
   chronicConditions: string[];
-  uhid?: string; // optional
-  waitTime?: number; // optional
-  status?: "Waiting" | "In Progress" | "Completed"; // optional
+  waitTime?: number;
+  status: "Waiting" | "In Progress" | "Completed";
+  createdAt: string;
 }
 
 const getStatusColor = (status: Patient["status"]) => {
@@ -71,6 +72,7 @@ const PatientQueue: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // ✅ Patient Card Component
   const PatientCard: React.FC<{ patient: Patient }> = ({ patient }) => (
     <div
       className={`bg-white rounded-lg border p-4 hover:shadow-md transition-all cursor-pointer ${
@@ -163,63 +165,55 @@ const PatientQueue: React.FC = () => {
         </div>
         <div className="flex items-center space-x-4">
           <div className="text-right">
-            <p className="text-sm text-gray-500">Patients in Queue</p>
+            <p className="text-sm text-gray-500">Patients in OPD Queue</p>
             <p className="text-2xl font-bold text-blue-600">
-              {patients.length}
+              {patients.filter((p) => p.patientType === "OPD").length}
             </p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* ✅ Only OPD patients */}
         <div className="lg:col-span-2 space-y-4">
-          {patients.map((patient) => (
-            <PatientCard key={patient.id} patient={patient} />
-          ))}
+          {patients
+            .filter((patient) => patient.patientType === "OPD")
+            .map((patient) => (
+              <PatientCard key={patient.id} patient={patient} />
+            ))}
         </div>
 
+        {/* ✅ Show details only if OPD selected */}
         <div className="space-y-6">
-          {selectedPatient ? (
+          {selectedPatient && selectedPatient.patientType === "OPD" ? (
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 Patient Details
               </h3>
               <div className="space-y-3 text-sm">
                 <div>
-                  <span className="font-medium text-gray-700">
-                    Full Name:
-                  </span>
-                  <p className="text-gray-600 mt-1">
-                    {selectedPatient.fullName}
-                  </p>
+                  <span className="font-medium text-gray-700">Full Name:</span>
+                  <p className="text-gray-600 mt-1">{selectedPatient.fullName}</p>
                 </div>
                 <div>
                   <span className="font-medium text-gray-700">Contact:</span>
-                  <p className="text-gray-600 mt-1">
-                    {selectedPatient.contactNumber}
-                  </p>
+                  <p className="text-gray-600 mt-1">{selectedPatient.contactNumber}</p>
                 </div>
                 <div>
                   <span className="font-medium text-gray-700">Address:</span>
-                  <p className="text-gray-600 mt-1">
-                    {selectedPatient.address}
-                  </p>
+                  <p className="text-gray-600 mt-1">{selectedPatient.address}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">
-                    Chronic Conditions:
-                  </span>
+                  <span className="font-medium text-gray-700">Chronic Conditions:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {selectedPatient.chronicConditions?.map(
-                      (condition, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full"
-                        >
-                          {condition}
-                        </span>
-                      )
-                    )}
+                    {selectedPatient.chronicConditions?.map((condition, index) => (
+                      <span
+                        key={index}
+                        className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full"
+                      >
+                        {condition}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -228,7 +222,7 @@ const PatientQueue: React.FC = () => {
             <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
               <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
               <p className="text-gray-600">
-                Select a patient to view details and actions
+                Select an OPD patient to view details and actions
               </p>
             </div>
           )}
