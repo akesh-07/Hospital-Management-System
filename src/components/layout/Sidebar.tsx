@@ -23,7 +23,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange
     { id: 'dashboard' as NavigationItem, label: 'Dashboard', icon: Home },
     { id: 'registration' as NavigationItem, label: 'Registration', icon: UserPlus },
     { id: 'queue' as NavigationItem, label: 'Pre-OPD', icon: Users },
-    { id: 'vitals' as NavigationItem, label: 'Vitals', icon: Activity },
     { id: 'doctor' as NavigationItem, label: 'Doctor Module', icon: Stethoscope },
     { id: 'prescription' as NavigationItem, label: 'Prescription', icon: FileText },
     { id: 'pharmacy' as NavigationItem, label: 'Pharmacy', icon: Pill },
