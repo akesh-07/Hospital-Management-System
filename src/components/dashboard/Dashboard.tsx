@@ -149,11 +149,11 @@ export const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center">
             <p className="text-gray-600 text-sm">Today's Revenue</p>
-            <p className="text-2xl font-bold text-green-600">${analytics.revenue.today.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-green-600">₹{analytics.revenue.today.toLocaleString()}</p>
           </div>
           <div className="text-center">
             <p className="text-gray-600 text-sm">This Month</p>
-            <p className="text-2xl font-bold text-blue-600">${analytics.revenue.thisMonth.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-blue-600">₹{analytics.revenue.thisMonth.toLocaleString()}</p>
           </div>
           <div className="text-center">
             <p className="text-gray-600 text-sm">Growth Rate</p>
