@@ -15,9 +15,20 @@ import {
   Brain,
   AlertCircle,
   CheckCircle,
+  Plus,
+  Trash2,
+  Calendar,
+  Save,
+  Printer,
 } from "lucide-react";
 import { db } from "../../firebase";
-import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  orderBy,
+} from "firebase/firestore";
 import { Vitals } from "../../types";
 
 // Import the Patient interface from PatientQueue
@@ -44,11 +55,453 @@ interface Patient {
   createdAt: string;
 }
 
+interface Medication {
+  id: string;
+  name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  instructions: string;
+}
+
 interface DoctorModuleProps {
   selectedPatient: Patient | null;
   onBack: () => void;
 }
 
+// --- PrescriptionModule Component ---
+// This is the PrescriptionModule, now adapted to be used within DoctorModule
+const PrescriptionModule: React.FC<{
+  selectedPatient: Patient;
+  consultation: any;
+}> = ({ selectedPatient, consultation }) => {
+  const [medications, setMedications] = useState<Medication[]>([
+    {
+      id: "1",
+      name: "",
+      dosage: "",
+      frequency: "",
+      duration: "",
+      instructions: "",
+    },
+  ]);
+
+  const [advice, setAdvice] = useState({
+    general: [] as string[],
+    diet: [] as string[],
+    followUp: {
+      enabled: false,
+      duration: "",
+      unit: "Days" as "Days" | "Months" | "Years",
+    },
+  });
+
+  const commonMedications = [
+    "Paracetamol",
+    "Ibuprofen",
+    "Metformin",
+    "Lisinopril",
+    "Omeprazole",
+    "Aspirin",
+    "Atorvastatin",
+    "Amoxicillin",
+    "Losartan",
+    "Pantoprazole",
+  ];
+
+  const dosageOptions = [
+    "250mg",
+    "500mg",
+    "1g",
+    "5mg",
+    "10mg",
+    "25mg",
+    "50mg",
+    "100mg",
+  ];
+  const frequencyOptions = [
+    "Once daily",
+    "Twice daily",
+    "Thrice daily",
+    "Four times daily",
+    "As needed",
+  ];
+  const durationOptions = [
+    "3 days",
+    "5 days",
+    "7 days",
+    "10 days",
+    "2 weeks",
+    "1 month",
+  ];
+
+  const generalAdvice = [
+    "Drink plenty of water (8-10 glasses/day)",
+    "Take adequate rest and sleep",
+    "Avoid smoking and alcohol",
+    "Regular exercise as tolerated",
+    "Monitor blood pressure regularly",
+    "Take medications as prescribed",
+  ];
+
+  const dietPlans = [
+    "Diabetic Diet - Low sugar, controlled carbs",
+    "CKD Diet - Low protein, restricted potassium",
+    "Hypertension Diet - Low sodium, DASH diet",
+    "Heart Healthy Diet - Low saturated fat",
+    "Weight Loss Diet - Calorie controlled",
+  ];
+
+  const addMedication = () => {
+    const newId = (medications.length + 1).toString();
+    setMedications([
+      ...medications,
+      {
+        id: newId,
+        name: "",
+        dosage: "",
+        frequency: "",
+        duration: "",
+        instructions: "",
+      },
+    ]);
+  };
+
+  const removeMedication = (id: string) => {
+    setMedications(medications.filter((med) => med.id !== id));
+  };
+
+  const updateMedication = (
+    id: string,
+    field: keyof Medication,
+    value: string
+  ) => {
+    setMedications(
+      medications.map((med) =>
+        med.id === id ? { ...med, [field]: value } : med
+      )
+    );
+  };
+
+  const toggleAdvice = (category: "general" | "diet", item: string) => {
+    setAdvice((prev) => ({
+      ...prev,
+      [category]: prev[category].includes(item)
+        ? prev[category].filter((i) => i !== item)
+        : [...prev[category], item],
+    }));
+  };
+
+  return (
+    <div className="bg-gray-50">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <FileText className="w-8 h-8 text-blue-600" />
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Prescription & Advice
+              </h1>
+              <p className="text-gray-600">
+                Create detailed prescription and treatment plan
+              </p>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <p className="font-semibold text-gray-900">
+              {selectedPatient.fullName}
+            </p>
+            <p className="text-sm text-gray-600">
+              {selectedPatient.uhid} • {selectedPatient.age}Y
+            </p>
+            <p className="text-sm text-blue-600 font-medium">
+              {consultation.diagnosis || "Pending Diagnosis"}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Medications
+              </h3>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={addMedication}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Medication</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {medications.map((medication, index) => (
+                <div
+                  key={medication.id}
+                  className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-medium text-gray-900">
+                      Medication {index + 1}
+                    </h4>
+                    {medications.length > 1 && (
+                      <button
+                        onClick={() => removeMedication(medication.id)}
+                        className="p-1 text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Medication Name
+                      </label>
+                      <input
+                        type="text"
+                        list={`medications-${medication.id}`}
+                        value={medication.name}
+                        onChange={(e) =>
+                          updateMedication(
+                            medication.id,
+                            "name",
+                            e.target.value
+                          )
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter medication"
+                      />
+                      <datalist id={`medications-${medication.id}`}>
+                        {commonMedications.map((med) => (
+                          <option key={med} value={med} />
+                        ))}
+                      </datalist>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Dosage
+                      </label>
+                      <input
+                        type="text"
+                        list={`dosage-${medication.id}`}
+                        value={medication.dosage}
+                        onChange={(e) =>
+                          updateMedication(
+                            medication.id,
+                            "dosage",
+                            e.target.value
+                          )
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="e.g., 500mg"
+                      />
+                      <datalist id={`dosage-${medication.id}`}>
+                        {dosageOptions.map((dose) => (
+                          <option key={dose} value={dose} />
+                        ))}
+                      </datalist>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Frequency
+                      </label>
+                      <select
+                        value={medication.frequency}
+                        onChange={(e) =>
+                          updateMedication(
+                            medication.id,
+                            "frequency",
+                            e.target.value
+                          )
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="">Select frequency</option>
+                        {frequencyOptions.map((freq) => (
+                          <option key={freq} value={freq}>
+                            {freq}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Duration
+                      </label>
+                      <select
+                        value={medication.duration}
+                        onChange={(e) =>
+                          updateMedication(
+                            medication.id,
+                            "duration",
+                            e.target.value
+                          )
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="">Select duration</option>
+                        {durationOptions.map((dur) => (
+                          <option key={dur} value={dur}>
+                            {dur}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Instructions
+                      </label>
+                      <input
+                        type="text"
+                        value={medication.instructions}
+                        onChange={(e) =>
+                          updateMedication(
+                            medication.id,
+                            "instructions",
+                            e.target.value
+                          )
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="e.g., After meals"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                General Advice
+              </h3>
+              <div className="space-y-3">
+                {generalAdvice.map((item) => (
+                  <label
+                    key={item}
+                    className="flex items-start space-x-3 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={advice.general.includes(item)}
+                      onChange={() => toggleAdvice("general", item)}
+                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">{item}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="mt-6">
+                <button className="flex items-center space-x-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors">
+                  <Bot className="w-4 h-4" />
+                  <span>AI Suggested Advice</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Diet Plan
+              </h3>
+              <div className="space-y-3">
+                {dietPlans.map((plan) => (
+                  <label
+                    key={plan}
+                    className="flex items-start space-x-3 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={advice.diet.includes(plan)}
+                      onChange={() => toggleAdvice("diet", plan)}
+                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">{plan}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Follow-up Schedule
+            </h3>
+            <div className="flex items-center space-x-4">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={advice.followUp.enabled}
+                  onChange={(e) =>
+                    setAdvice((prev) => ({
+                      ...prev,
+                      followUp: {
+                        ...prev.followUp,
+                        enabled: e.target.checked,
+                      },
+                    }))
+                  }
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="text-gray-700">Schedule follow-up</span>
+              </label>
+
+              {advice.followUp.enabled && (
+                <>
+                  <input
+                    type="number"
+                    min="1"
+                    value={advice.followUp.duration}
+                    onChange={(e) =>
+                      setAdvice((prev) => ({
+                        ...prev,
+                        followUp: {
+                          ...prev.followUp,
+                          duration: e.target.value,
+                        },
+                      }))
+                    }
+                    className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="1"
+                  />
+                  <select
+                    value={advice.followUp.unit}
+                    onChange={(e) =>
+                      setAdvice((prev) => ({
+                        ...prev,
+                        followUp: {
+                          ...prev.followUp,
+                          unit: e.target.value as "Days" | "Months" | "Years",
+                        },
+                      }))
+                    }
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="Days">Days</option>
+                    <option value="Months">Months</option>
+                    <option value="Years">Years</option>
+                  </select>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Main DoctorModule Component ---
 export const DoctorModule: React.FC<DoctorModuleProps> = ({
   selectedPatient,
   onBack,
@@ -175,256 +628,232 @@ Additional Symptoms from examination: ${
 
     return (
       <div className="space-y-6">
-          {/* Header */} {" "}
+        {/* Header */}{" "}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-           {" "}
+          {" "}
           <div className="flex items-center justify-between mb-6">
-             {" "}
+            {" "}
             <div className="flex items-center space-x-3">
-               {" "}
+              {" "}
               <div className="w-10 h-10 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg flex items-center justify-center">
-                  <Brain className="w-6 h-6 text-purple-600" /> {" "}
-              </div>
-               {" "}
+                <Brain className="w-6 h-6 text-purple-600" />{" "}
+              </div>{" "}
               <div>
-                 {" "}
+                {" "}
                 <h3 className="text-lg font-semibold text-gray-900">
-                    AI Diagnostic Assistant  {" "}
-                </h3>
-                 {" "}
+                  {" "}
+                  AI Diagnostic Assistant{" "}
+                </h3>{" "}
                 <p className="text-sm text-gray-600">
-                    Get AI-powered insights and recommendations based on patient
-                    data  {" "}
-                </p>
-                 {" "}
-              </div>
-               {" "}
-            </div>
-             {" "}
+                  {" "}
+                  Get AI-powered insights and recommendations based on patient
+                  data{" "}
+                </p>{" "}
+              </div>{" "}
+            </div>{" "}
             <button
               onClick={handleAutoFill}
               className="flex items-center space-x-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm"
             >
-                <CheckCircle className="w-4 h-4" /> {" "}
-              <span>Auto-fill from Examination</span> {" "}
-            </button>
-             {" "}
+              <CheckCircle className="w-4 h-4" />{" "}
+              <span>Auto-fill from Examination</span>{" "}
+            </button>{" "}
           </div>
-            {/* Patient Context */} {" "}
+          {/* Patient Context */}{" "}
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
-             {" "}
-            <h4 className="font-medium text-gray-900 mb-2">Patient Context</h4> {" "}
+            {" "}
+            <h4 className="font-medium text-gray-900 mb-2">
+              Patient Context
+            </h4>{" "}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-               {" "}
+              {" "}
               <div>
-                  <span className="text-gray-600">Name:</span> {" "}
-                <p className="font-medium">{selectedPatient.fullName}</p> {" "}
-              </div>
-               {" "}
+                <span className="text-gray-600">Name:</span>{" "}
+                <p className="font-medium">{selectedPatient.fullName}</p>{" "}
+              </div>{" "}
               <div>
-                  <span className="text-gray-600">Age:</span> {" "}
-                <p className="font-medium">{selectedPatient.age}Y</p> {" "}
-              </div>
-               {" "}
+                <span className="text-gray-600">Age:</span>{" "}
+                <p className="font-medium">{selectedPatient.age}Y</p>{" "}
+              </div>{" "}
               <div>
-                  <span className="text-gray-600">Gender:</span> {" "}
-                <p className="font-medium">{selectedPatient.gender}</p> {" "}
-              </div>
-               {" "}
+                <span className="text-gray-600">Gender:</span>{" "}
+                <p className="font-medium">{selectedPatient.gender}</p>{" "}
+              </div>{" "}
               <div>
-                  <span className="text-gray-600">Type:</span> {" "}
-                <p className="font-medium">{selectedPatient.patientType}</p> {" "}
-              </div>
-               {" "}
-            </div>
-             {" "}
+                <span className="text-gray-600">Type:</span>{" "}
+                <p className="font-medium">{selectedPatient.patientType}</p>{" "}
+              </div>{" "}
+            </div>{" "}
             {selectedPatient.chronicConditions &&
               selectedPatient.chronicConditions.length > 0 && (
                 <div className="mt-3">
-                   {" "}
+                  {" "}
                   <span className="text-gray-600 text-sm">
-                      Chronic Conditions:  {" "}
-                  </span>
-                   {" "}
+                    {" "}
+                    Chronic Conditions:{" "}
+                  </span>{" "}
                   <div className="flex flex-wrap gap-2 mt-1">
-                     {" "}
+                    {" "}
                     {selectedPatient.chronicConditions.map(
                       (condition, index) => (
                         <span
                           key={index}
                           className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full"
                         >
-                            {condition} {" "}
+                          {" "}
+                          {condition}{" "}
                         </span>
                       )
-                    )}
-                     {" "}
-                  </div>
-                   {" "}
+                    )}{" "}
+                  </div>{" "}
                 </div>
-              )}
-             {" "}
+              )}{" "}
           </div>
-            {/* Input Section */} {" "}
+          {/* Input Section */}{" "}
           <div className="space-y-4">
-             {" "}
+            {" "}
             <div>
-               {" "}
+              {" "}
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Current Symptoms  {" "}
-              </label>
-               {" "}
+                {" "}
+                Current Symptoms{" "}
+              </label>{" "}
               <textarea
                 rows={3}
                 placeholder="Describe the patient's current symptoms in detail..."
                 value={symptoms}
                 onChange={(e) => setSymptoms(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-              />
-               {" "}
-            </div>
-             {" "}
+              />{" "}
+            </div>{" "}
             <div>
-               {" "}
+              {" "}
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Duration & Timeline  {" "}
-              </label>
-               {" "}
+                {" "}
+                Duration & Timeline{" "}
+              </label>{" "}
               <input
                 type="text"
                 placeholder="e.g., 3 days, 1 week, chronic for 2 months..."
                 value={duration}
                 onChange={(e) => setDuration(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-               {" "}
-            </div>
-             {" "}
+              />{" "}
+            </div>{" "}
             <button
               onClick={handleSubmit}
               disabled={isLoading}
               className="flex items-center justify-center space-x-2 w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-               {" "}
+              {" "}
               {isLoading ? (
                 <>
-                    <Loader className="w-5 h-5 animate-spin" /> {" "}
-                  <span>Analyzing...</span> {" "}
+                  <Loader className="w-5 h-5 animate-spin" />{" "}
+                  <span>Analyzing...</span>{" "}
                 </>
               ) : (
                 <>
-                    <Brain className="w-5 h-5" /> {" "}
-                  <span>Generate AI Diagnosis</span> {" "}
+                  <Brain className="w-5 h-5" />{" "}
+                  <span>Generate AI Diagnosis</span>{" "}
                 </>
-              )}
-               {" "}
-            </button>
-             {" "}
-          </div>
-           {" "}
+              )}{" "}
+            </button>{" "}
+          </div>{" "}
         </div>
-          {/* Results Section - Your original diagnosis display */} {" "}
+        {/* Results Section - Your original diagnosis display */}{" "}
         {diagnosis && (
           <div className="bg-white rounded-lg border border-gray-200 p-6">
-             {" "}
+            {" "}
             <div className="flex items-center space-x-3 mb-4">
-               {" "}
+              {" "}
               <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-green-600" /> {" "}
-              </div>
-               {" "}
+                <Bot className="w-5 h-5 text-green-600" />{" "}
+              </div>{" "}
               <div>
-                 {" "}
+                {" "}
                 <h4 className="text-lg font-semibold text-gray-900">
-                    Possible Diagnosis  {" "}
-                </h4>
-                 {" "}
+                  {" "}
+                  Possible Diagnosis{" "}
+                </h4>{" "}
                 <p className="text-sm text-gray-600">
-                    AI-generated diagnosis based on symptoms and duration  {" "}
-                </p>
-                 {" "}
-              </div>
-               {" "}
-            </div>
-             {" "}
+                  {" "}
+                  AI-generated diagnosis based on symptoms and duration{" "}
+                </p>{" "}
+              </div>{" "}
+            </div>{" "}
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
-               {" "}
+              {" "}
               <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
-                  {diagnosis} {" "}
-              </div>
-               {" "}
-            </div>
-             {" "}
+                {" "}
+                {diagnosis}{" "}
+              </div>{" "}
+            </div>{" "}
             <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
-               {" "}
+              {" "}
               <div className="flex items-center space-x-2 text-sm text-gray-500">
-                  <AlertCircle className="w-4 h-4" /> {" "}
+                <AlertCircle className="w-4 h-4" />{" "}
                 <span>
-                    AI suggestions are for reference only. Always use clinical  
-                  judgment.  {" "}
-                </span>
-                 {" "}
-              </div>
-               {" "}
+                  {" "}
+                  AI suggestions are for reference only. Always use clinical
+                  judgment.{" "}
+                </span>{" "}
+              </div>{" "}
               <div className="flex items-center space-x-3">
-                 {" "}
+                {" "}
                 <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                    Copy Results  {" "}
-                </button>
-                 {" "}
+                  {" "}
+                  Copy Results{" "}
+                </button>{" "}
                 <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    Add to Notes  {" "}
-                </button>
-                 {" "}
-              </div>
-               {" "}
-            </div>
-             {" "}
+                  {" "}
+                  Add to Notes{" "}
+                </button>{" "}
+              </div>{" "}
+            </div>{" "}
           </div>
         )}
-          {/* Quick Actions */} {" "}
+        {/* Quick Actions */}{" "}
         {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-  		<div className="bg-white rounded-lg border border-gray-200 p-4">
-  			<h5 className="font-medium text-gray-900 mb-2">Quick Analysis</h5>
-  			<p className="text-sm text-gray-600 mb-3">
-  			Get instant insights from examination data
-  			</p>
-  			<button
-  			onClick={() => {
-  				handleAutoFill();
-  				handleSubmit();
-  			}}
-  			className="w-full px-3 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors text-sm"
-  			>
-  			Analyze Current Case
-  			</button>
-  		</div>
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h5 className="font-medium text-gray-900 mb-2">Quick Analysis</h5>
+        <p className="text-sm text-gray-600 mb-3">
+        Get instant insights from examination data
+        </p>
+        <button
+        onClick={() => {
+          handleAutoFill();
+          handleSubmit();
+        }}
+        className="w-full px-3 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors text-sm"
+        >
+        Analyze Current Case
+        </button>
+      </div>
 
-  		<div className="bg-white rounded-lg border border-gray-200 p-4">
-  			<h5 className="font-medium text-gray-900 mb-2">
-  			Drug Interactions
-  			</h5>
-  			<p className="text-sm text-gray-600 mb-3">
-  			Check for potential medication conflicts
-  			</p>
-  			<button className="w-full px-3 py-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors text-sm">
-  			Check Interactions
-  			</button>
-  		</div>
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h5 className="font-medium text-gray-900 mb-2">
+        Drug Interactions
+        </h5>
+        <p className="text-sm text-gray-600 mb-3">
+        Check for potential medication conflicts
+        </p>
+        <button className="w-full px-3 py-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors text-sm">
+        Check Interactions
+        </button>
+      </div>
 
-  		<div className="bg-white rounded-lg border border-gray-200 p-4">
-  			<h5 className="font-medium text-gray-900 mb-2">
-  			Treatment Guidelines
-  			</h5>
-  			<p className="text-sm text-gray-600 mb-3">
-  			Access evidence-based protocols
-  			</p>
-  			<button className="w-full px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm">
-  			View Guidelines
-  			</button>
-  		</div>
-  		</div> */}
-         {" "}
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h5 className="font-medium text-gray-900 mb-2">
+        Treatment Guidelines
+        </h5>
+        <p className="text-sm text-gray-600 mb-3">
+        Access evidence-based protocols
+        </p>
+        <button className="w-full px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm">
+        View Guidelines
+        </button>
+      </div>
+      </div> */}{" "}
       </div>
     );
   }; // Mock history data - in real app, this would be fetched from the database
@@ -511,8 +940,7 @@ Additional Symptoms from examination: ${
           : "text-gray-600 hover:bg-gray-100"
       }`}
     >
-        <Icon className="w-4 h-4" /> {" "}
-      <span className="font-medium">{label}</span> {" "}
+      <Icon className="w-4 h-4" /> <span className="font-medium">{label}</span>{" "}
     </button>
   );
 
@@ -523,261 +951,233 @@ Additional Symptoms from examination: ${
     onToggle: (item: string) => void;
   }> = ({ title, items, selected, onToggle }) => (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3> {" "}
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>{" "}
       <div className="grid grid-cols-2 gap-3">
-         {" "}
+        {" "}
         {items.map((item) => (
           <label
             key={item}
             className="flex items-center space-x-2 cursor-pointer"
           >
-             {" "}
+            {" "}
             <input
               type="checkbox"
               checked={selected.includes(item)}
               onChange={() => onToggle(item)}
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
-              <span className="text-sm text-gray-700">{item}</span> {" "}
+            <span className="text-sm text-gray-700">{item}</span>{" "}
           </label>
-        ))}
-         {" "}
-      </div>
-       {" "}
+        ))}{" "}
+      </div>{" "}
     </div>
   );
 
   if (!selectedPatient) {
     return (
       <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
-         {" "}
+        {" "}
         <div className="text-center">
-            <Stethoscope className="w-12 h-12 text-gray-400 mx-auto mb-3" /> {" "}
+          <Stethoscope className="w-12 h-12 text-gray-400 mx-auto mb-3" />{" "}
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              No Patient Selected  {" "}
-          </h2>
-           {" "}
+            {" "}
+            No Patient Selected{" "}
+          </h2>{" "}
           <p className="text-gray-600 mb-4">
-              Please select a patient from the queue to begin consultation.  {" "}
-          </p>
-           {" "}
+            {" "}
+            Please select a patient from the queue to begin consultation.{" "}
+          </p>{" "}
           <button
             onClick={onBack}
             className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-              <ArrowLeft className="w-4 h-4" />  <span>Back to Queue</span> {" "}
-          </button>
-           {" "}
-        </div>
-         {" "}
+            <ArrowLeft className="w-4 h-4" /> <span>Back to Queue</span>{" "}
+          </button>{" "}
+        </div>{" "}
       </div>
     );
   }
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-       {" "}
+      {" "}
       <div className="max-w-7xl mx-auto">
-         {" "}
+        {" "}
         <div className="flex items-center justify-between mb-6">
-           {" "}
+          {" "}
           <div className="flex items-center space-x-3">
-             {" "}
+            {" "}
             <button
               onClick={onBack}
               className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
             >
-                <ArrowLeft className="w-5 h-5" />  <span>Back to Queue</span> {" "}
+              <ArrowLeft className="w-5 h-5" /> <span>Back to Queue</span>{" "}
             </button>
-              <div className="h-6 w-px bg-gray-300"></div>
-              <Stethoscope className="w-8 h-8 text-blue-600" /> {" "}
+            <div className="h-6 w-px bg-gray-300"></div>
+            <Stethoscope className="w-8 h-8 text-blue-600" />{" "}
             <div>
-               {" "}
+              {" "}
               <h1 className="text-3xl font-bold text-gray-900">
-                  Doctor Consultation  {" "}
-              </h1>
-               {" "}
+                {" "}
+                Doctor Consultation{" "}
+              </h1>{" "}
               <p className="text-gray-600">
-                  Complete medical examination and diagnosis  {" "}
-              </p>
-               {" "}
-            </div>
-             {" "}
-          </div>
-           {" "}
+                {" "}
+                Complete medical examination and diagnosis{" "}
+              </p>{" "}
+            </div>{" "}
+          </div>{" "}
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-             {" "}
+            {" "}
             <div className="flex items-center space-x-3">
-               {" "}
+              {" "}
               <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                 {" "}
+                {" "}
                 <span className="text-blue-600 font-medium text-sm">
-                   {" "}
+                  {" "}
                   {selectedPatient.fullName
                     ?.split(" ")
                     .map((n) => n[0])
-                    .join("")}
-                   {" "}
-                </span>
-                 {" "}
-              </div>
-               {" "}
+                    .join("")}{" "}
+                </span>{" "}
+              </div>{" "}
               <div>
-                 {" "}
+                {" "}
                 <p className="font-semibold text-gray-900">
-                    {selectedPatient.fullName} {" "}
-                </p>
-                 {" "}
+                  {" "}
+                  {selectedPatient.fullName}{" "}
+                </p>{" "}
                 <p className="text-sm text-gray-600">
-                    {selectedPatient.uhid} • {selectedPatient.age}Y •  {" "}
-                  {selectedPatient.gender} {" "}
-                </p>
-                 {" "}
-              </div>
-               {" "}
-            </div>
-             {" "}
-          </div>
-           {" "}
-        </div>
-         {" "}
+                  {" "}
+                  {selectedPatient.uhid} • {selectedPatient.age}Y •{" "}
+                  {selectedPatient.gender}{" "}
+                </p>{" "}
+              </div>{" "}
+            </div>{" "}
+          </div>{" "}
+        </div>{" "}
         <div className="flex space-x-2 mb-6 overflow-x-auto">
-            <TabButton id="history" label="Patient History" icon={FileText} /> {" "}
+          <TabButton id="history" label="Patient History" icon={FileText} />{" "}
           <TabButton
             id="assessment"
             label="Clinical Assessment"
             icon={Stethoscope}
           />
-            <TabButton id="prescriptions" label="Prescriptions" icon={Pill} />
-            <TabButton id="ai-assist" label="AI Assist" icon={Bot} /> {" "}
-        </div>
-         {" "}
+          <TabButton id="prescriptions" label="Prescriptions" icon={Pill} />
+          <TabButton id="ai-assist" label="AI Assist" icon={Bot} />{" "}
+        </div>{" "}
         {activeTab === "history" && (
           <div className="space-y-6">
-             {" "}
+            {" "}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-               {" "}
+              {" "}
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Patient Information  {" "}
-              </h3>
-               {" "}
+                {" "}
+                Patient Information{" "}
+              </h3>{" "}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                 {" "}
+                {" "}
                 <div>
-                    <p className="text-sm text-gray-600">Contact Number</p> {" "}
+                  <p className="text-sm text-gray-600">Contact Number</p>{" "}
                   <p className="font-medium text-gray-900">
-                      {selectedPatient.contactNumber} {" "}
-                  </p>
-                   {" "}
-                </div>
-                 {" "}
+                    {" "}
+                    {selectedPatient.contactNumber}{" "}
+                  </p>{" "}
+                </div>{" "}
                 <div>
-                    <p className="text-sm text-gray-600">Address</p> {" "}
+                  <p className="text-sm text-gray-600">Address</p>{" "}
                   <p className="font-medium text-gray-900">
-                      {selectedPatient.address} {" "}
-                  </p>
-                   {" "}
-                </div>
-                 {" "}
+                    {" "}
+                    {selectedPatient.address}{" "}
+                  </p>{" "}
+                </div>{" "}
                 <div>
-                    <p className="text-sm text-gray-600">Visit Type</p> {" "}
+                  <p className="text-sm text-gray-600">Visit Type</p>{" "}
                   <p className="font-medium text-gray-900">
-                      {selectedPatient.visitType} {" "}
-                  </p>
-                   {" "}
-                </div>
-                 {" "}
+                    {" "}
+                    {selectedPatient.visitType}{" "}
+                  </p>{" "}
+                </div>{" "}
                 <div>
-                    <p className="text-sm text-gray-600">Payment Method</p> {" "}
+                  <p className="text-sm text-gray-600">Payment Method</p>{" "}
                   <p className="font-medium text-gray-900">
-                      {selectedPatient.paymentMethod} {" "}
-                  </p>
-                   {" "}
-                </div>
-                 {" "}
-              </div>
-               {" "}
+                    {" "}
+                    {selectedPatient.paymentMethod}{" "}
+                  </p>{" "}
+                </div>{" "}
+              </div>{" "}
               {selectedPatient.chronicConditions &&
                 selectedPatient.chronicConditions.length > 0 && (
                   <div className="mb-6">
-                     {" "}
+                    {" "}
                     <p className="text-sm text-gray-600 mb-2">
-                        Chronic Conditions  {" "}
-                    </p>
-                     {" "}
+                      {" "}
+                      Chronic Conditions{" "}
+                    </p>{" "}
                     <div className="flex flex-wrap gap-2">
-                       {" "}
+                      {" "}
                       {selectedPatient.chronicConditions.map(
                         (condition, index) => (
                           <span
                             key={index}
                             className="px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full"
                           >
-                              {condition} {" "}
+                            {" "}
+                            {condition}{" "}
                           </span>
                         )
-                      )}
-                       {" "}
-                    </div>
-                     {" "}
+                      )}{" "}
+                    </div>{" "}
                   </div>
-                )}
-               {" "}
-            </div>
-             {" "}
+                )}{" "}
+            </div>{" "}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-               {" "}
+              {" "}
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Previous Consultations  {" "}
-              </h3>
-               {" "}
+                {" "}
+                Previous Consultations{" "}
+              </h3>{" "}
               <div className="space-y-3">
-                 {" "}
+                {" "}
                 {mockHistory.map((item, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                   >
-                     {" "}
+                    {" "}
                     <div>
-                       {" "}
+                      {" "}
                       <p className="font-medium text-gray-900">
-                          {item.diagnosis} {" "}
+                        {" "}
+                        {item.diagnosis}{" "}
                       </p>
-                        <p className="text-sm text-gray-600">{item.doctor}</p> {" "}
-                    </div>
-                     {" "}
+                      <p className="text-sm text-gray-600">{item.doctor}</p>{" "}
+                    </div>{" "}
                     <div className="flex items-center space-x-2">
-                        <Clock className="w-4 h-4 text-gray-400" /> {" "}
-                      <span className="text-sm text-gray-600">{item.date}</span>
-                       {" "}
-                    </div>
-                     {" "}
+                      <Clock className="w-4 h-4 text-gray-400" />{" "}
+                      <span className="text-sm text-gray-600">{item.date}</span>{" "}
+                    </div>{" "}
                   </div>
-                ))}
-                 {" "}
-              </div>
-               {" "}
-            </div>
-             {" "}
+                ))}{" "}
+              </div>{" "}
+            </div>{" "}
           </div>
-        )}
-         {" "}
+        )}{" "}
         {activeTab === "assessment" && (
           <div className="flex flex-col lg:flex-row gap-6">
-              {/* Left Column */} {" "}
+            {/* Left Column */}{" "}
             <div className="w-full lg:w-2/3 space-y-6">
-                {/* Examination Section */} {" "}
+              {/* Examination Section */}{" "}
               <div className="bg-white rounded-lg border border-gray-200 p-6">
-                 {" "}
+                {" "}
                 <div className="flex items-center justify-between mb-4">
-                   {" "}
+                  {" "}
                   <h3 className="text-lg font-semibold text-gray-900">
-                      Chief Complaints & Symptoms  {" "}
-                  </h3>
-                   {" "}
+                    {" "}
+                    Chief Complaints & Symptoms{" "}
+                  </h3>{" "}
                   <div className="flex space-x-2">
-                     {" "}
+                    {" "}
                     {quickTemplates.map((template) => (
                       <button
                         key={template.name}
@@ -794,22 +1194,20 @@ Additional Symptoms from examination: ${
                         }
                         className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
                       >
-                          {template.name} {" "}
+                        {" "}
+                        {template.name}{" "}
                       </button>
-                    ))}
-                     {" "}
-                  </div>
-                   {" "}
-                </div>
-                 {" "}
+                    ))}{" "}
+                  </div>{" "}
+                </div>{" "}
                 <div className="grid grid-cols-3 md:grid-cols-5 gap-3 mb-4">
-                   {" "}
+                  {" "}
                   {commonSymptoms.map((symptom) => (
                     <label
                       key={symptom}
                       className="flex items-center space-x-2 cursor-pointer"
                     >
-                       {" "}
+                      {" "}
                       <input
                         type="checkbox"
                         checked={consultation.symptoms.includes(symptom)}
@@ -822,15 +1220,12 @@ Additional Symptoms from examination: ${
                         }
                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
-                        <span className="text-sm text-gray-700">{symptom}</span>
-                       {" "}
+                      <span className="text-sm text-gray-700">{symptom}</span>{" "}
                     </label>
-                  ))}
-                   {" "}
-                </div>
-                 {" "}
+                  ))}{" "}
+                </div>{" "}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                   {" "}
+                  {" "}
                   <input
                     type="text"
                     placeholder="Duration of symptoms"
@@ -842,8 +1237,7 @@ Additional Symptoms from examination: ${
                       }))
                     }
                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                   {" "}
+                  />{" "}
                   <input
                     type="text"
                     placeholder="Add custom symptom"
@@ -857,12 +1251,9 @@ Additional Symptoms from examination: ${
                       }
                     }}
                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                   {" "}
-                </div>
-                 {" "}
-              </div>
-               {" "}
+                  />{" "}
+                </div>{" "}
+              </div>{" "}
               <CheckboxList
                 title="General Examination"
                 items={generalExaminations}
@@ -874,8 +1265,7 @@ Additional Symptoms from examination: ${
                     setConsultation
                   )
                 }
-              />
-               {" "}
+              />{" "}
               <CheckboxList
                 title="Systemic Examination"
                 items={systemicExaminations}
@@ -888,41 +1278,38 @@ Additional Symptoms from examination: ${
                   )
                 }
               />
-                {/* Investigations Section */} {" "}
+              {/* Investigations Section */}{" "}
               <div className="bg-white rounded-lg border border-gray-200 p-6">
-                 {" "}
+                {" "}
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Upload Reports  {" "}
-                </h3>
-                 {" "}
+                  {" "}
+                  Upload Reports{" "}
+                </h3>{" "}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                   {" "}
+                  {" "}
                   {["X-Ray", "Ultrasound", "Discharge Summary"].map((type) => (
                     <div
                       key={type}
                       className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors cursor-pointer"
                     >
-                       {" "}
-                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" /> {" "}
+                      {" "}
+                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />{" "}
                       <p className="text-sm text-gray-600 mb-1">
                         Upload {type}
                       </p>
-                        <p className="text-xs text-gray-500">PDF, Images</p> {" "}
+                      <p className="text-xs text-gray-500">PDF, Images</p>{" "}
                     </div>
-                  ))}
-                   {" "}
-                </div>
-                 {" "}
-              </div>
-               {" "}
+                  ))}{" "}
+                </div>{" "}
+              </div>{" "}
               <div className="bg-white rounded-lg border border-gray-200 p-6">
-                 {" "}
+                {" "}
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Diagnosis & Notes  {" "}
-                </h3>
-                 {" "}
+                  {" "}
+                  Diagnosis & Notes{" "}
+                </h3>{" "}
                 <div className="space-y-4">
-                   {" "}
+                  {" "}
                   <input
                     type="text"
                     placeholder="Primary Diagnosis"
@@ -934,8 +1321,7 @@ Additional Symptoms from examination: ${
                       }))
                     }
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                   {" "}
+                  />{" "}
                   <textarea
                     rows={4}
                     placeholder="Additional notes and observations..."
@@ -947,24 +1333,21 @@ Additional Symptoms from examination: ${
                       }))
                     }
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                   {" "}
-                </div>
-                 {" "}
-              </div>
-               {" "}
+                  />{" "}
+                </div>{" "}
+              </div>{" "}
             </div>
-              {/* Right Column */} {" "}
+            {/* Right Column */}{" "}
             <div className="w-full lg:w-1/3">
-                {/* Vitals Section */} {" "}
+              {/* Vitals Section */}{" "}
               <div className="sticky top-6 bg-white rounded-lg border border-gray-200 p-6">
-                 {" "}
+                {" "}
                 <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                    Current Vitals  {" "}
-                </h3>
-                 {" "}
+                  {" "}
+                  Current Vitals{" "}
+                </h3>{" "}
                 <div className="grid grid-cols-2 gap-y-6 gap-x-2">
-                   {" "}
+                  {" "}
                   {vitals ? (
                     <>
                       {Object.entries({
@@ -976,11 +1359,10 @@ Additional Symptoms from examination: ${
                         Height: `${vitals.height} cm`,
                       }).map(([key, value]) => (
                         <div key={key} className="text-center">
-                            <p className="text-sm text-gray-600 mb-1">{key}</p> {" "}
+                          <p className="text-sm text-gray-600 mb-1">{key}</p>{" "}
                           <p className="text-xl font-bold text-gray-900">
                             {value}
-                          </p>
-                           {" "}
+                          </p>{" "}
                         </div>
                       ))}
                     </>
@@ -988,70 +1370,39 @@ Additional Symptoms from examination: ${
                     <div className="col-span-2 text-center text-gray-500">
                       No vitals recorded yet.
                     </div>
-                  )}
-                   {" "}
-                </div>
-                 {" "}
-              </div>
-               {" "}
-            </div>
-             {" "}
+                  )}{" "}
+                </div>{" "}
+              </div>{" "}
+            </div>{" "}
           </div>
-        )}
-         {" "}
-        {activeTab === "prescriptions" && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-             {" "}
-            <div className="flex items-center justify-between mb-6">
-               {" "}
-              <h3 className="text-lg font-semibold text-gray-900">
-                  Create Prescription  {" "}
-              </h3>
-               {" "}
-              <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                  <ChevronRight className="w-4 h-4" /> {" "}
-                <span>Continue to Prescription</span> {" "}
-              </button>
-               {" "}
-            </div>
-             {" "}
-            <div className="text-center py-8">
-                <Pill className="w-12 h-12 text-gray-400 mx-auto mb-3" /> {" "}
-              <p className="text-gray-600">
-                  Complete examination to proceed with prescription  {" "}
-              </p>
-               {" "}
-            </div>
-             {" "}
-          </div>
-        )}
-         {" "}
+        )}{" "}
+        {activeTab === "prescriptions" && selectedPatient && (
+          <PrescriptionModule
+            selectedPatient={selectedPatient}
+            consultation={consultation}
+          />
+        )}{" "}
         {activeTab === "ai-assist" && selectedPatient && (
           <AIAssistTab
             consultation={consultation}
             selectedPatient={selectedPatient}
           />
-        )}
-         {" "}
+        )}{" "}
         <div className="flex items-center justify-between mt-8 p-6 bg-white rounded-lg border border-gray-200">
-           {" "}
+          {" "}
           <div className="flex items-center space-x-4">
-             {" "}
+            {" "}
             <button className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                Save Draft  {" "}
-            </button>
-             {" "}
+              {" "}
+              Save Draft{" "}
+            </button>{" "}
             <button className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                <span>Complete Consultation</span>
-                <ChevronRight className="w-4 h-4" /> {" "}
-            </button>
-             {" "}
-          </div>
-           {" "}
-        </div>
-         {" "}
-      </div>
-       {" "}
+              <span>Complete Consultation</span>
+              <ChevronRight className="w-4 h-4" />{" "}
+            </button>{" "}
+          </div>{" "}
+        </div>{" "}
+      </div>{" "}
     </div>
   );
 };
