@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-
+import React, { useState, useEffect } from "react";
 import {
   Stethoscope,
   FileText,
@@ -17,6 +16,9 @@ import {
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
+import { db } from "../../firebase";
+import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
+import { Vitals } from "../../types";
 
 // Import the Patient interface from PatientQueue
 interface Patient {
@@ -54,6 +56,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
   const [activeTab, setActiveTab] = useState<
     "history" | "assessment" | "prescriptions" | "ai-assist"
   >("history");
+  const [vitals, setVitals] = useState<Vitals | null>(null);
   const [consultation, setConsultation] = useState({
     symptoms: [] as string[],
     duration: "",
@@ -63,16 +66,32 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
     investigations: [] as string[],
     diagnosis: "",
     notes: "",
-  }); // Mock vitals data - in real app, this would be fetched from the database
+  });
 
-  const mockVitals = {
-    bp: "120/80",
-    pulse: 72,
-    temp: 98.6,
-    spo2: 98,
-    weight: 70,
-    height: 165,
-  }; // AI Assistant Component
+  // Fetch vitals from Firebase when a patient is selected
+  useEffect(() => {
+    if (!selectedPatient?.id) {
+      setVitals(null);
+      return;
+    }
+
+    const vitalsQuery = query(
+      collection(db, "vitals"),
+      where("patientId", "==", selectedPatient.id),
+      orderBy("recordedAt", "desc")
+    );
+
+    const unsubscribe = onSnapshot(vitalsQuery, (snapshot) => {
+      if (snapshot.docs.length > 0) {
+        const latestVitals = snapshot.docs[0].data() as Vitals;
+        setVitals(latestVitals);
+      } else {
+        setVitals(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [selectedPatient]);
 
   const AIAssistTab: React.FC<{
     consultation: any;
@@ -526,7 +545,7 @@ Additional Symptoms from examination: ${
       </div>
        {" "}
     </div>
-  ); // If no patient is selected, show error state
+  );
 
   if (!selectedPatient) {
     return (
@@ -946,20 +965,30 @@ Additional Symptoms from examination: ${
                  {" "}
                 <div className="grid grid-cols-2 gap-y-6 gap-x-2">
                    {" "}
-                  {Object.entries({
-                    "Blood Pressure": mockVitals.bp,
-                    Pulse: `${mockVitals.pulse} bpm`,
-                    Temperature: `${mockVitals.temp}°F`,
-                    "SPO₂": `${mockVitals.spo2}%`,
-                    Weight: `${mockVitals.weight} kg`,
-                    Height: `${mockVitals.height} cm`,
-                  }).map(([key, value]) => (
-                    <div key={key} className="text-center">
-                        <p className="text-sm text-gray-600 mb-1">{key}</p> {" "}
-                      <p className="text-xl font-bold text-gray-900">{value}</p>
-                       {" "}
+                  {vitals ? (
+                    <>
+                      {Object.entries({
+                        "Blood Pressure": vitals.bloodPressure,
+                        Pulse: `${vitals.pulse} bpm`,
+                        Temperature: `${vitals.temperature}°F`,
+                        "SPO₂": `${vitals.spo2}%`,
+                        Weight: `${vitals.weight} kg`,
+                        Height: `${vitals.height} cm`,
+                      }).map(([key, value]) => (
+                        <div key={key} className="text-center">
+                            <p className="text-sm text-gray-600 mb-1">{key}</p> {" "}
+                          <p className="text-xl font-bold text-gray-900">
+                            {value}
+                          </p>
+                           {" "}
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <div className="col-span-2 text-center text-gray-500">
+                      No vitals recorded yet.
                     </div>
-                  ))}
+                  )}
                    {" "}
                 </div>
                  {" "}
