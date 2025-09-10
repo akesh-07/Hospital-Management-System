@@ -863,11 +863,6 @@ Additional Symptoms from examination: ${
         )}
 
         <div className="flex items-center justify-between mt-8 p-6 bg-white rounded-lg border border-gray-200">
-          <button className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-colors">
-            <Bot className="w-4 h-4" />
-            <span>AI Diagnostic Assist</span>
-          </button>
-
           <div className="flex items-center space-x-4">
             <button className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
               Save Draft
