@@ -77,14 +77,14 @@ export const PharmacyDashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Daily Sales"
-            value={`$${analytics.dailySales.toLocaleString()}`}
+            value={`₹ ${analytics.dailySales.toLocaleString()}`}
             icon={DollarSign}
             color="bg-green-500"
             subtitle="Today's revenue"
           />
           <StatCard
             title="Total Revenue"
-            value={`$${analytics.totalRevenue.toLocaleString()}`}
+            value={`₹${analytics.totalRevenue.toLocaleString()}`}
             icon={TrendingUp}
             color="bg-blue-500"
             subtitle="This month"
@@ -122,7 +122,7 @@ export const PharmacyDashboard: React.FC = () => {
                         style={{ width: `${(item.amount / Math.max(...analytics.salesTrend.map(i => i.amount))) * 100}%` }}
                       ></div>
                     </div>
-                    <span className="text-sm font-medium text-gray-900 w-16">${item.amount}</span>
+                    <span className="text-sm font-medium text-gray-900 w-16">₹{item.amount}</span>
                   </div>
                 </div>
               ))}
@@ -173,7 +173,7 @@ export const PharmacyDashboard: React.FC = () => {
                     <p className="font-medium text-gray-900">{drug.name}</p>
                     <p className="text-sm text-gray-600">{drug.quantity} units sold</p>
                   </div>
-                  <span className="font-semibold text-green-600">${drug.revenue}</span>
+                  <span className="font-semibold text-green-600">₹{drug.revenue}</span>
                 </div>
               ))}
             </div>

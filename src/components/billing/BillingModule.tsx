@@ -236,16 +236,16 @@ export const BillingModule: React.FC = () => {
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Total Billed Amount</span>
                 <span className="font-semibold text-gray-900">
-                  ${(totalRevenue + pendingAmount).toLocaleString()}
+                  ₹{(totalRevenue + pendingAmount).toLocaleString()}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Amount Collected</span>
-                <span className="font-semibold text-green-600">${totalRevenue.toLocaleString()}</span>
+                <span className="font-semibold text-green-600">₹{totalRevenue.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Pending Collection</span>
-                <span className="font-semibold text-yellow-600">${pendingAmount.toLocaleString()}</span>
+                <span className="font-semibold text-yellow-600">₹{pendingAmount.toLocaleString()}</span>
               </div>
               <div className="pt-4 border-t border-gray-200">
                 <div className="flex items-center justify-between">
