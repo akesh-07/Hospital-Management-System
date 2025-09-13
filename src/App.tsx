@@ -68,7 +68,7 @@ function App() {
   );
   <Routes>
     <Route path="/" element={<LoginPage />} />
-    <Route path="/doctor" element={<DoctorModule />} />
+    <Route path="/doctor" element={<PatientQueue />} />
     <Route path="/reception" element={<ReceptionistDashboard />} />
     <Route path="/pharmacy" element={<PharmacyDashboard />} />
     <Route path="/staff" element={<StaffDashboard />} />
