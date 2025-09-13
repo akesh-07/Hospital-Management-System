@@ -65,8 +65,8 @@ interface Medication {
 }
 
 interface DoctorModuleProps {
-  selectedPatient: Patient | null;
-  onBack: () => void;
+  selectedPatient?: Patient | null;
+  onBack?: () => void;
 }
 
 // --- PrescriptionModule Component ---
