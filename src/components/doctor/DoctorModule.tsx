@@ -30,6 +30,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { Vitals } from "../../types";
+import PatientQueue from "../queue/PatientQueue";
 
 // Import the Patient interface from PatientQueue
 interface Patient {
@@ -975,26 +976,27 @@ Additional Symptoms from examination: ${
 
   if (!selectedPatient) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
-        {" "}
-        <div className="text-center">
-          <Stethoscope className="w-12 h-12 text-gray-400 mx-auto mb-3" />{" "}
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            {" "}
-            No Patient Selected{" "}
-          </h2>{" "}
-          <p className="text-gray-600 mb-4">
-            {" "}
-            Please select a patient from the queue to begin consultation.{" "}
-          </p>{" "}
-          <button
-            onClick={onBack}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" /> <span>Back to Queue</span>{" "}
-          </button>{" "}
-        </div>{" "}
-      </div>
+      <PatientQueue />
+      // <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
+      //   {" "}
+      //   <div className="text-center">
+      //     <Stethoscope className="w-12 h-12 text-gray-400 mx-auto mb-3" />{" "}
+      //     <h2 className="text-xl font-semibold text-gray-900 mb-2">
+      //       {" "}
+      //       No Patient Selected{" "}
+      //     </h2>{" "}
+      //     <p className="text-gray-600 mb-4">
+      //       {" "}
+      //       Please select a patient from the queue to begin consultation.{" "}
+      //     </p>{" "}
+      //     <button
+      //       onClick={onBack}
+      //       className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+      //     >
+      //       <ArrowLeft className="w-4 h-4" /> <span>Back to Queue</span>{" "}
+      //     </button>{" "}
+      //   </div>{" "}
+      // </div>
     );
   }
 

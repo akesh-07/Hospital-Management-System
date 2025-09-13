@@ -1,6 +1,6 @@
 import React from "react";
 import { User, Bell, Settings } from "lucide-react";
-import HMS_LOGO from "./HMS.jpeg";
+import HMS_LOGO from "./hms-logo.png";
 interface HeaderProps {
   currentSection: string;
 }
