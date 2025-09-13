@@ -1,6 +1,6 @@
 import React from "react";
 import { User, Bell, Settings } from "lucide-react";
-
+import HMS_LOGO from "./HMS.jpeg";
 interface HeaderProps {
   currentSection: string;
 }
@@ -11,8 +11,8 @@ export const Header: React.FC<HeaderProps> = ({ currentSection }) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-3">
-            <div>
-              <img src="hms-logo.png" alt="logo" />
+            <div className="w-[200px]">
+              <img src={HMS_LOGO} alt="logo" />
             </div>
           </div>
           <div className="hidden md:block">
