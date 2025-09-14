@@ -20,6 +20,9 @@ import {
   Calendar,
   Save,
   Printer,
+  Heart,
+  FileDown,
+  Search,
 } from "lucide-react";
 import { db } from "../../firebase";
 import {
@@ -509,7 +512,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<
     "history" | "assessment" | "prescriptions" | "ai-assist"
-  >("history");
+  >("assessment");
   const [vitals, setVitals] = useState<Vitals | null>(null);
   const [consultation, setConsultation] = useState({
     symptoms: [] as string[],
@@ -813,52 +816,10 @@ Additional Symptoms from examination: ${
             </div>{" "}
           </div>
         )}
-        {/* Quick Actions */}{" "}
-        {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <h5 className="font-medium text-gray-900 mb-2">Quick Analysis</h5>
-        <p className="text-sm text-gray-600 mb-3">
-        Get instant insights from examination data
-        </p>
-        <button
-        onClick={() => {
-          handleAutoFill();
-          handleSubmit();
-        }}
-        className="w-full px-3 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors text-sm"
-        >
-        Analyze Current Case
-        </button>
-      </div>
-
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <h5 className="font-medium text-gray-900 mb-2">
-        Drug Interactions
-        </h5>
-        <p className="text-sm text-gray-600 mb-3">
-        Check for potential medication conflicts
-        </p>
-        <button className="w-full px-3 py-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors text-sm">
-        Check Interactions
-        </button>
-      </div>
-
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <h5 className="font-medium text-gray-900 mb-2">
-        Treatment Guidelines
-        </h5>
-        <p className="text-sm text-gray-600 mb-3">
-        Access evidence-based protocols
-        </p>
-        <button className="w-full px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm">
-        View Guidelines
-        </button>
-      </div>
-      </div> */}{" "}
       </div>
     );
-  }; // Mock history data - in real app, this would be fetched from the database
-
+  };
+  // Mock history data - in real app, this would be fetched from the database
   const mockHistory = [
     { date: "2024-08-15", diagnosis: "Routine Checkup", doctor: "Dr. Smith" },
     {
@@ -866,45 +827,6 @@ Additional Symptoms from examination: ${
       diagnosis: "Hypertension Follow-up",
       doctor: "Dr. Wilson",
     },
-  ];
-
-  const commonSymptoms = [
-    "Fever",
-    "Cough",
-    "Headache",
-    "Back Pain",
-    "Muscle Spasm",
-    "Diarrhea",
-    "Fatigue",
-    "Nausea",
-    "Chest Pain",
-    "Shortness of Breath",
-  ];
-
-  const quickTemplates = [
-    { name: "Fever Package", symptoms: ["Fever", "Fatigue", "Headache"] },
-    { name: "Cold & Cough", symptoms: ["Cough", "Runny Nose", "Sore Throat"] },
-    { name: "Back Pain", symptoms: ["Back Pain", "Muscle Spasm"] },
-    { name: "Diarrhea", symptoms: ["Diarrhea", "Nausea", "Abdominal Pain"] },
-  ];
-
-  const generalExaminations = [
-    "Conscious & Oriented",
-    "Afebrile",
-    "Well Nourished",
-    "No Pallor",
-    "No Icterus",
-    "No Cyanosis",
-    "No Clubbing",
-    "No Lymphadenopathy",
-  ];
-
-  const systemicExaminations = [
-    "CVS: S1S2 heard, No murmur",
-    "RS: Clear bilateral air entry",
-    "CNS: Normal",
-    "P/A: Soft, non-tender",
-    "Extremities: Normal",
   ];
 
   const toggleArrayItem = (
@@ -945,59 +867,8 @@ Additional Symptoms from examination: ${
     </button>
   );
 
-  const CheckboxList: React.FC<{
-    title: string;
-    items: string[];
-    selected: string[];
-    onToggle: (item: string) => void;
-  }> = ({ title, items, selected, onToggle }) => (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>{" "}
-      <div className="grid grid-cols-2 gap-3">
-        {" "}
-        {items.map((item) => (
-          <label
-            key={item}
-            className="flex items-center space-x-2 cursor-pointer"
-          >
-            {" "}
-            <input
-              type="checkbox"
-              checked={selected.includes(item)}
-              onChange={() => onToggle(item)}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="text-sm text-gray-700">{item}</span>{" "}
-          </label>
-        ))}{" "}
-      </div>{" "}
-    </div>
-  );
-
   if (!selectedPatient) {
-    return (
-      <PatientQueue />
-      // <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
-      //   {" "}
-      //   <div className="text-center">
-      //     <Stethoscope className="w-12 h-12 text-gray-400 mx-auto mb-3" />{" "}
-      //     <h2 className="text-xl font-semibold text-gray-900 mb-2">
-      //       {" "}
-      //       No Patient Selected{" "}
-      //     </h2>{" "}
-      //     <p className="text-gray-600 mb-4">
-      //       {" "}
-      //       Please select a patient from the queue to begin consultation.{" "}
-      //     </p>{" "}
-      //     <button
-      //       onClick={onBack}
-      //       className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-      //     >
-      //       <ArrowLeft className="w-4 h-4" /> <span>Back to Queue</span>{" "}
-      //     </button>{" "}
-      //   </div>{" "}
-      // </div>
-    );
+    return <PatientQueue />;
   }
 
   return (
@@ -1069,6 +940,7 @@ Additional Symptoms from examination: ${
           <TabButton id="ai-assist" label="AI Assist" icon={Bot} />{" "}
         </div>{" "}
         {activeTab === "history" && (
+          // ... existing history tab content
           <div className="space-y-6">
             {" "}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -1164,220 +1036,236 @@ Additional Symptoms from examination: ${
               </div>{" "}
             </div>{" "}
           </div>
-        )}{" "}
+        )}
         {activeTab === "assessment" && (
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* Left Column */}{" "}
-            <div className="w-full lg:w-2/3 space-y-6">
-              {/* Examination Section */}{" "}
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Patient Vitals
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+                  <div>
+                    <p className="text-sm text-gray-500">BP</p>
+                    <p className="font-bold text-lg text-gray-800">120/80</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">PR</p>
+                    <p className="font-bold text-lg text-gray-800">72 bpm</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">SpO₂</p>
+                    <p className="font-bold text-lg text-gray-800">98%</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">BMI</p>
+                    <p className="font-bold text-lg text-gray-800">22.5</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">BPR</p>
+                    <p className="font-bold text-lg text-gray-800">18/min</p>
+                  </div>
+                </div>
+              </div>
               <div className="bg-white rounded-lg border border-gray-200 p-6">
-                {" "}
-                <div className="flex items-center justify-between mb-4">
-                  {" "}
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {" "}
-                    Chief Complaints & Symptoms{" "}
-                  </h3>{" "}
-                  <div className="flex space-x-2">
-                    {" "}
-                    {quickTemplates.map((template) => (
-                      <button
-                        key={template.name}
-                        onClick={() =>
-                          setConsultation((prev) => ({
-                            ...prev,
-                            symptoms: [
-                              ...new Set([
-                                ...prev.symptoms,
-                                ...template.symptoms,
-                              ]),
-                            ],
-                          }))
-                        }
-                        className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
-                      >
-                        {" "}
-                        {template.name}{" "}
-                      </button>
-                    ))}{" "}
-                  </div>{" "}
-                </div>{" "}
-                <div className="grid grid-cols-3 md:grid-cols-5 gap-3 mb-4">
-                  {" "}
-                  {commonSymptoms.map((symptom) => (
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Medical & Personal History
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <button className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md">
+                    <FileDown className="w-4 h-4" />
+                    <span>Discharge Summary</span>
+                  </button>
+                  <button className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md">
+                    <FileDown className="w-4 h-4" />
+                    <span>X-Ray (PDF)</span>
+                  </button>
+                  <button className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md">
+                    <FileDown className="w-4 h-4" />
+                    <span>USG (PDF)</span>
+                  </button>
+                  <button className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md">
+                    <FileDown className="w-4 h-4" />
+                    <span>Investigation ROP</span>
+                  </button>
+                </div>
+                <div className="mt-2 text-center text-xs text-blue-600 font-semibold">
+                  AI Assisted Summary
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Chief Complaints
+              </h3>
+              <div className="grid grid-cols-4 gap-2 mb-4">
+                {["Fever", "Cold", "Cough", "Diarrhea", "Vomiting"].map(
+                  (symptom) => (
                     <label
                       key={symptom}
-                      className="flex items-center space-x-2 cursor-pointer"
+                      className="flex items-center space-x-2 text-sm"
                     >
-                      {" "}
                       <input
                         type="checkbox"
-                        checked={consultation.symptoms.includes(symptom)}
-                        onChange={() =>
-                          toggleArrayItem(
-                            consultation.symptoms,
-                            symptom,
-                            setConsultation
-                          )
-                        }
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-sm text-gray-700">{symptom}</span>{" "}
+                      <span>{symptom}</span>
                     </label>
-                  ))}{" "}
-                </div>{" "}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  {" "}
-                  <input
-                    type="text"
-                    placeholder="Duration of symptoms"
-                    value={consultation.duration}
-                    onChange={(e) =>
-                      setConsultation((prev) => ({
-                        ...prev,
-                        duration: e.target.value,
-                      }))
-                    }
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />{" "}
-                  <input
-                    type="text"
-                    placeholder="Add custom symptom"
-                    onKeyPress={(e) => {
-                      if (e.key === "Enter" && e.currentTarget.value) {
-                        setConsultation((prev) => ({
-                          ...prev,
-                          symptoms: [...prev.symptoms, e.currentTarget.value],
-                        }));
-                        e.currentTarget.value = "";
-                      }
-                    }}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />{" "}
-                </div>{" "}
-              </div>{" "}
-              <CheckboxList
-                title="General Examination"
-                items={generalExaminations}
-                selected={consultation.generalExamination}
-                onToggle={(item) =>
-                  toggleArrayItem(
-                    consultation.generalExamination,
-                    item,
-                    setConsultation
                   )
-                }
-              />{" "}
-              <CheckboxList
-                title="Systemic Examination"
-                items={systemicExaminations}
-                selected={consultation.systemicExamination}
-                onToggle={(item) =>
-                  toggleArrayItem(
-                    consultation.systemicExamination,
-                    item,
-                    setConsultation
-                  )
-                }
-              />
-              {/* Investigations Section */}{" "}
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                {" "}
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  {" "}
-                  Upload Reports{" "}
-                </h3>{" "}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {" "}
-                  {["X-Ray", "Ultrasound", "Discharge Summary"].map((type) => (
-                    <div
-                      key={type}
-                      className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors cursor-pointer"
-                    >
-                      {" "}
-                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />{" "}
-                      <p className="text-sm text-gray-600 mb-1">
-                        Upload {type}
-                      </p>
-                      <p className="text-xs text-gray-500">PDF, Images</p>{" "}
-                    </div>
-                  ))}{" "}
-                </div>{" "}
-              </div>{" "}
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                {" "}
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  {" "}
-                  Diagnosis & Notes{" "}
-                </h3>{" "}
-                <div className="space-y-4">
-                  {" "}
-                  <input
-                    type="text"
-                    placeholder="Primary Diagnosis"
-                    value={consultation.diagnosis}
-                    onChange={(e) =>
-                      setConsultation((prev) => ({
-                        ...prev,
-                        diagnosis: e.target.value,
-                      }))
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />{" "}
-                  <textarea
-                    rows={4}
-                    placeholder="Additional notes and observations..."
-                    value={consultation.notes}
-                    onChange={(e) =>
-                      setConsultation((prev) => ({
-                        ...prev,
-                        notes: e.target.value,
-                      }))
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />{" "}
-                </div>{" "}
-              </div>{" "}
+                )}
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="p-2 text-left font-medium">Symptom</th>
+                      <th className="p-2 text-left font-medium">Duration</th>
+                      <th className="p-2 text-left font-medium">
+                        Aggravating/Relieving Factors
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="p-2">
+                        <input
+                          type="text"
+                          className="w-full border-gray-300 rounded-md p-1"
+                        />
+                      </td>
+                      <td className="p-2">
+                        <input
+                          type="text"
+                          className="w-full border-gray-300 rounded-md p-1"
+                        />
+                      </td>
+                      <td className="p-2">
+                        <input
+                          type="text"
+                          className="w-full border-gray-300 rounded-md p-1"
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-            {/* Right Column */}{" "}
-            <div className="w-full lg:w-1/3">
-              {/* Vitals Section */}{" "}
-              <div className="sticky top-6 bg-white rounded-lg border border-gray-200 p-6">
-                {" "}
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                  {" "}
-                  Current Vitals{" "}
-                </h3>{" "}
-                <div className="grid grid-cols-2 gap-y-6 gap-x-2">
-                  {" "}
-                  {vitals ? (
-                    <>
-                      {Object.entries({
-                        "Blood Pressure": vitals.bloodPressure,
-                        Pulse: `${vitals.pulse} bpm`,
-                        Temperature: `${vitals.temperature}°F`,
-                        "SPO₂": `${vitals.spo2}%`,
-                        Weight: `${vitals.weight} kg`,
-                        Height: `${vitals.height} cm`,
-                      }).map(([key, value]) => (
-                        <div key={key} className="text-center">
-                          <p className="text-sm text-gray-600 mb-1">{key}</p>{" "}
-                          <p className="text-xl font-bold text-gray-900">
-                            {value}
-                          </p>{" "}
-                        </div>
-                      ))}
-                    </>
-                  ) : (
-                    <div className="col-span-2 text-center text-gray-500">
-                      No vitals recorded yet.
-                    </div>
-                  )}{" "}
-                </div>{" "}
-              </div>{" "}
-            </div>{" "}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  General Examination
+                </h3>
+                <div className="grid grid-cols-3 gap-4">
+                  {["Pallor", "Icterus", "Cyanosis", "Clubbing", "LAP"].map(
+                    (item) => (
+                      <label
+                        key={item}
+                        className="flex items-center space-x-2 text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>{item}</span>
+                      </label>
+                    )
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="text-sm font-medium">Consciousness</label>
+                    <input
+                      type="text"
+                      className="w-full mt-1 border-gray-300 rounded-md p-1"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Built</label>
+                    <select className="w-full mt-1 border-gray-300 rounded-md p-1">
+                      <option>Mild</option>
+                      <option>Moderate</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Templates for Easy Fill
+                </h3>
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {["Knee Pain", "Back Pain", "Muscle Spasm"].map((item) => (
+                    <label
+                      key={item}
+                      className="flex items-center space-x-2 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>{item}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search symptoms/findings"
+                    className="w-full pl-10 p-2 border-gray-300 rounded-md"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Systemic Examination
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium">CNS</h4>
+                    <textarea
+                      className="w-full mt-1 border-gray-300 rounded-md p-1"
+                      rows={3}
+                    ></textarea>
+                  </div>
+                  <div>
+                    <h4 className="font-medium">RS</h4>
+                    <textarea
+                      className="w-full mt-1 border-gray-300 rounded-md p-1"
+                      rows={3}
+                    ></textarea>
+                  </div>
+                  <div>
+                    <h4 className="font-medium">CVS</h4>
+                    <textarea
+                      className="w-full mt-1 border-gray-300 rounded-md p-1"
+                      rows={3}
+                    ></textarea>
+                  </div>
+                  <div>
+                    <h4 className="font-medium">P/A</h4>
+                    <textarea
+                      className="w-full mt-1 border-gray-300 rounded-md p-1"
+                      rows={3}
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Local Examination
+                </h3>
+                <div className="text-center text-gray-500 italic p-4 border-2 border-dashed rounded-md">
+                  Use based on case type - Ortho module specific.
+                </div>
+              </div>
+            </div>
           </div>
-        )}{" "}
+        )}
         {activeTab === "prescriptions" && selectedPatient && (
           <PrescriptionModule
             selectedPatient={selectedPatient}
