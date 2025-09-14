@@ -3,47 +3,64 @@ import {
   Home,
   UserPlus,
   Users,
-  Activity,
   Stethoscope,
-  FileText,
   Pill,
-  CreditCard,
   BarChart3,
-  Heart,
+  CreditCard,
+  FileText,
 } from "lucide-react";
 import { NavigationItem } from "../../types";
+import { useAuth, UserRole } from "../../contexts/AuthContext";
 
 interface SidebarProps {
   activeSection: NavigationItem;
   onSectionChange: (section: NavigationItem) => void;
 }
 
+const allNavigationItems = [
+  { id: "dashboard" as NavigationItem, label: "Dashboard", icon: Home },
+  {
+    id: "registration" as NavigationItem,
+    label: "Patient Registration",
+    icon: UserPlus,
+  },
+  { id: "queue" as NavigationItem, label: "Pre-OPD", icon: Users },
+  { id: "doctor" as NavigationItem, label: "Doctor Module", icon: Stethoscope },
+  { id: "pharmacy" as NavigationItem, label: "Pharmacy Dashboard", icon: Pill },
+  {
+    id: "prescription" as NavigationItem,
+    label: "Prescription",
+    icon: FileText,
+  },
+  { id: "billing" as NavigationItem, label: "Payments", icon: CreditCard },
+  { id: "analytics" as NavigationItem, label: "Analytics", icon: BarChart3 },
+];
+
+const rolePermissions: Record<UserRole, NavigationItem[]> = {
+  doctor: ["dashboard", "queue", "doctor"],
+  pharmacist: ["dashboard", "pharmacy"],
+  "staff-nurse": ["dashboard", "queue"],
+  receptionist: ["dashboard", "registration", "queue"],
+  technician: ["dashboard"], // Assuming a default for technician
+};
+
 export const Sidebar: React.FC<SidebarProps> = ({
   activeSection,
   onSectionChange,
 }) => {
-  const navigationItems = [
-    { id: "dashboard" as NavigationItem, label: "Dashboard", icon: Home },
-    {
-      id: "registration" as NavigationItem,
-      label: "Registration",
-      icon: UserPlus,
-    },
-    { id: "queue" as NavigationItem, label: "Pre-OPD", icon: Users },
-    {
-      id: "doctor" as NavigationItem,
-      label: "Doctor Module",
-      icon: Stethoscope,
-    },
-    {
-      id: "prescription" as NavigationItem,
-      label: "Prescription",
-      icon: FileText,
-    },
-    { id: "pharmacy" as NavigationItem, label: "Pharmacy", icon: Pill },
-    { id: "billing" as NavigationItem, label: "Payments", icon: CreditCard },
-    { id: "analytics" as NavigationItem, label: "Analytics", icon: BarChart3 },
-  ];
+  const { user } = useAuth();
+
+  const getVisibleItems = () => {
+    if (!user?.role || !rolePermissions[user.role]) {
+      // Default to only showing dashboard if role is not found or user is not logged in
+      return allNavigationItems.filter((item) => item.id === "dashboard");
+    }
+
+    const allowedItems = rolePermissions[user.role];
+    return allNavigationItems.filter((item) => allowedItems.includes(item.id));
+  };
+
+  const navigationItems = getVisibleItems();
 
   return (
     <aside className="bg-white w-64 min-h-screen border-r border-gray-200 shadow-sm">
