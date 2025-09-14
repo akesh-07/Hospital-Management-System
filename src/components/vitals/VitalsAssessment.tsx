@@ -1,4 +1,11 @@
-import React, { useReducer, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useReducer,
+  useEffect,
+  useCallback,
+  useMemo,
+  useState,
+  Fragment,
+} from "react";
 import {
   Activity,
   Heart,
@@ -8,6 +15,8 @@ import {
   Save,
   ArrowLeft,
   AlertCircle,
+  Loader,
+  X,
 } from "lucide-react";
 import { db } from "../../firebase";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
@@ -121,6 +130,9 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
     errorMessage: "",
     validationErrors: {},
   });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [aiSummary, setAiSummary] = useState("");
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
   // --- DERIVED STATE & MEMOIZED FUNCTIONS ---
 
@@ -265,6 +277,78 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
       setStatus({ errorMessage: friendlyMessage });
     } finally {
       setStatus({ isSaving: false });
+    }
+  };
+  const handleAiAssist = async () => {
+    if (!selectedPatient) {
+      setAiSummary("Please select a patient first.");
+      setIsModalOpen(true);
+      return;
+    }
+
+    setIsModalOpen(true);
+    setIsAiLoading(true);
+    setAiSummary("");
+
+    const prompt = `
+      Analyze the following patient vitals and provide a brief summary.
+      Patient Information:
+      - Name: ${selectedPatient.fullName}
+      - Age: ${selectedPatient.age}
+      - Gender: ${selectedPatient.gender}
+      - Chronic Conditions: ${
+        selectedPatient.chronicConditions?.join(", ") || "None"
+      }
+
+      Vitals:
+      - Weight: ${vitals.weight || "N/A"} kg
+      - Height: ${vitals.height || "N/A"} cm
+      - BMI: ${vitals.bmi || "N/A"}
+      - Pulse: ${vitals.pulse || "N/A"} bpm
+      - Blood Pressure: ${vitals.bloodPressure || "N/A"} mmHg
+      - Temperature: ${vitals.temperature || "N/A"} °F
+      - SpO2: ${vitals.spo2 || "N/A"} %
+      - Respiratory Rate: ${vitals.respiratoryRate || "N/A"} breaths/min
+    `;
+
+    try {
+      const response = await fetch(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer ", // Add your API key here
+          },
+          body: JSON.stringify({
+            model: "llama-3.1-8b-instant",
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are a medical assistant. Analyze the provided patient vitals and generate a concise summary. Highlight any potential areas of concern.",
+              },
+              {
+                role: "user",
+                content: prompt,
+              },
+            ],
+          }),
+        }
+      );
+
+      const data = await response.json();
+      const content =
+        data?.choices?.[0]?.message?.content?.trim() ||
+        "Unable to generate summary. Please try again.";
+      setAiSummary(content);
+    } catch (err) {
+      console.error("Error calling Groq:", err);
+      setAiSummary(
+        "Error connecting to AI service. Please check your connection and try again."
+      );
+    } finally {
+      setIsAiLoading(false);
     }
   };
 
@@ -446,7 +530,10 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
                 <Upload className="w-4 h-4" />
                 <span>Upload Report</span>
               </button>
-              <button className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300 transition-colors">
+              <button
+                onClick={handleAiAssist}
+                className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300 transition-colors"
+              >
                 <Bot className="w-4 h-4" />
                 <span>AI Assist</span>
               </button>
@@ -454,10 +541,15 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
           </div>
         </div>
       </div>
+      <AiSummaryModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        summary={aiSummary}
+        isLoading={isAiLoading}
+      />
     </div>
   );
 };
-
 // --- SUB-COMPONENTS ---
 
 const VitalCard: React.FC<{
@@ -537,5 +629,71 @@ const BMIResultCard: React.FC<{
     </div>
   </div>
 );
+
+const AiSummaryModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  summary: string;
+  isLoading: boolean;
+}> = ({ isOpen, onClose, summary, isLoading }) => {
+  if (!isOpen) return null;
+
+  return (
+    // Modal Overlay
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 animate-fade-in-fast">
+      {/* Modal Content */}
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col transform transition-all duration-300 ease-in-out scale-95 animate-scale-in">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between p-5 border-b border-gray-200 bg-gray-50 rounded-t-xl">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-100 rounded-full">
+              <Bot className="w-6 h-6 text-blue-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-800">
+              AI-Generated Vitals Analysis
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Modal Body */}
+        <div className="p-6 overflow-y-auto flex-grow">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center h-full min-h-[250px] text-center">
+              <Loader className="w-12 h-12 text-blue-500 animate-spin mb-4" />
+              <p className="text-lg font-semibold text-gray-700">
+                Analyzing Vitals...
+              </p>
+              <p className="text-sm text-gray-500">
+                Please wait while our AI processes the information.
+              </p>
+            </div>
+          ) : (
+            <div className="text-gray-700 whitespace-pre-wrap leading-relaxed space-y-4">
+              {summary.split("\n").map((paragraph, index) => (
+                <p key={index}>{paragraph || "\u00A0"}</p> // Use non-breaking space for empty lines
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Modal Footer */}
+        <div className="flex items-center justify-end p-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+          <button
+            onClick={onClose}
+            className="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default VitalsAssessment;
