@@ -42,6 +42,7 @@ interface DoctorModuleProps {
 }
 
 // --- Main DoctorModule Component ---
+// Show PatientQueue
 export const DoctorModule: React.FC<DoctorModuleProps> = ({
   selectedPatient,
   onBack,
