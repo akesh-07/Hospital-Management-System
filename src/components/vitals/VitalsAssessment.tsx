@@ -630,6 +630,43 @@ const BMIResultCard: React.FC<{
   </div>
 );
 
+const FormattedAiSummary: React.FC<{ summary: string }> = ({ summary }) => {
+  const lines = summary.split("\n").filter((line) => line.trim() !== "");
+
+  return (
+    <div className="space-y-4 text-gray-700">
+      {lines.map((line, index) => {
+        if (line.startsWith("**") && line.endsWith("**")) {
+          return (
+            <h3 key={index} className="text-lg font-bold text-gray-800 pt-2">
+              {line.slice(2, -2)}
+            </h3>
+          );
+        }
+        if (line.startsWith("* ")) {
+          return (
+            <ul key={index} className="list-disc list-inside pl-4">
+              <li>{line.slice(2)}</li>
+            </ul>
+          );
+        }
+        if (line.includes(":")) {
+          const parts = line.split(":");
+          const key = parts[0];
+          const value = parts.slice(1).join(":");
+          return (
+            <div key={index} className="flex">
+              <span className="font-semibold w-1/3">{key}:</span>
+              <span className="w-2/3">{value}</span>
+            </div>
+          );
+        }
+        return <p key={index}>{line}</p>;
+      })}
+    </div>
+  );
+};
+
 const AiSummaryModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
@@ -674,11 +711,7 @@ const AiSummaryModal: React.FC<{
               </p>
             </div>
           ) : (
-            <div className="text-gray-700 whitespace-pre-wrap leading-relaxed space-y-4">
-              {summary.split("\n").map((paragraph, index) => (
-                <p key={index}>{paragraph || "\u00A0"}</p> // Use non-breaking space for empty lines
-              ))}
-            </div>
+            <FormattedAiSummary summary={summary} />
           )}
         </div>
 
@@ -695,5 +728,4 @@ const AiSummaryModal: React.FC<{
     </div>
   );
 };
-
 export default VitalsAssessment;
