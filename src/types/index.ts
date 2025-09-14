@@ -4,20 +4,20 @@ export interface Patient {
   fullName: string;
   age: number;
   dateOfBirth: string;
-  gender: 'Male' | 'Female' | 'Other';
+  gender: "Male" | "Female" | "Other";
   contactNumber: string;
   email: string;
   address: string;
   abhaId?: string;
-  patientType: 'OPD' | 'IPD' | 'Emergency';
-  visitType: 'Appointment' | 'Walk-in';
-  paymentMethod: 'Cash' | 'Card' | 'Insurance' | 'Online';
+  patientType: "OPD" | "IPD" | "Emergency";
+  visitType: "Appointment" | "Walk-in";
+  paymentMethod: "Cash" | "Card" | "Insurance" | "Online";
   consultationPackage: string;
   preferredLanguage: string;
   doctorAssigned: string;
   chronicConditions: string[];
   waitTime?: number;
-  status: 'Waiting' | 'In Progress' | 'Completed';
+  status: "Waiting" | "In Progress" | "Completed";
   createdAt: string;
 }
 
@@ -40,6 +40,22 @@ export interface Vitals {
   recordedBy: string;
 }
 
+export interface VitalsState {
+  weight: string;
+  height: string;
+  bmi: string;
+  pulse: string;
+  bloodPressure: string;
+  temperature: string;
+  spo2: string;
+  respiratoryRate: string;
+  riskFlags: {
+    diabetes: boolean;
+    heartDisease: boolean;
+    kidney: boolean;
+  };
+}
+
 export interface Consultation {
   id: string;
   patientId: string;
@@ -57,7 +73,7 @@ export interface Consultation {
   advice: string[];
   followUp?: {
     duration: number;
-    unit: 'Days' | 'Months' | 'Years';
+    unit: "Days" | "Months" | "Years";
   };
   createdAt: string;
 }
@@ -77,8 +93,8 @@ export interface Payment {
   uhid: string;
   services: string[];
   amount: number;
-  paymentMode: 'Cash' | 'Card' | 'Insurance' | 'Online';
-  status: 'Paid' | 'Pending' | 'Partial';
+  paymentMode: "Cash" | "Card" | "Insurance" | "Online";
+  status: "Paid" | "Pending" | "Partial";
   date: string;
 }
 
@@ -98,13 +114,22 @@ export interface Analytics {
   };
 }
 
-export type NavigationItem = 
-  | 'dashboard' 
-  | 'registration' 
-  | 'queue' 
-  | 'vitals' 
-  | 'doctor' 
-  | 'prescription' 
-  | 'pharmacy'
-  | 'billing' 
-  | 'analytics';
+export interface Medication {
+  id: string;
+  name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  instructions: string;
+}
+
+export type NavigationItem =
+  | "dashboard"
+  | "registration"
+  | "queue"
+  | "vitals"
+  | "doctor"
+  | "prescription"
+  | "pharmacy"
+  | "billing"
+  | "analytics";
