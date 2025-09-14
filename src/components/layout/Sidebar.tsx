@@ -53,10 +53,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSection }) => {
   const visibleItems = getVisibleItems();
 
   return (
-    <aside className="bg-white w-64 min-h-screen border-r border-gray-200 shadow-sm">
-      <div className="p-6 border-b border-gray-100"></div>
+    <aside className="w-64 min-h-screen bg-gradient-to-b from-[#012e58] to-[#1a4b7a] text-white shadow-2xl">
+      {/* Header */}
+      <div className="p-6 border-b border-white/10">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+            <Stethoscope className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-white">UR Home Hospital</h1>
+          </div>
+        </div>
+      </div>
 
-      <nav className="p-4">
+      {/* Navigation */}
+      <nav className="p-4 flex-1">
         <ul className="space-y-2">
           {visibleItems.map((item) => {
             const Icon = item.icon;
@@ -67,18 +78,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSection }) => {
               <li key={item.id}>
                 <button
                   onClick={() => navigate(item.path)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
+                  className={`w-full flex items-center space-x-4 px-4 py-3 rounded-xl text-left transition-all duration-300 group ${
                     isActive
-                      ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      ? "bg-white/20 text-white shadow-lg backdrop-blur-sm border border-white/20"
+                      : "text-white/80 hover:bg-white/10 hover:text-white"
                   }`}
                 >
-                  <Icon
-                    className={`w-5 h-5 ${
-                      isActive ? "text-blue-600" : "text-gray-400"
+                  <div
+                    className={`p-2 rounded-lg transition-all duration-300 ${
+                      isActive
+                        ? "bg-white/20 shadow-inner"
+                        : "bg-white/5 group-hover:bg-white/10"
                     }`}
-                  />
-                  <span className="font-medium">{item.label}</span>
+                  >
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <span className="font-medium text-sm">{item.label}</span>
                 </button>
               </li>
             );
@@ -86,15 +101,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSection }) => {
         </ul>
       </nav>
 
-      <div className="p-4 mt-8 border-t border-gray-100">
-        <div className="bg-blue-50 p-4 rounded-lg">
+      {/* System Status - matching original bottom section */}
+      <div className="p-4 mt-8 border-t border-white/10">
+        <div className="bg-white/10 p-4 rounded-lg backdrop-blur-sm">
           <div className="flex items-center space-x-2 mb-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium text-gray-700">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium text-white/90">
               System Status
             </span>
           </div>
-          <p className="text-xs text-gray-600">All systems operational</p>
+          <p className="text-xs text-white/70">All systems operational</p>
         </div>
       </div>
     </aside>
