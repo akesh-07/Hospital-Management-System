@@ -22,44 +22,8 @@ import { db } from "../../firebase";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
 
 // --- TYPE DEFINITIONS ---
-interface Patient {
-  id: string;
-  uhid: string;
-  fullName: string;
-  age: number;
-  dateOfBirth: string;
-  gender: "Male" | "Female" | "Other";
-  contactNumber: string;
-  email: string;
-  address: string;
-  abhaId?: string;
-  patientType: "OPD" | "IPD" | "Emergency";
-  visitType: "Appointment" | "Walk-in";
-  paymentMethod: "Cash" | "Card" | "Insurance" | "Online";
-  consultationPackage: string;
-  preferredLanguage: string;
-  doctorAssigned: string;
-  chronicConditions: string[];
-  waitTime?: number;
-  status: "Waiting" | "In Progress" | "Completed";
-  createdAt: string;
-}
-
-interface VitalsState {
-  weight: string;
-  height: string;
-  bmi: string;
-  pulse: string;
-  bloodPressure: string;
-  temperature: string;
-  spo2: string;
-  respiratoryRate: string;
-  riskFlags: {
-    diabetes: boolean;
-    heartDisease: boolean;
-    kidney: boolean;
-  };
-}
+import { Patient } from "../../types";
+import { VitalsState } from "../../types";
 
 // --- CONSTANTS ---
 const INITIAL_VITALS_STATE: VitalsState = {
