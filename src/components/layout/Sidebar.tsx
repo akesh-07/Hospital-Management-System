@@ -1,83 +1,72 @@
 import React from "react";
-import {
-  Home,
-  UserPlus,
-  Users,
-  Stethoscope,
-  Pill,
-  BarChart3,
-  CreditCard,
-  FileText,
-} from "lucide-react";
-import { NavigationItem } from "../../types";
-import { useAuth, UserRole } from "../../contexts/AuthContext";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Home, UserPlus, Users, Stethoscope, Pill } from "lucide-react";
+import { UserRole } from "../../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface SidebarProps {
-  activeSection: NavigationItem;
-  onSectionChange: (section: NavigationItem) => void;
+  activeSection: string;
 }
 
 const allNavigationItems = [
-  { id: "dashboard" as NavigationItem, label: "Dashboard", icon: Home },
+  { id: "dashboard", label: "Dashboard", icon: Home, path: "/dashboard" },
   {
-    id: "registration" as NavigationItem,
-    label: "Patient Registration",
+    id: "registration",
+    label: "Registration",
     icon: UserPlus,
+    path: "/registration",
   },
-  { id: "queue" as NavigationItem, label: "Pre-OPD", icon: Users },
-  { id: "doctor" as NavigationItem, label: "Doctor Module", icon: Stethoscope },
-  { id: "pharmacy" as NavigationItem, label: "Pharmacy Dashboard", icon: Pill },
+  { id: "queue", label: "Pre-OPD", icon: Users, path: "/pre-opd" },
   {
-    id: "prescription" as NavigationItem,
-    label: "Prescription",
-    icon: FileText,
+    id: "doctor",
+    label: "Doctor Module",
+    icon: Stethoscope,
+    path: "/doctor-module",
   },
-  { id: "billing" as NavigationItem, label: "Payments", icon: CreditCard },
-  { id: "analytics" as NavigationItem, label: "Analytics", icon: BarChart3 },
+  { id: "pharmacy", label: "Pharmacy", icon: Pill, path: "/pharmacy" },
 ];
 
-const rolePermissions: Record<UserRole, NavigationItem[]> = {
+const rolePermissions: Record<UserRole, string[]> = {
   doctor: ["dashboard", "queue", "doctor"],
   pharmacist: ["dashboard", "pharmacy"],
   "staff-nurse": ["dashboard", "queue"],
   receptionist: ["dashboard", "registration", "queue"],
-  technician: ["dashboard"], // Assuming a default for technician
+  technician: ["dashboard"],
 };
 
-export const Sidebar: React.FC<SidebarProps> = ({
-  activeSection,
-  onSectionChange,
-}) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeSection }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const getVisibleItems = () => {
     if (!user?.role || !rolePermissions[user.role]) {
-      // Default to only showing dashboard if role is not found or user is not logged in
       return allNavigationItems.filter((item) => item.id === "dashboard");
     }
 
-    const allowedItems = rolePermissions[user.role];
-    return allNavigationItems.filter((item) => allowedItems.includes(item.id));
+    const allowedItemIds = rolePermissions[user.role];
+    return allNavigationItems.filter((item) =>
+      allowedItemIds.includes(item.id)
+    );
   };
 
-  const navigationItems = getVisibleItems();
+  const visibleItems = getVisibleItems();
 
   return (
     <aside className="bg-white w-64 min-h-screen border-r border-gray-200 shadow-sm">
-      <div className="p-6 border-b border-gray-100">
-        <div className="flex items-center space-x-2"></div>
-      </div>
+      <div className="p-6 border-b border-gray-100"></div>
 
       <nav className="p-4">
         <ul className="space-y-2">
-          {navigationItems.map((item) => {
+          {visibleItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeSection === item.id;
+            const isActive =
+              location.pathname === item.path || activeSection === item.id;
 
             return (
               <li key={item.id}>
                 <button
-                  onClick={() => onSectionChange(item.id)}
+                  onClick={() => navigate(item.path)}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
                     isActive
                       ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"

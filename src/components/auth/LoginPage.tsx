@@ -15,7 +15,7 @@ import { useAuth, UserRole } from "../../contexts/AuthContext";
 interface LoginForm {
   email: string;
   password: string;
-  role: UserRole | "";
+  role: UserRole | "" | string;
 }
 
 const userRoles = [
@@ -23,31 +23,31 @@ const userRoles = [
     value: "doctor" as UserRole,
     label: "Login as Doctor",
     icon: "👨‍⚕️",
-    route: "/doctor",
+    route: "/dashboard",
   },
   {
     value: "pharmacist" as UserRole,
     label: "Login as Pharmacist",
     icon: "💊",
-    route: "/pharmacy",
+    route: "/dashboard",
   },
   {
     value: "technician" as UserRole,
     label: "Login as Technician",
     icon: "🔬",
-    route: "/technician",
+    route: "/dashboard",
   },
   {
     value: "receptionist" as UserRole,
     label: "Login as Receptionist",
     icon: "📋",
-    route: "/reception",
+    route: "/dashboard",
   },
   {
     value: "staff-nurse" as UserRole,
     label: "Login as Staff Nurse",
     icon: "👩‍⚕️",
-    route: "/staff",
+    route: "/dashboard",
   },
 ];
 
@@ -69,7 +69,6 @@ const LoginPage: React.FC = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Clear error when user starts typing
     if (errors[name as keyof LoginForm]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -125,12 +124,13 @@ const LoginPage: React.FC = () => {
       );
 
       if (success) {
-        // Navigate to role-specific dashboard
         const selectedRole = userRoles.find(
           (role) => role.value === formData.role
         );
         if (selectedRole) {
           navigate(selectedRole.route);
+        } else {
+          navigate("/dashboard"); // Fallback to dashboard
         }
       } else {
         setLoginError(
@@ -144,16 +144,10 @@ const LoginPage: React.FC = () => {
 
   const selectedRole = userRoles.find((role) => role.value === formData.role);
 
+  // The rest of the component's JSX remains the same
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50 flex items-center justify-center p-4">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-4 -right-4 w-96 h-96 bg-blue-100 rounded-full opacity-20 animate-pulse"></div>
-        <div className="absolute -bottom-8 -left-8 w-80 h-80 bg-teal-100 rounded-full opacity-20 animate-pulse delay-300"></div>
-      </div>
-
       <div className="relative w-full max-w-md">
-        {/* Hospital Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4 shadow-lg">
             <Activity className="w-8 h-8 text-white" />
@@ -163,8 +157,6 @@ const LoginPage: React.FC = () => {
           </h1>
           <p className="text-gray-600">Management System Portal</p>
         </div>
-
-        {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-2xl p-8 backdrop-blur-sm border border-gray-100">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-2">
@@ -172,15 +164,12 @@ const LoginPage: React.FC = () => {
             </h2>
             <p className="text-gray-600">Please sign in to your account</p>
           </div>
-
           {loginError && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-600">{loginError}</p>
             </div>
           )}
-
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
             <div className="space-y-2">
               <label
                 htmlFor="email"
@@ -210,8 +199,6 @@ const LoginPage: React.FC = () => {
                 </p>
               )}
             </div>
-
-            {/* Password Field */}
             <div className="space-y-2">
               <label
                 htmlFor="password"
@@ -252,8 +239,6 @@ const LoginPage: React.FC = () => {
                 </p>
               )}
             </div>
-
-            {/* Role Selection Dropdown */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 Select Your Role
@@ -283,7 +268,6 @@ const LoginPage: React.FC = () => {
                     }`}
                   />
                 </button>
-
                 {isDropdownOpen && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 animate-fade-in">
                     {userRoles.map((role) => (
@@ -306,8 +290,6 @@ const LoginPage: React.FC = () => {
                 </p>
               )}
             </div>
-
-            {/* Remember Me */}
             <div className="flex items-center justify-between">
               <label className="flex items-center">
                 <input
@@ -323,8 +305,6 @@ const LoginPage: React.FC = () => {
                 Forgot password?
               </a>
             </div>
-
-            {/* Login Button */}
             <button
               type="submit"
               disabled={isLoading}
@@ -340,8 +320,6 @@ const LoginPage: React.FC = () => {
               )}
             </button>
           </form>
-
-          {/* Footer */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Need help? Contact{" "}
@@ -352,25 +330,6 @@ const LoginPage: React.FC = () => {
                 IT Support
               </a>
             </p>
-          </div>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="mt-8 grid grid-cols-3 gap-4 text-center">
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 shadow-md">
-            <Users className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-            <p className="text-sm font-medium text-gray-800">24/7</p>
-            <p className="text-xs text-gray-600">Support</p>
-          </div>
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 shadow-md">
-            <Activity className="w-6 h-6 text-teal-600 mx-auto mb-2" />
-            <p className="text-sm font-medium text-gray-800">Secure</p>
-            <p className="text-xs text-gray-600">Platform</p>
-          </div>
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 shadow-md">
-            <Lock className="w-6 h-6 text-green-600 mx-auto mb-2" />
-            <p className="text-sm font-medium text-gray-800">HIPAA</p>
-            <p className="text-xs text-gray-600">Compliant</p>
           </div>
         </div>
       </div>
