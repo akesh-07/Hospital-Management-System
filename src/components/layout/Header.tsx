@@ -9,12 +9,18 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ currentSection }) => {
   const [userName, setUserName] = useState<string | null>(null); // State to hold the user's name
+  const [userRole, setUserRole] = useState<string | null>(null); // State to hold the user's role
 
   // Use useEffect to read the cookie when the component mounts
   useEffect(() => {
     const nameFromCookie = Cookies.get("userName");
+    const roleFromCookie = Cookies.get("userRole"); // Read the userRole cookie
+
     if (nameFromCookie) {
       setUserName(nameFromCookie);
+    }
+    if (roleFromCookie) {
+      setUserRole(roleFromCookie);
     }
   }, []); // The empty dependency array ensures this runs only once
 
@@ -56,7 +62,8 @@ export const Header: React.FC<HeaderProps> = ({ currentSection }) => {
             <div className="hidden sm:block">
               {/* Dynamically display the user's name from the state */}
               <p className="text-sm font-medium text-white">{userName || "User"}</p>
-              <p className="text-xs text-white/70">General Physician</p>
+              {/* Dynamically display the user's role from the state */}
+              <p className="text-xs text-white/70">{userRole || "Role"}</p>
             </div>
           </div>
         </div>

@@ -134,12 +134,14 @@ const LoginPage: React.FC = () => {
       );
 
       if (success) {
-        // Get the name from the form data
+        // Get the name and role from the form data
         const nameToStore = formData.name;
+        const roleToStore = formData.role;
         // Set the name state for immediate display
         setUserName(nameToStore);
-        // Set the cookie with the user's name
+        // Set the cookies with the user's name and role
         Cookies.set("userName", nameToStore, { expires: 7 });
+        Cookies.set("userRole", roleToStore, { expires: 7 });
 
         const selectedRole = userRoles.find(
           (role) => role.value === formData.role
