@@ -17,12 +17,7 @@ const allNavigationItems = [
     path: "/registration",
   },
   { id: "queue", label: "Pre-OPD", icon: Users, path: "/pre-opd" },
-  {
-    id: "doctor",
-    label: "Doctor Module",
-    icon: Stethoscope,
-    path: "/doctor-module",
-  },
+
   { id: "pharmacy", label: "Pharmacy", icon: Pill, path: "/pharmacy" },
 ];
 

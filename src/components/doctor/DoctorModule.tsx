@@ -224,9 +224,6 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
               <span className="font-medium">Back</span>
             </button>
             <div className="h-6 w-px bg-gray-300"></div>
-            <div className="p-2 bg-[#012e58]/10 rounded-full">
-              <Stethoscope className="w-6 h-6 text-[#012e58]" />
-            </div>
 
             {/* Tab Navigation in Header */}
             <div className="flex space-x-2">

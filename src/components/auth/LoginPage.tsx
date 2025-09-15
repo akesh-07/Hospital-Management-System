@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { useAuth, UserRole } from "../../contexts/AuthContext";
+import HMS_LOGO from "../layout/hms-logo.png"; // Import the logo image
 
 // Updated interface to include the name field
 interface LoginForm {
@@ -166,23 +167,15 @@ const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e0f7fa] via-white to-[#e0f2f1] flex items-center justify-center p-4">
       <div className="relative w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#012e58] rounded-full mb-4 shadow-lg">
-            <Activity className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-[#0B2D4D] mb-2">
-            Clinexa Hospital
-          </h1>
-          <p className="text-[#1a4b7a]">Management System Portal</p>
+        <div className="text-center mb-6">
+          <img
+            src={HMS_LOGO}
+            alt="Clinexa Hospital"
+            className="mx-auto w-40 sm:w-48 md:w-56 lg:w-64 object-contain"
+          />
         </div>
+
         <div className="bg-white rounded-2xl shadow-2xl p-8 backdrop-blur-sm border border-gray-100">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-semibold text-[#0B2D4D] mb-2">
-              {/* Display a dynamic welcome message */}
-              {userName ? `Welcome, ${userName}` : "Welcome Back"}
-            </h2>
-            <p className="text-[#1a4b7a]">Please sign in to your account</p>
-          </div>
           {loginError && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-600">{loginError}</p>
@@ -206,9 +199,7 @@ const LoginPage: React.FC = () => {
                   value={formData.name}
                   onChange={handleInputChange}
                   className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
-                    errors.name
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-300"
+                    errors.name ? "border-red-500 bg-red-50" : "border-gray-300"
                   }`}
                   placeholder="Enter your full name"
                 />
