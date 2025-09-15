@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import Cookies from "js-cookie"; // Import the Cookies library
 import { User, Bell, Settings } from "lucide-react";
 import HMS_LOGO from "./hms-logo.png";
 
@@ -7,6 +8,16 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ currentSection }) => {
+  const [userName, setUserName] = useState<string | null>(null); // State to hold the user's name
+
+  // Use useEffect to read the cookie when the component mounts
+  useEffect(() => {
+    const nameFromCookie = Cookies.get("userName");
+    if (nameFromCookie) {
+      setUserName(nameFromCookie);
+    }
+  }, []); // The empty dependency array ensures this runs only once
+
   return (
     // Change 1: Reduced vertical padding to a minimum
     <header className="bg-gradient-to-r from-[#012e58] to-[#1a4b7a] border-b border-white/10 px-6 py-1">
@@ -43,7 +54,8 @@ export const Header: React.FC<HeaderProps> = ({ currentSection }) => {
               <User className="w-3.5 h-3.5 text-white" />
             </div>
             <div className="hidden sm:block">
-              <p className="text-sm font-medium text-white">Dr. Sarah Wilson</p>
+              {/* Dynamically display the user's name from the state */}
+              <p className="text-sm font-medium text-white">{userName || "User"}</p>
               <p className="text-xs text-white/70">General Physician</p>
             </div>
           </div>
