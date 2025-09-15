@@ -21,8 +21,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import Cookies from "js-cookie";
-import { mockAnalytics } from "../../data/mockData";
 
 type CategoryType =
   | "symptoms"
@@ -32,7 +30,38 @@ type CategoryType =
   | null;
 
 export const Dashboard: React.FC = () => {
-  const analytics = mockAnalytics;
+  // Mock analytics data
+  const analytics = {
+    topSymptoms: [
+      { name: "Fever", count: 145 },
+      { name: "Headache", count: 132 },
+      { name: "Fatigue", count: 128 },
+      { name: "Nausea", count: 98 },
+      { name: "Cough", count: 87 },
+    ],
+    topDiagnoses: [
+      { name: "Hypertension", count: 234 },
+      { name: "Diabetes", count: 198 },
+      { name: "Anxiety", count: 156 },
+      { name: "Depression", count: 142 },
+      { name: "Asthma", count: 134 },
+    ],
+    topMedications: [
+      { name: "Lisinopril", count: 189 },
+      { name: "Metformin", count: 167 },
+      { name: "Amlodipine", count: 145 },
+      { name: "Omeprazole", count: 123 },
+      { name: "Atorvastatin", count: 98 },
+    ],
+    labTests: [
+      { name: "CBC", count: 298 },
+      { name: "Lipid Panel", count: 267 },
+      { name: "HbA1c", count: 234 },
+      { name: "TSH", count: 198 },
+      { name: "Creatinine", count: 176 },
+    ],
+  };
+
   const [userName, setUserName] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>(null);
 
@@ -48,10 +77,8 @@ export const Dashboard: React.FC = () => {
   ];
 
   useEffect(() => {
-    const nameFromCookie = Cookies.get("userName");
-    if (nameFromCookie) {
-      setUserName(nameFromCookie);
-    }
+    // Mock cookie reading - in real implementation would use Cookies.get("userName")
+    setUserName("Dr. Smith");
   }, []);
 
   const getCategoryData = (category: CategoryType) => {
@@ -113,74 +140,75 @@ export const Dashboard: React.FC = () => {
   }> = ({ category, label, icon: Icon }) => (
     <button
       onClick={() => setSelectedCategory(category)}
-      className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-200 ${
+      className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full transition-all duration-200 ${
         selectedCategory === category
           ? "bg-[#012e58] text-white shadow-md"
           : "bg-gray-100 text-[#1a4b7a] hover:bg-gray-200"
       }`}
     >
-      <Icon className="w-4 h-4" />
-      <span className="text-sm font-medium">{label}</span>
+      <Icon className="w-3.5 h-3.5" />
+      <span className="text-xs font-medium">{label}</span>
     </button>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
+    <div className="h-screen bg-gray-50 p-3 flex items-center justify-center overflow-hidden">
+      <div className="w-full max-w-4xl h-full bg-white rounded-xl shadow-lg border border-gray-200 p-4 flex flex-col">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-[#0B2D4D] mb-2">
+        <div className="text-center mb-4 flex-shrink-0">
+          <h1 className="text-xl font-bold text-[#0B2D4D] mb-1">
             Basic Analytics
           </h1>
-          <p className="text-[#1a4b7a]">
+          <p className="text-sm text-[#1a4b7a]">
             Welcome back, {userName || "User"}. Here's your overview.
           </p>
         </div>
 
         {/* Main Content Area */}
-        <div className="mb-8">
+        <div className="flex-1 mb-3 min-h-0" style={{ maxHeight: "60vh" }}>
           {selectedCategory === null ? (
             /* Default Line Chart */
-            <div className="bg-gray-50 rounded-xl p-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <Calendar className="w-6 h-6 text-[#012e58]" />
-                <h3 className="text-xl font-semibold text-[#0B2D4D]">
+            <div className="bg-gray-50 rounded-lg p-3 h-full flex flex-col">
+              <div className="flex items-center space-x-2 mb-2 flex-shrink-0">
+                <Calendar className="w-5 h-5 text-[#012e58]" />
+                <h3 className="text-lg font-semibold text-[#0B2D4D]">
                   Daily Appointments vs Treatment
                 </h3>
               </div>
 
-              <div className="h-80">
+              <div className="flex-1 min-h-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={dailyAppointmentsVsTreatment}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis
                       dataKey="date"
-                      tick={{ fontSize: 12 }}
+                      tick={{ fontSize: 10 }}
                       stroke="#6b7280"
                     />
-                    <YAxis tick={{ fontSize: 12 }} stroke="#6b7280" />
+                    <YAxis tick={{ fontSize: 10 }} stroke="#6b7280" />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: "white",
                         border: "1px solid #e5e7eb",
                         borderRadius: "8px",
                         boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                        fontSize: "12px",
                       }}
                     />
                     <Line
                       type="monotone"
                       dataKey="appointments"
                       stroke="#012e58"
-                      strokeWidth={3}
-                      dot={{ r: 4, fill: "#012e58" }}
+                      strokeWidth={2}
+                      dot={{ r: 3, fill: "#012e58" }}
                       name="Appointments"
                     />
                     <Line
                       type="monotone"
                       dataKey="treatments"
                       stroke="#3b82f6"
-                      strokeWidth={3}
-                      dot={{ r: 4, fill: "#3b82f6" }}
+                      strokeWidth={2}
+                      dot={{ r: 3, fill: "#3b82f6" }}
                       name="Treatments"
                     />
                   </LineChart>
@@ -189,26 +217,26 @@ export const Dashboard: React.FC = () => {
             </div>
           ) : (
             /* Bar Chart Area */
-            <div className="bg-gray-50 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-3">
+            <div className="bg-gray-50 rounded-lg p-3 h-full flex flex-col">
+              <div className="flex items-center justify-between mb-2 flex-shrink-0">
+                <div className="flex items-center space-x-2">
                   {React.createElement(getCategoryIcon(selectedCategory), {
-                    className: "w-6 h-6 text-[#012e58]",
+                    className: "w-5 h-5 text-[#012e58]",
                   })}
-                  <h3 className="text-xl font-semibold text-[#0B2D4D]">
+                  <h3 className="text-lg font-semibold text-[#0B2D4D]">
                     {getCategoryTitle(selectedCategory)}
                   </h3>
                 </div>
                 <button
                   onClick={() => setSelectedCategory(null)}
-                  className="flex items-center space-x-1 px-3 py-1 rounded-lg bg-gray-200 text-[#1a4b7a] hover:bg-gray-300 transition-colors"
+                  className="flex items-center space-x-1 px-2 py-1 rounded-md bg-gray-200 text-[#1a4b7a] hover:bg-gray-300 transition-colors"
                 >
-                  <X className="w-4 h-4" />
-                  <span className="text-sm">Back</span>
+                  <X className="w-3.5 h-3.5" />
+                  <span className="text-xs">Back</span>
                 </button>
               </div>
 
-              <div className="h-80">
+              <div className="flex-1 min-h-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={formatChartData(getCategoryData(selectedCategory))}
@@ -216,19 +244,20 @@ export const Dashboard: React.FC = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis
                       dataKey="name"
-                      tick={{ fontSize: 12 }}
+                      tick={{ fontSize: 10 }}
                       stroke="#6b7280"
                     />
-                    <YAxis tick={{ fontSize: 12 }} stroke="#6b7280" />
+                    <YAxis tick={{ fontSize: 10 }} stroke="#6b7280" />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: "white",
                         border: "1px solid #e5e7eb",
                         borderRadius: "8px",
                         boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                        fontSize: "12px",
                       }}
                     />
-                    <Bar dataKey="value" fill="#012e58" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="value" fill="#012e58" radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -237,7 +266,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Filter Buttons */}
-        <div className="flex flex-wrap justify-center gap-3">
+        <div className="flex flex-wrap justify-center gap-2 mb-3 flex-shrink-0">
           <FilterButton
             category="symptoms"
             label="Top Symptoms"
@@ -261,8 +290,8 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Footer Info */}
-        <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-          <p className="text-sm text-[#1a4b7a]">
+        <div className="pt-2 border-t border-gray-200 text-center flex-shrink-0">
+          <p className="text-xs text-[#1a4b7a]">
             Last updated:{" "}
             {new Date().toLocaleDateString("en-US", {
               weekday: "long",
