@@ -12,7 +12,7 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { Header } from "./components/layout/Header";
 import { Sidebar } from "./components/layout/Sidebar";
 import LoginPage from "./components/auth/LoginPage";
-import { Dashboard } from "./components/dashboard/Dashboard";
+import Dashboard from "./components/dashboard/Dashboard";
 import { PatientRegistration } from "./components/registration/PatientRegistration";
 import PatientQueue from "./components/queue/PatientQueue";
 import { DoctorModule } from "./components/doctor/DoctorModule";
@@ -43,7 +43,7 @@ function App() {
           {/* Public route for the Login page */}
           <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} />
-  <Route path="/signup" element={<SignupPage />} />
+          <Route path="/signup" element={<SignupPage />} />
           {/* Common Dashboard for all roles */}
           <Route
             path="/dashboard"
