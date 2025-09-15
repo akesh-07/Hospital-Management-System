@@ -61,7 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSection }) => {
             <Stethoscope className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white">UR Home Hospital</h1>
+            <h1 className="text-lg font-bold text-white">Clinexa</h1>
           </div>
         </div>
       </div>

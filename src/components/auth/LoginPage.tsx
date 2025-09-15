@@ -153,7 +153,7 @@ const LoginPage: React.FC = () => {
             <Activity className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-[#0B2D4D] mb-2">
-            MediCare Hospital
+            Clinexa Hospital
           </h1>
           <p className="text-[#1a4b7a]">Management System Portal</p>
         </div>
