@@ -7,6 +7,8 @@ import {
   Phone,
   Tag,
   Car as IdCard, // ⚠️ using IdCard
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../../firebase";
@@ -52,7 +54,8 @@ const getStatusColor = (status: Patient["status"]) => {
 
 const PatientQueue: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  // State to manage the open patient ID for the accordion
+  const [openPatientId, setOpenPatientId] = useState<string | null>(null);
   const [showVitals, setShowVitals] = useState(false);
   const [vitalsPatient, setVitalsPatient] = useState<Patient | null>(null);
   const [showDoctor, setShowDoctor] = useState(false);
@@ -100,18 +103,22 @@ const PatientQueue: React.FC = () => {
     setDoctorPatient(null);
   };
 
-  // ✅ Patient Card Component
-  const PatientCard: React.FC<{ patient: Patient }> = ({ patient }) => (
+  // ✅ Patient Card Component with Accordion
+  const PatientCard: React.FC<{
+    patient: Patient;
+    isOpen: boolean;
+    onToggle: () => void;
+  }> = ({ patient, isOpen, onToggle }) => (
     <div
-      className={`bg-white rounded-lg border p-4 hover:shadow-md transition-all cursor-pointer ${
-        selectedPatient?.id === patient.id
-          ? "ring-2 ring-[#012e58]"
-          : "border-gray-200"
+      className={`bg-white rounded-full border p-4 hover:shadow-md transition-all cursor-pointer ${
+        isOpen ? "ring-2 ring-[#012e58] rounded-xl" : "border-gray-200"
       }`}
-      onClick={() => setSelectedPatient(patient)}
+      onClick={onToggle}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center space-x-3">
+      {/* --- First Line: 6-Column Layout --- */}
+      <div className="flex justify-around gap-6 text-sm items-center">
+        {/* Patient Name and Details */}
+        <div className="col-span-2 rounded-none flex items-center space-x-3">
           <div className="w-10 h-10 bg-[#e0f7fa] rounded-full flex items-center justify-center">
             <span className="text-[#012e58] font-medium text-sm">
               {patient.fullName
@@ -122,31 +129,60 @@ const PatientQueue: React.FC = () => {
           </div>
           <div>
             <h3 className="font-semibold text-[#0B2D4D]">{patient.fullName}</h3>
-            <p className="text-sm text-[#1a4b7a]">
+            <p className="text-xs text-[#1a4b7a]">
               {patient.gender}, {patient.age} years • UHID:{" "}
               {patient.uhid || "N/A"}
             </p>
           </div>
         </div>
-        <span
-          className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(
-            patient.status
-          )}`}
-        >
-          {patient.status || "Waiting"}
-        </span>
+
+        {/* Doctor Assigned */}
+        <div className="flex flex-col">
+          <span className="text-xs font-medium text-gray-500">Doctor</span>
+          <span className="text-sm text-[#1a4b7a] font-medium">
+            Dr. {patient.doctorAssigned || "Not Assigned"}
+          </span>
+        </div>
+
+        {/* Waiting Time */}
+        <div className="flex flex-col">
+          <span className="text-xs font-medium text-gray-500">Wait Time</span>
+          <div className="flex items-center space-x-1">
+            <Clock className="w-4 h-4 text-gray-400" />
+            <span className="text-sm text-[#1a4b7a] font-medium">
+              {patient.waitTime || 0} min
+            </span>
+          </div>
+        </div>
+        <div className="flex justify-between items-center mb-2">
+          <span
+            className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(
+              patient.status
+            )}`}
+          >
+            {patient.status || "Waiting"}
+          </span>
+        </div>
+        <div className="flex items-center space-x-5">
+          {isOpen ? (
+            <ChevronUp className="w-5 h-5 text-gray-500" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-gray-500" />
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 text-sm">
+      {/* --- Detailed Info (Accordion Content) with Transition --- */}
+      <div
+        className={`grid grid-cols-3 gap-4 text-sm overflow-hidden transition-all duration-300 ease-in-out ${
+          isOpen
+            ? "max-h-96 opacity-100 pt-4 mt-3 border-t border-gray-200"
+            : "max-h-0 opacity-0"
+        }`}
+      >
         <div className="flex items-center space-x-2">
           <Phone className="w-4 h-4 text-gray-400" />
           <span className="text-[#1a4b7a]">{patient.contactNumber}</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Clock className="w-4 h-4 text-gray-400" />
-          <span className="text-[#1a4b7a]">
-            Wait: {patient.waitTime || 0} min
-          </span>
         </div>
         <div className="flex items-center space-x-2">
           <Tag className="w-4 h-4 text-gray-400" />
@@ -164,18 +200,31 @@ const PatientQueue: React.FC = () => {
             {patient.abhaId ? "ABHA Linked" : "No ABHA"}
           </span>
         </div>
-      </div>
-
-      <div className="mt-3 pt-3 border-t border-gray-100">
-        <div className="flex items-center justify-between text-sm mb-3">
-          <span className="text-[#1a4b7a]">
-            Dr. {patient.doctorAssigned || "Not Assigned"}
-          </span>
-          <span className="text-[#1a4b7a]">{patient.paymentMethod}</span>
+        <div className="">
+          <span className="font-medium text-[#0B2D4D]">Address:</span>
+          <p className="text-[#1a4b7a] mt-1">{patient.address}</p>
         </div>
-
+        <div className="">
+          <span className="font-medium text-[#0B2D4D]">
+            Chronic Conditions:
+          </span>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {patient.chronicConditions?.map((condition, index) => (
+              <span
+                key={index}
+                className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full"
+              >
+                {condition}
+              </span>
+            ))}
+          </div>
+        </div>
         {/* ✅ Action Buttons */}
-        <div className="flex gap-2">
+        <div
+          className={`flex gap-2 transition-all duration-300 ease-in-out ${
+            isOpen ? "mt-3 pt-3 opacity-100" : "max-h-0 opacity-0"
+          }`}
+        >
           <button
             onClick={(e) => handleVitalsClick(patient, e)}
             className="flex-1 px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200"
@@ -235,77 +284,23 @@ const PatientQueue: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* ✅ Only OPD patients */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="space-y-4">
           {patients
             .filter((patient) => patient.patientType === "OPD")
             .map((patient) => (
-              <PatientCard key={patient.id} patient={patient} />
+              <PatientCard
+                key={patient.id}
+                patient={patient}
+                isOpen={openPatientId === patient.id}
+                onToggle={() =>
+                  setOpenPatientId(
+                    openPatientId === patient.id ? null : patient.id
+                  )
+                }
+              />
             ))}
-        </div>
-
-        {/* ✅ Show details only if OPD selected */}
-        <div className="space-y-6">
-          {selectedPatient && selectedPatient.patientType === "OPD" ? (
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
-                Patient Details
-              </h3>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <span className="font-medium text-[#0B2D4D]">Full Name:</span>
-                  <p className="text-[#1a4b7a] mt-1">
-                    {selectedPatient.fullName}
-                  </p>
-                </div>
-                <div>
-                  <span className="font-medium text-[#0B2D4D]">Contact:</span>
-                  <p className="text-[#1a4b7a] mt-1">
-                    {selectedPatient.contactNumber}
-                  </p>
-                </div>
-                <div>
-                  <span className="font-medium text-[#0B2D4D]">Address:</span>
-                  <p className="text-[#1a4b7a] mt-1">
-                    {selectedPatient.address}
-                  </p>
-                </div>
-                <div>
-                  <span className="font-medium text-[#0B2D4D]">
-                    Doctor Assigned:
-                  </span>
-                  <p className="text-[#1a4b7a] mt-1">
-                    Dr. {selectedPatient.doctorAssigned || "Not Assigned"}
-                  </p>
-                </div>
-                <div>
-                  <span className="font-medium text-[#0B2D4D]">
-                    Chronic Conditions:
-                  </span>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {selectedPatient.chronicConditions?.map(
-                      (condition, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full"
-                        >
-                          {condition}
-                        </span>
-                      )
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
-              <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-[#1a4b7a]">
-                Select an OPD patient to view details and actions
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </div>
