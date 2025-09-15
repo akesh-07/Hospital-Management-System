@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Users,
   Calendar,
@@ -9,10 +9,20 @@ import {
   Pill,
   TestTube,
 } from "lucide-react";
+import Cookies from "js-cookie"; // Import the Cookies library
 import { mockAnalytics } from "../../data/mockData";
 
 export const Dashboard: React.FC = () => {
   const analytics = mockAnalytics;
+  const [userName, setUserName] = useState<string | null>(null); // State for user name
+
+  // useEffect to read the cookie when the component mounts
+  useEffect(() => {
+    const nameFromCookie = Cookies.get("userName");
+    if (nameFromCookie) {
+      setUserName(nameFromCookie);
+    }
+  }, []); // The empty dependency array ensures this runs only once
 
   const StatCard: React.FC<{
     title: string;
@@ -84,7 +94,8 @@ export const Dashboard: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold text-[#0B2D4D]">Dashboard</h1>
           <p className="text-[#1a4b7a] mt-1">
-            Welcome back, Dr. Wilson. Here's your hospital overview.
+            
+            Welcome back, {userName || "User"}. Here's your hospital overview.
           </p>
         </div>
         <div className="text-right">

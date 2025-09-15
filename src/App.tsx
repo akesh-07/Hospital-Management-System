@@ -19,6 +19,7 @@ import { DoctorModule } from "./components/doctor/DoctorModule";
 import { PharmacyDashboard } from "./components/pharmacy/PharmacyDashboard";
 import StaffDashboard from "./components/Staff/StaffDashboard";
 import { PharmacyModule } from "./components/pharmacy/PharmacyModule";
+import SignupPage from "./components/auth/SignupPage";
 
 // A layout component for all authenticated pages
 const AuthenticatedLayout: React.FC<{
@@ -42,7 +43,7 @@ function App() {
           {/* Public route for the Login page */}
           <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} />
-
+  <Route path="/signup" element={<SignupPage />} />
           {/* Common Dashboard for all roles */}
           <Route
             path="/dashboard"

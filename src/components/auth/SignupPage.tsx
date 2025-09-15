@@ -1,6 +1,6 @@
+// src/components/auth/SignupPage.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Cookies from "js-cookie"; // Import js-cookie library
 import {
   Eye,
   EyeOff,
@@ -10,76 +10,70 @@ import {
   ChevronDown,
   Activity,
   Users,
+  Signature,
 } from "lucide-react";
 import { useAuth, UserRole } from "../../contexts/AuthContext";
+import { Link } from "react-router-dom";
 
-// Updated interface to include the name field
-interface LoginForm {
+interface SignupForm {
+  name: string;
   email: string;
   password: string;
   role: UserRole | "" | string;
-  name: string;
 }
 
 const userRoles = [
   {
     value: "doctor" as UserRole,
-    label: "Login as Doctor",
+    label: "Register as Doctor",
     icon: "👨‍⚕️",
-    route: "/dashboard",
   },
   {
     value: "pharmacist" as UserRole,
-    label: "Login as Pharmacist",
+    label: "Register as Pharmacist",
     icon: "💊",
-    route: "/dashboard",
   },
   {
     value: "technician" as UserRole,
-    label: "Login as Technician",
+    label: "Register as Technician",
     icon: "🔬",
-    route: "/dashboard",
   },
   {
     value: "receptionist" as UserRole,
-    label: "Login as Receptionist",
+    label: "Register as Receptionist",
     icon: "📋",
-    route: "/dashboard",
   },
   {
     value: "staff-nurse" as UserRole,
-    label: "Login as Staff Nurse",
+    label: "Register as Staff Nurse",
     icon: "👩‍⚕️",
-    route: "/dashboard",
   },
 ];
 
-const LoginPage: React.FC = () => {
-  const [formData, setFormData] = useState<LoginForm>({
+const SignupPage: React.FC = () => {
+  const [formData, setFormData] = useState<SignupForm>({
+    name: "",
     email: "",
     password: "",
     role: "",
-    name: "", // Initialize the name field
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [errors, setErrors] = useState<Partial<LoginForm>>({});
-  const [loginError, setLoginError] = useState("");
-  // New state to hold the user's name for display
-  const [userName, setUserName] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Partial<SignupForm>>({});
+  const [signupError, setSignupError] = useState("");
 
-  const { login, isLoading } = useAuth();
+  const { signup, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    if (errors[name as keyof LoginForm]) {
+    if (errors[name as keyof SignupForm]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
-    if (loginError) {
-      setLoginError("");
+    if (signupError) {
+      setSignupError("");
     }
   };
 
@@ -89,13 +83,13 @@ const LoginPage: React.FC = () => {
     if (errors.role) {
       setErrors((prev) => ({ ...prev, role: "" }));
     }
-    if (loginError) {
-      setLoginError("");
+    if (signupError) {
+      setSignupError("");
     }
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<LoginForm> = {};
+    const newErrors: Partial<SignupForm> = {};
 
     if (!formData.name) {
       newErrors.name = "Name is required";
@@ -127,37 +121,22 @@ const LoginPage: React.FC = () => {
     if (!validateForm()) return;
 
     try {
-      const success = await login(
+      const success = await signup(
+        formData.name,
         formData.email,
         formData.password,
         formData.role as UserRole
       );
 
       if (success) {
-        // Get the name and role from the form data
-        const nameToStore = formData.name;
-        const roleToStore = formData.role;
-        // Set the name state for immediate display
-        setUserName(nameToStore);
-        // Set the cookies with the user's name and role
-        Cookies.set("userName", nameToStore, { expires: 7 });
-        Cookies.set("userRole", roleToStore, { expires: 7 });
-
-        const selectedRole = userRoles.find(
-          (role) => role.value === formData.role
-        );
-        if (selectedRole) {
-          navigate(selectedRole.route);
-        } else {
-          navigate("/dashboard"); // Fallback to dashboard
-        }
+        navigate("/dashboard");
       } else {
-        setLoginError(
-          "Invalid credentials. Please check your email, password, and role."
+        setSignupError(
+          "Registration failed. The email may already be in use or the password is weak."
         );
       }
     } catch (error) {
-      setLoginError("Login failed. Please try again.");
+      setSignupError("Registration failed. Please try again.");
     }
   };
 
@@ -178,18 +157,16 @@ const LoginPage: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-2xl p-8 backdrop-blur-sm border border-gray-100">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-semibold text-[#0B2D4D] mb-2">
-              {/* Display a dynamic welcome message */}
-              {userName ? `Welcome, ${userName}` : "Welcome Back"}
+              Join Our Team
             </h2>
-            <p className="text-[#1a4b7a]">Please sign in to your account</p>
+            <p className="text-[#1a4b7a]">Create your new account</p>
           </div>
-          {loginError && (
+          {signupError && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{loginError}</p>
+              <p className="text-sm text-red-600">{signupError}</p>
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* New input field for Name */}
             <div className="space-y-2">
               <label
                 htmlFor="name"
@@ -198,7 +175,7 @@ const LoginPage: React.FC = () => {
                 Full Name
               </label>
               <div className="relative">
-                <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Signature className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   id="name"
@@ -219,7 +196,6 @@ const LoginPage: React.FC = () => {
                 </p>
               )}
             </div>
-
             <div className="space-y-2">
               <label
                 htmlFor="email"
@@ -269,7 +245,7 @@ const LoginPage: React.FC = () => {
                       ? "border-red-500 bg-red-50"
                       : "border-gray-300"
                   }`}
-                  placeholder="Enter your password"
+                  placeholder="Create a password"
                 />
                 <button
                   type="button"
@@ -301,7 +277,7 @@ const LoginPage: React.FC = () => {
                     errors.role ? "border-red-500 bg-red-50" : "border-gray-300"
                   } ${formData.role ? "text-[#0B2D4D]" : "text-gray-500"}`}
                 >
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <span className="flex items-center gap-2">
                     {selectedRole ? (
                       <>
@@ -340,21 +316,6 @@ const LoginPage: React.FC = () => {
                 </p>
               )}
             </div>
-            <div className="flex items-center justify-between">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="rounded border-gray-300 text-[#012e58] focus:ring-[#1a4b7a] focus:ring-2"
-                />
-                <span className="ml-2 text-sm text-[#1a4b7a]">Remember me</span>
-              </label>
-              <a
-                href="#"
-                className="text-sm text-[#012e58] hover:text-[#1a4b7a] transition-colors"
-              >
-                Forgot password?
-              </a>
-            </div>
             <button
               type="submit"
               disabled={isLoading}
@@ -363,22 +324,22 @@ const LoginPage: React.FC = () => {
               {isLoading ? (
                 <div className="flex items-center justify-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Signing In...</span>
+                  <span>Registering...</span>
                 </div>
               ) : (
-                "Sign In"
+                "Sign Up"
               )}
             </button>
           </form>
           <div className="mt-6 text-center">
             <p className="text-sm text-[#1a4b7a]">
-              Need help? Contact{" "}
-              <a
-                href="#"
+              Already have an account?{" "}
+              <Link
+                to="/login"
                 className="text-[#012e58] hover:text-[#1a4b7a] transition-colors"
               >
-                IT Support
-              </a>
+                Sign In
+              </Link>
             </p>
           </div>
         </div>
@@ -387,4 +348,4 @@ const LoginPage: React.FC = () => {
   );
 };
 
-export default LoginPage;
+export default SignupPage;
