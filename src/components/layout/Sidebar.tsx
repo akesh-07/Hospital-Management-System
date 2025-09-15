@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Home, UserPlus, Users, Stethoscope, Pill } from "lucide-react";
 import { UserRole } from "../../contexts/AuthContext";
 import { useAuth } from "../../contexts/AuthContext";
-
+import HMS_LOGO from "./HMS-bgr.png";
 interface SidebarProps {
   activeSection: string;
 }
@@ -53,15 +53,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSection }) => {
   const visibleItems = getVisibleItems();
 
   return (
-    <aside className="w-64 min-h-screen bg-gradient-to-b from-[#012e58] to-[#1a4b7a] text-white shadow-2xl">
+    <aside className="w-64 min-h-screen bg-gradient-to-r from-[#012e58] to-[#1a4b7a] text-white shadow-2xl">
       {/* Header */}
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-            <Stethoscope className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-white">Clinexa</h1>
+          <div className="flex items-center space-x-3">
+            <div className="w-[120px]">
+              <img src={HMS_LOGO} alt="logo" />
+            </div>
           </div>
         </div>
       </div>
