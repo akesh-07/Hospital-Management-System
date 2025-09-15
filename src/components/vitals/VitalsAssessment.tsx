@@ -318,7 +318,7 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
 
   // --- RENDER ---
   return (
-    <div className="p-6 bg-gray-50 min-h-screen font-sans">
+    <div className="p-6 bg-[#F8F9FA] min-h-screen font-sans">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <header className="flex items-center justify-between mb-6">
@@ -328,15 +328,15 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
                 onClick={onBack}
                 className="p-2 hover:bg-white rounded-lg border border-gray-200 transition-colors"
               >
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
+                <ArrowLeft className="w-5 h-5 text-[#1a4b7a]" />
               </button>
             )}
-            <Activity className="w-8 h-8 text-blue-600" />
+            <Activity className="w-8 h-8 text-[#012e58]" />
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-[#0B2D4D]">
                 Vitals & Assessment
               </h1>
-              <p className="text-gray-600">
+              <p className="text-[#1a4b7a]">
                 Record patient vital signs and health metrics
               </p>
             </div>
@@ -344,11 +344,11 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
 
           {/* Dynamic Patient Info */}
           <div className="bg-white rounded-lg border border-gray-200 p-4 text-right">
-            <p className="text-sm text-gray-500">Current Patient</p>
-            <p className="font-semibold text-gray-900">
+            <p className="text-sm text-[#1a4b7a]">Current Patient</p>
+            <p className="font-semibold text-[#0B2D4D]">
               {selectedPatient?.fullName || "No Patient Selected"}
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-[#1a4b7a]">
               {selectedPatient ? (
                 <>
                   {selectedPatient.uhid} • {selectedPatient.age}Y •{" "}
@@ -448,7 +448,7 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
         {/* Risk Assessment & Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
               Risk Assessment Flags
             </h3>
             <div className="space-y-4">
@@ -472,9 +472,9 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
                         payload: { flag: key },
                       })
                     }
-                    className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    className="h-4 w-4 text-[#012e58] rounded border-gray-300 focus:ring-[#1a4b7a]"
                   />
-                  <span className="text-gray-700">{label}</span>
+                  <span className="text-[#1a4b7a]">{label}</span>
                 </label>
               ))}
             </div>
@@ -484,7 +484,7 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
             <button
               onClick={handleSaveVitals}
               disabled={status.isSaving || !selectedPatient}
-              className="flex items-center justify-center space-x-2 w-full px-4 py-3 rounded-lg font-semibold transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700"
+              className="flex items-center justify-center space-x-2 w-full px-4 py-3 rounded-lg font-semibold transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed bg-[#012e58] text-white hover:bg-[#1a4b7a]"
             >
               <Save className="w-5 h-5" />
               <span>{status.isSaving ? "Saving..." : "Save Vitals"}</span>
@@ -535,15 +535,15 @@ const VitalCard: React.FC<{
     }`}
   >
     <div className="flex items-center space-x-2 mb-3">
-      <Icon className="w-5 h-5 text-blue-600" />
-      <h3 className="font-medium text-gray-800">{title}</h3>
+      <Icon className="w-5 h-5 text-[#012e58]" />
+      <h3 className="font-medium text-[#0B2D4D]">{title}</h3>
     </div>
     <div className="relative">
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(field, e.target.value)}
-        className="w-full text-3xl font-bold text-gray-900 bg-transparent border-0 p-0 focus:ring-0 focus:outline-none"
+        className="w-full text-3xl font-bold text-[#0B2D4D] bg-transparent border-0 p-0 focus:ring-0 focus:outline-none"
         placeholder="—"
         autoComplete="off"
       />
@@ -571,11 +571,11 @@ const BMIResultCard: React.FC<{
 }> = ({ bmi, category }) => (
   <div className="bg-white rounded-lg border border-gray-200 p-4">
     <div className="flex items-center space-x-2 mb-3">
-      <Activity className="w-5 h-5 text-blue-600" />
-      <h3 className="font-medium text-gray-800">BMI</h3>
+      <Activity className="w-5 h-5 text-[#012e58]" />
+      <h3 className="font-medium text-[#0B2D4D]">BMI</h3>
     </div>
     <div className="relative">
-      <div className="text-3xl font-bold text-gray-900">{bmi || "—"}</div>
+      <div className="text-3xl font-bold text-[#0B2D4D]">{bmi || "—"}</div>
       <span className="absolute right-0 top-1/2 -translate-y-1/2 text-sm text-gray-500">
         kg/m²
       </span>
@@ -598,11 +598,11 @@ const FormattedAiSummary: React.FC<{ summary: string }> = ({ summary }) => {
   const lines = summary.split("\n").filter((line) => line.trim() !== "");
 
   return (
-    <div className="space-y-4 text-gray-700">
+    <div className="space-y-4 text-[#1a4b7a]">
       {lines.map((line, index) => {
         if (line.startsWith("**") && line.endsWith("**")) {
           return (
-            <h3 key={index} className="text-lg font-bold text-gray-800 pt-2">
+            <h3 key={index} className="text-lg font-bold text-[#0B2D4D] pt-2">
               {line.slice(2, -2)}
             </h3>
           );
@@ -645,12 +645,12 @@ const AiSummaryModal: React.FC<{
       {/* Modal Content */}
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col transform transition-all duration-300 ease-in-out scale-95 animate-scale-in">
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 bg-gray-50 rounded-t-xl">
+        <div className="flex items-center justify-between p-5 border-b border-gray-200 bg-[#F8F9FA] rounded-t-xl">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-100 rounded-full">
-              <Bot className="w-6 h-6 text-blue-600" />
+            <div className="p-2 bg-[#e0f7fa] rounded-full">
+              <Bot className="w-6 h-6 text-[#012e58]" />
             </div>
-            <h2 className="text-xl font-bold text-gray-800">
+            <h2 className="text-xl font-bold text-[#0B2D4D]">
               AI-Generated Vitals Analysis
             </h2>
           </div>
@@ -666,11 +666,11 @@ const AiSummaryModal: React.FC<{
         <div className="p-6 overflow-y-auto flex-grow">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-full min-h-[250px] text-center">
-              <Loader className="w-12 h-12 text-blue-500 animate-spin mb-4" />
-              <p className="text-lg font-semibold text-gray-700">
+              <Loader className="w-12 h-12 text-[#012e58] animate-spin mb-4" />
+              <p className="text-lg font-semibold text-[#0B2D4D]">
                 Analyzing Vitals...
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-[#1a4b7a]">
                 Please wait while our AI processes the information.
               </p>
             </div>
@@ -680,10 +680,10 @@ const AiSummaryModal: React.FC<{
         </div>
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-end p-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+        <div className="flex items-center justify-end p-4 border-t border-gray-200 bg-[#F8F9FA] rounded-b-xl">
           <button
             onClick={onClose}
-            className="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            className="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1a4b7a] transition-colors"
           >
             Close
           </button>

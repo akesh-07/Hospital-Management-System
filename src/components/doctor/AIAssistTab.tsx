@@ -96,11 +96,11 @@ Additional Symptoms from examination: ${
             </div>{" "}
             <div>
               {" "}
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-[#0B2D4D]">
                 {" "}
                 AI Diagnostic Assistant{" "}
               </h3>{" "}
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-[#1a4b7a]">
                 {" "}
                 Get AI-powered insights and recommendations based on patient
                 data{" "}
@@ -109,34 +109,34 @@ Additional Symptoms from examination: ${
           </div>{" "}
           <button
             onClick={handleAutoFill}
-            className="flex items-center space-x-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm"
+            className="flex items-center space-x-2 px-3 py-2 bg-[#e0f7fa] text-[#012e58] rounded-lg hover:bg-[#b3e5fc] transition-colors text-sm"
           >
             <CheckCircle className="w-4 h-4" />{" "}
             <span>Auto-fill from Examination</span>{" "}
           </button>{" "}
         </div>
         {/* Patient Context */}{" "}
-        <div className="bg-gray-50 rounded-lg p-4 mb-6">
+        <div className="bg-[#F8F9FA] rounded-lg p-4 mb-6">
           {" "}
-          <h4 className="font-medium text-gray-900 mb-2">
+          <h4 className="font-medium text-[#0B2D4D] mb-2">
             Patient Context
           </h4>{" "}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             {" "}
             <div>
-              <span className="text-gray-600">Name:</span>{" "}
+              <span className="text-[#1a4b7a]">Name:</span>{" "}
               <p className="font-medium">{selectedPatient.fullName}</p>{" "}
             </div>{" "}
             <div>
-              <span className="text-gray-600">Age:</span>{" "}
+              <span className="text-[#1a4b7a]">Age:</span>{" "}
               <p className="font-medium">{selectedPatient.age}Y</p>{" "}
             </div>{" "}
             <div>
-              <span className="text-gray-600">Gender:</span>{" "}
+              <span className="text-[#1a4b7a]">Gender:</span>{" "}
               <p className="font-medium">{selectedPatient.gender}</p>{" "}
             </div>{" "}
             <div>
-              <span className="text-gray-600">Type:</span>{" "}
+              <span className="text-[#1a4b7a]">Type:</span>{" "}
               <p className="font-medium">{selectedPatient.patientType}</p>{" "}
             </div>{" "}
           </div>{" "}
@@ -144,7 +144,7 @@ Additional Symptoms from examination: ${
             selectedPatient.chronicConditions.length > 0 && (
               <div className="mt-3">
                 {" "}
-                <span className="text-gray-600 text-sm">
+                <span className="text-[#1a4b7a] text-sm">
                   {" "}
                   Chronic Conditions:{" "}
                 </span>{" "}
@@ -168,7 +168,7 @@ Additional Symptoms from examination: ${
           {" "}
           <div>
             {" "}
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[#0B2D4D] mb-2">
               {" "}
               Current Symptoms{" "}
             </label>{" "}
@@ -177,12 +177,12 @@ Additional Symptoms from examination: ${
               placeholder="Describe the patient's current symptoms in detail..."
               value={symptoms}
               onChange={(e) => setSymptoms(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent resize-none"
             />{" "}
           </div>{" "}
           <div>
             {" "}
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[#0B2D4D] mb-2">
               {" "}
               Duration & Timeline{" "}
             </label>{" "}
@@ -191,13 +191,13 @@ Additional Symptoms from examination: ${
               placeholder="e.g., 3 days, 1 week, chronic for 2 months..."
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent"
             />{" "}
           </div>{" "}
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="flex items-center justify-center space-x-2 w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center space-x-2 w-full px-6 py-3 bg-gradient-to-r from-[#012e58] to-[#1a4b7a] text-white rounded-lg hover:from-[#1a4b7a] hover:to-[#012e58] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {" "}
             {isLoading ? (
@@ -224,19 +224,19 @@ Additional Symptoms from examination: ${
             </div>{" "}
             <div>
               {" "}
-              <h4 className="text-lg font-semibold text-gray-900">
+              <h4 className="text-lg font-semibold text-[#0B2D4D]">
                 {" "}
                 Possible Diagnosis{" "}
               </h4>{" "}
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-[#1a4b7a]">
                 {" "}
                 AI-generated diagnosis based on symptoms and duration{" "}
               </p>{" "}
             </div>{" "}
           </div>{" "}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
+          <div className="bg-gradient-to-r from-[#e0f7fa] to-[#e0f2f1] border border-blue-200 rounded-lg p-6">
             {" "}
-            <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
+            <div className="whitespace-pre-wrap text-[#0B2D4D] leading-relaxed">
               {" "}
               {diagnosis}{" "}
             </div>{" "}
@@ -257,7 +257,7 @@ Additional Symptoms from examination: ${
                 {" "}
                 Copy Results{" "}
               </button>{" "}
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+              <button className="px-4 py-2 bg-[#012e58] text-white rounded-lg hover:bg-[#1a4b7a] transition-colors">
                 {" "}
                 Add to Notes{" "}
               </button>{" "}

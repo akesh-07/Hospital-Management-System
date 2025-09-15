@@ -17,10 +17,10 @@ const SectionHeader: React.FC<{ icon: React.ElementType; title: string }> = ({
   title,
 }) => (
   <div className="flex items-center space-x-3 mb-6">
-    <div className="bg-[#00A6A6]/10 p-2 rounded-lg">
-      <Icon className="w-6 h-6 text-[#00A6A6]" />
+    <div className="bg-accent-blue/10 p-2 rounded-lg">
+      <Icon className="w-6 h-6 text-accent-blue" />
     </div>
-    <h2 className="text-2xl font-bold text-[#0B2D4D] tracking-tight">
+    <h2 className="text-2xl font-bold text-primary-dark tracking-tight">
       {title}
     </h2>
   </div>
@@ -127,21 +127,21 @@ export const PatientRegistration: React.FC = () => {
 
   // A common className for form inputs to ensure consistency
   const inputStyle =
-    "p-3 border border-gray-300 rounded-lg w-full bg-gray-50 focus:ring-2 focus:ring-[#00A6A6] focus:border-[#00A6A6] transition duration-200 ease-in-out text-[#2C3E50] placeholder:text-[#7F8C8D]";
+    "p-3 border border-gray-300 rounded-lg w-full bg-gray-50 focus:ring-2 focus:ring-accent-blue focus:border-accent-blue transition duration-200 ease-in-out text-primary-light placeholder:text-gray-500";
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 bg-[#F5F7FA] min-h-screen font-sans">
+    <div className="p-4 sm:p-6 lg:p-8 bg-gray-100 min-h-screen font-sans">
       <div className="max-w-7xl mx-auto bg-white p-6 sm:p-8 rounded-2xl shadow-lg border border-gray-200">
         {/* Header Section */}
         <div className="flex items-center space-x-4 mb-8 pb-6 border-b border-gray-200">
-          <div className="p-3 bg-[#00A6A6]/10 rounded-full">
-            <UserPlus className="w-8 h-8 text-[#00A6A6]" />
+          <div className="p-3 bg-accent-blue/10 rounded-full">
+            <UserPlus className="w-8 h-8 text-accent-blue" />
           </div>
           <div>
-            <h1 className="text-4xl font-extrabold text-[#0B2D4D] tracking-tight">
+            <h1 className="text-4xl font-extrabold text-primary-dark tracking-tight">
               Patient Registration
             </h1>
-            <p className="text-[#7F8C8D] text-lg mt-1">
+            <p className="text-gray-500 text-lg mt-1">
               Complete the form to onboard a new patient efficiently.
             </p>
           </div>
@@ -149,8 +149,8 @@ export const PatientRegistration: React.FC = () => {
 
         {/* Success Message */}
         {showSuccess && (
-          <div className="mb-6 bg-[#2ECC71]/10 border-l-4 border-[#2ECC71] text-emerald-900 p-4 rounded-r-lg flex items-center space-x-3">
-            <CheckCircle className="w-6 h-6 text-[#2ECC71]" />
+          <div className="mb-6 bg-accent-blue/10 border-l-4 border-accent-blue text-blue-900 p-4 rounded-r-lg flex items-center space-x-3">
+            <CheckCircle className="w-6 h-6 text-accent-blue" />
             <span className="font-medium text-lg">
               Patient registered successfully!
             </span>
@@ -195,7 +195,7 @@ export const PatientRegistration: React.FC = () => {
                     required
                   />
                   {!formData.dateOfBirth && (
-                    <span className="absolute left-3.5 top-3.5 text-[#7F8C8D] pointer-events-none">
+                    <span className="absolute left-3.5 top-3.5 text-gray-500 pointer-events-none">
                       Date of Birth
                     </span>
                   )}
@@ -306,18 +306,18 @@ export const PatientRegistration: React.FC = () => {
 
               {/* Chronic Conditions Sub-section */}
               <div className="mt-7 pt-6 border-t border-gray-200">
-                <h3 className="text-lg font-semibold text-[#2C3E50] mb-4">
+                <h3 className="text-lg font-semibold text-primary-light mb-4">
                   Chronic Conditions (if any)
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-y-3 gap-x-4">
                   {chronicConditionOptions.map((condition) => (
                     <label
                       key={condition}
-                      className="flex items-center space-x-2 text-base text-[#2C3E50] cursor-pointer hover:text-[#00A6A6] transition-colors"
+                      className="flex items-center space-x-2 text-base text-primary-light cursor-pointer hover:text-accent-blue transition-colors"
                     >
                       <input
                         type="checkbox"
-                        className="h-4 w-4 text-[#00A6A6] border-gray-300 rounded focus:ring-[#00A6A6]"
+                        className="h-4 w-4 text-accent-blue border-gray-300 rounded focus:ring-accent-blue"
                         checked={formData.chronicConditions.includes(condition)}
                         onChange={() => toggleCondition(condition)}
                       />
@@ -329,7 +329,7 @@ export const PatientRegistration: React.FC = () => {
 
               {/* Preferences Sub-section */}
               <div className="mt-7 pt-6 border-t border-gray-200">
-                <h3 className="text-lg font-semibold text-[#2C3E50] mb-4">
+                <h3 className="text-lg font-semibold text-primary-light mb-4">
                   Additional Preferences
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
@@ -383,7 +383,7 @@ export const PatientRegistration: React.FC = () => {
           <div className="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
             <button
               type="button"
-              className="group flex items-center px-6 py-3 border border-[#00A6A6] rounded-lg text-[#00A6A6] bg-white hover:bg-[#00A6A6] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00A6A6] transition-all duration-300 text-lg font-medium"
+              className="group flex items-center px-6 py-3 border border-accent-blue rounded-lg text-accent-blue bg-white hover:bg-accent-blue hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-blue transition-all duration-300 text-lg font-medium"
               onClick={clearForm}
             >
               <X className="w-5 h-5 mr-2.5 transition-transform duration-300 group-hover:rotate-90" />
@@ -391,7 +391,7 @@ export const PatientRegistration: React.FC = () => {
             </button>
             <button
               type="submit"
-              className="flex items-center px-8 py-3 bg-[#0B2D4D] text-white font-semibold rounded-lg shadow-md hover:bg-[#0B2D4D]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0B2D4D] transition-all duration-300 text-lg"
+              className="flex items-center px-8 py-3 bg-primary-dark text-white font-semibold rounded-lg shadow-md hover:bg-primary-dark/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-all duration-300 text-lg"
             >
               <Save className="w-5 h-5 mr-2.5" />
               Register Patient

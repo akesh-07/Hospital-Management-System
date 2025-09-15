@@ -127,8 +127,8 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
       onClick={() => setActiveTab(id as any)}
       className={`flex items-center space-x-2 px-4 py-3 rounded-lg transition-colors ${
         activeTab === id
-          ? "bg-blue-600 text-white shadow-sm"
-          : "text-gray-600 hover:bg-gray-100"
+          ? "bg-[#012e58] text-white shadow-sm"
+          : "text-[#1a4b7a] hover:bg-[#e0f7fa]"
       }`}
     >
       <Icon className="w-4 h-4" /> <span className="font-medium">{label}</span>{" "}
@@ -140,7 +140,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-[#F8F9FA] min-h-screen">
       {" "}
       <div className="max-w-7xl mx-auto">
         {" "}
@@ -150,19 +150,19 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
             {" "}
             <button
               onClick={onBack}
-              className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+              className="flex items-center space-x-2 px-3 py-2 text-[#1a4b7a] hover:text-[#0B2D4D] hover:bg-[#e0f7fa] rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5" /> <span>Back to Queue</span>{" "}
             </button>
             <div className="h-6 w-px bg-gray-300"></div>
-            <Stethoscope className="w-8 h-8 text-blue-600" />{" "}
+            <Stethoscope className="w-8 h-8 text-[#012e58]" />{" "}
             <div>
               {" "}
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-[#0B2D4D]">
                 {" "}
                 Doctor Consultation{" "}
               </h1>{" "}
-              <p className="text-gray-600">
+              <p className="text-[#1a4b7a]">
                 {" "}
                 Complete medical examination and diagnosis{" "}
               </p>{" "}
@@ -172,9 +172,9 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
             {" "}
             <div className="flex items-center space-x-3">
               {" "}
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-[#e0f7fa] rounded-full flex items-center justify-center">
                 {" "}
-                <span className="text-blue-600 font-medium text-sm">
+                <span className="text-[#012e58] font-medium text-sm">
                   {" "}
                   {selectedPatient.fullName
                     ?.split(" ")
@@ -184,11 +184,11 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
               </div>{" "}
               <div>
                 {" "}
-                <p className="font-semibold text-gray-900">
+                <p className="font-semibold text-[#0B2D4D]">
                   {" "}
                   {selectedPatient.fullName}{" "}
                 </p>{" "}
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-[#1a4b7a]">
                   {" "}
                   {selectedPatient.uhid} • {selectedPatient.age}Y •{" "}
                   {selectedPatient.gender}{" "}
@@ -213,36 +213,36 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
             {" "}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               {" "}
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
                 {" "}
                 Patient Information{" "}
               </h3>{" "}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 {" "}
                 <div>
-                  <p className="text-sm text-gray-600">Contact Number</p>{" "}
-                  <p className="font-medium text-gray-900">
+                  <p className="text-sm text-[#1a4b7a]">Contact Number</p>{" "}
+                  <p className="font-medium text-[#0B2D4D]">
                     {" "}
                     {selectedPatient.contactNumber}{" "}
                   </p>{" "}
                 </div>{" "}
                 <div>
-                  <p className="text-sm text-gray-600">Address</p>{" "}
-                  <p className="font-medium text-gray-900">
+                  <p className="text-sm text-[#1a4b7a]">Address</p>{" "}
+                  <p className="font-medium text-[#0B2D4D]">
                     {" "}
                     {selectedPatient.address}{" "}
                   </p>{" "}
                 </div>{" "}
                 <div>
-                  <p className="text-sm text-gray-600">Visit Type</p>{" "}
-                  <p className="font-medium text-gray-900">
+                  <p className="text-sm text-[#1a4b7a]">Visit Type</p>{" "}
+                  <p className="font-medium text-[#0B2D4D]">
                     {" "}
                     {selectedPatient.visitType}{" "}
                   </p>{" "}
                 </div>{" "}
                 <div>
-                  <p className="text-sm text-gray-600">Payment Method</p>{" "}
-                  <p className="font-medium text-gray-900">
+                  <p className="text-sm text-[#1a4b7a]">Payment Method</p>{" "}
+                  <p className="font-medium text-[#0B2D4D]">
                     {" "}
                     {selectedPatient.paymentMethod}{" "}
                   </p>{" "}
@@ -252,7 +252,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
                 selectedPatient.chronicConditions.length > 0 && (
                   <div className="mb-6">
                     {" "}
-                    <p className="text-sm text-gray-600 mb-2">
+                    <p className="text-sm text-[#1a4b7a] mb-2">
                       {" "}
                       Chronic Conditions{" "}
                     </p>{" "}
@@ -275,7 +275,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
             </div>{" "}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               {" "}
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
                 {" "}
                 Previous Consultations{" "}
               </h3>{" "}
@@ -289,15 +289,17 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
                     {" "}
                     <div>
                       {" "}
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium text-[#0B2D4D]">
                         {" "}
                         {item.diagnosis}{" "}
                       </p>
-                      <p className="text-sm text-gray-600">{item.doctor}</p>{" "}
+                      <p className="text-sm text-[#1a4b7a]">{item.doctor}</p>{" "}
                     </div>{" "}
                     <div className="flex items-center space-x-2">
                       <Clock className="w-4 h-4 text-gray-400" />{" "}
-                      <span className="text-sm text-gray-600">{item.date}</span>{" "}
+                      <span className="text-sm text-[#1a4b7a]">
+                        {item.date}
+                      </span>{" "}
                     </div>{" "}
                   </div>
                 ))}{" "}
@@ -309,62 +311,62 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
                   Patient Vitals
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
                   <div>
                     <p className="text-sm text-gray-500">BP</p>
-                    <p className="font-bold text-lg text-gray-800">120/80</p>
+                    <p className="font-bold text-lg text-[#0B2D4D]">120/80</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">PR</p>
-                    <p className="font-bold text-lg text-gray-800">72 bpm</p>
+                    <p className="font-bold text-lg text-[#0B2D4D]">72 bpm</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">SpO₂</p>
-                    <p className="font-bold text-lg text-gray-800">98%</p>
+                    <p className="font-bold text-lg text-[#0B2D4D]">98%</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">BMI</p>
-                    <p className="font-bold text-lg text-gray-800">22.5</p>
+                    <p className="font-bold text-lg text-[#0B2D4D]">22.5</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">BPR</p>
-                    <p className="font-bold text-lg text-gray-800">18/min</p>
+                    <p className="font-bold text-lg text-[#0B2D4D]">18/min</p>
                   </div>
                 </div>
               </div>
               <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
                   Medical & Personal History
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
-                  <button className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md">
+                  <button className="flex items-center space-x-2 px-3 py-2 text-sm bg-[#e0f7fa] hover:bg-[#b3e5fc] rounded-md">
                     <FileDown className="w-4 h-4" />
                     <span>Discharge Summary</span>
                   </button>
-                  <button className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md">
+                  <button className="flex items-center space-x-2 px-3 py-2 text-sm bg-[#e0f7fa] hover:bg-[#b3e5fc] rounded-md">
                     <FileDown className="w-4 h-4" />
                     <span>X-Ray (PDF)</span>
                   </button>
-                  <button className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md">
+                  <button className="flex items-center space-x-2 px-3 py-2 text-sm bg-[#e0f7fa] hover:bg-[#b3e5fc] rounded-md">
                     <FileDown className="w-4 h-4" />
                     <span>USG (PDF)</span>
                   </button>
-                  <button className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md">
+                  <button className="flex items-center space-x-2 px-3 py-2 text-sm bg-[#e0f7fa] hover:bg-[#b3e5fc] rounded-md">
                     <FileDown className="w-4 h-4" />
                     <span>Investigation ROP</span>
                   </button>
                 </div>
-                <div className="mt-2 text-center text-xs text-blue-600 font-semibold">
+                <div className="mt-2 text-center text-xs text-[#012e58] font-semibold">
                   AI Assisted Summary
                 </div>
               </div>
             </div>
 
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
                 Chief Complaints
               </h3>
               <div className="grid grid-cols-4 gap-2 mb-4">
@@ -376,7 +378,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
                     >
                       <input
                         type="checkbox"
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-gray-300 text-[#012e58] focus:ring-[#1a4b7a]"
                       />
                       <span>{symptom}</span>
                     </label>
@@ -385,7 +387,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-[#F8F9FA]">
                     <tr>
                       <th className="p-2 text-left font-medium">Symptom</th>
                       <th className="p-2 text-left font-medium">Duration</th>
@@ -422,7 +424,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
                   General Examination
                 </h3>
                 <div className="grid grid-cols-3 gap-4">
@@ -434,7 +436,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
                       >
                         <input
                           type="checkbox"
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="rounded border-gray-300 text-[#012e58] focus:ring-[#1a4b7a]"
                         />
                         <span>{item}</span>
                       </label>
@@ -459,7 +461,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
                 </div>
               </div>
               <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
                   Templates for Easy Fill
                 </h3>
                 <div className="grid grid-cols-3 gap-2 mb-4">
@@ -470,7 +472,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
                     >
                       <input
                         type="checkbox"
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-gray-300 text-[#012e58] focus:ring-[#1a4b7a]"
                       />
                       <span>{item}</span>
                     </label>
@@ -489,7 +491,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
                   Systemic Examination
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
@@ -524,7 +526,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
                 </div>
               </div>
               <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
                   Local Examination
                 </h3>
                 <div className="text-center text-gray-500 italic p-4 border-2 border-dashed rounded-md">
@@ -554,7 +556,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
               {" "}
               Save Draft{" "}
             </button>{" "}
-            <button className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <button className="flex items-center space-x-2 px-6 py-3 bg-[#012e58] text-white rounded-lg hover:bg-[#1a4b7a] transition-colors">
               <span>Complete Consultation</span>
               <ChevronRight className="w-4 h-4" />{" "}
             </button>{" "}

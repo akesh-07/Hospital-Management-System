@@ -106,24 +106,24 @@ export const PrescriptionFulfillment: React.FC = () => {
     <div
       className={`bg-white rounded-lg border p-4 hover:shadow-md transition-all cursor-pointer ${
         selectedPrescription?.id === prescription.id
-          ? "ring-2 ring-green-500"
+          ? "ring-2 ring-[#012e58]"
           : "border-gray-200"
       }`}
       onClick={() => setSelectedPrescription(prescription)}
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-            <User className="w-5 h-5 text-green-600" />
+          <div className="w-10 h-10 bg-[#e0f7fa] rounded-full flex items-center justify-center">
+            <User className="w-5 h-5 text-[#012e58]" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">
+            <h3 className="font-semibold text-[#0B2D4D]">
               {prescription.patientName}
             </h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-[#1a4b7a]">
               UHID: {prescription.uhid} • {prescription.patientType}
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-[#1a4b7a]">
               Dr. {prescription.doctorName}
             </p>
           </div>
@@ -139,19 +139,19 @@ export const PrescriptionFulfillment: React.FC = () => {
 
       <div className="space-y-2">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-600">
+          <span className="text-[#1a4b7a]">
             Medications: {prescription.medications.length}
           </span>
-          <span className="text-gray-600">
+          <span className="text-[#1a4b7a]">
             Dispensed:{" "}
             {prescription.medications.filter((med) => med.dispensed).length}
           </span>
         </div>
         <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-600">
+          <span className="text-[#1a4b7a]">
             Total Amount: ${prescription.totalAmount.toFixed(2)}
           </span>
-          <span className="text-gray-600">
+          <span className="text-[#1a4b7a]">
             {new Date(prescription.prescriptionDate).toLocaleDateString()}
           </span>
         </div>
@@ -160,7 +160,7 @@ export const PrescriptionFulfillment: React.FC = () => {
   );
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-[#F8F9FA] min-h-screen">
       <div className="max-w-7xl mx-auto">
         {/* Header section remains the same */}
         <div className="flex items-center justify-between mb-6">
@@ -172,7 +172,7 @@ export const PrescriptionFulfillment: React.FC = () => {
         <div>
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-[#0B2D4D]">
                 Active Prescriptions
               </h3>
               {/* Filter and Search UI remains the same */}

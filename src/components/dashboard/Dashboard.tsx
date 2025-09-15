@@ -1,15 +1,15 @@
-import React from 'react';
-import { 
-  Users, 
-  Calendar, 
-  CheckCircle, 
-  AlertCircle, 
+import React from "react";
+import {
+  Users,
+  Calendar,
+  CheckCircle,
+  AlertCircle,
   TrendingUp,
   Activity,
   Pill,
-  TestTube
-} from 'lucide-react';
-import { mockAnalytics } from '../../data/mockData';
+  TestTube,
+} from "lucide-react";
+import { mockAnalytics } from "../../data/mockData";
 
 export const Dashboard: React.FC = () => {
   const analytics = mockAnalytics;
@@ -24,12 +24,14 @@ export const Dashboard: React.FC = () => {
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-gray-600 text-sm font-medium">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+          <p className="text-[#1a4b7a] text-sm font-medium">{title}</p>
+          <p className="text-2xl font-bold text-[#0B2D4D] mt-1">{value}</p>
           {trend && (
             <div className="flex items-center mt-2">
               <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-              <span className="text-sm text-green-600 font-medium">{trend}</span>
+              <span className="text-sm text-green-600 font-medium">
+                {trend}
+              </span>
             </div>
           )}
         </div>
@@ -47,21 +49,28 @@ export const Dashboard: React.FC = () => {
   }> = ({ title, items, icon: Icon }) => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <div className="flex items-center space-x-2 mb-4">
-        <Icon className="w-5 h-5 text-blue-600" />
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+        <Icon className="w-5 h-5 text-[#012e58]" />
+        <h3 className="text-lg font-semibold text-[#0B2D4D]">{title}</h3>
       </div>
       <div className="space-y-3">
         {items.map((item, index) => (
           <div key={index} className="flex items-center justify-between">
-            <span className="text-gray-700">{item.name}</span>
+            <span className="text-[#1a4b7a]">{item.name}</span>
             <div className="flex items-center space-x-2">
               <div className="w-16 bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-blue-600 h-2 rounded-full"
-                  style={{ width: `${(item.count / Math.max(...items.map(i => i.count))) * 100}%` }}
+                <div
+                  className="bg-[#012e58] h-2 rounded-full"
+                  style={{
+                    width: `${
+                      (item.count / Math.max(...items.map((i) => i.count))) *
+                      100
+                    }%`,
+                  }}
                 ></div>
               </div>
-              <span className="text-sm font-medium text-gray-900 w-6">{item.count}</span>
+              <span className="text-sm font-medium text-[#0B2D4D] w-6">
+                {item.count}
+              </span>
             </div>
           </div>
         ))}
@@ -70,20 +79,22 @@ export const Dashboard: React.FC = () => {
   );
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+    <div className="p-6 space-y-6 bg-[#F8F9FA] min-h-screen">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome back, Dr. Wilson. Here's your hospital overview.</p>
+          <h1 className="text-3xl font-bold text-[#0B2D4D]">Dashboard</h1>
+          <p className="text-[#1a4b7a] mt-1">
+            Welcome back, Dr. Wilson. Here's your hospital overview.
+          </p>
         </div>
         <div className="text-right">
-          <p className="text-sm text-gray-500">Today's Date</p>
-          <p className="text-lg font-semibold text-gray-900">
-            {new Date().toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
+          <p className="text-sm text-[#1a4b7a]">Today's Date</p>
+          <p className="text-lg font-semibold text-[#0B2D4D]">
+            {new Date().toLocaleDateString("en-US", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
             })}
           </p>
         </div>
@@ -95,20 +106,20 @@ export const Dashboard: React.FC = () => {
           value={analytics.dailyAppointments.toString()}
           icon={Calendar}
           trend="+12% from yesterday"
-          color="bg-blue-500"
+          color="bg-[#012e58]"
         />
         <StatCard
           title="Total Patients"
           value={analytics.totalPatients.toLocaleString()}
           icon={Users}
           trend="+5% from last month"
-          color="bg-green-500"
+          color="bg-[#1a4b7a]"
         />
         <StatCard
           title="Completed Consultations"
           value={analytics.completedConsultations.toString()}
           icon={CheckCircle}
-          color="bg-purple-500"
+          color="bg-[#3b82f6]"
         />
         <StatCard
           title="Pending Payments"
@@ -145,21 +156,29 @@ export const Dashboard: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Overview</h3>
+        <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
+          Revenue Overview
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center">
-            <p className="text-gray-600 text-sm">Today's Revenue</p>
-            <p className="text-2xl font-bold text-green-600">₹{analytics.revenue.today.toLocaleString()}</p>
+            <p className="text-[#1a4b7a] text-sm">Today's Revenue</p>
+            <p className="text-2xl font-bold text-green-600">
+              ₹{analytics.revenue.today.toLocaleString()}
+            </p>
           </div>
           <div className="text-center">
-            <p className="text-gray-600 text-sm">This Month</p>
-            <p className="text-2xl font-bold text-blue-600">₹{analytics.revenue.thisMonth.toLocaleString()}</p>
+            <p className="text-[#1a4b7a] text-sm">This Month</p>
+            <p className="text-2xl font-bold text-[#012e58]">
+              ₹{analytics.revenue.thisMonth.toLocaleString()}
+            </p>
           </div>
           <div className="text-center">
-            <p className="text-gray-600 text-sm">Growth Rate</p>
+            <p className="text-[#1a4b7a] text-sm">Growth Rate</p>
             <div className="flex items-center justify-center space-x-1">
               <TrendingUp className="w-5 h-5 text-green-500" />
-              <p className="text-2xl font-bold text-green-600">{analytics.revenue.trend}%</p>
+              <p className="text-2xl font-bold text-green-600">
+                {analytics.revenue.trend}%
+              </p>
             </div>
           </div>
         </div>

@@ -105,15 +105,15 @@ const PatientQueue: React.FC = () => {
     <div
       className={`bg-white rounded-lg border p-4 hover:shadow-md transition-all cursor-pointer ${
         selectedPatient?.id === patient.id
-          ? "ring-2 ring-blue-500"
+          ? "ring-2 ring-[#012e58]"
           : "border-gray-200"
       }`}
       onClick={() => setSelectedPatient(patient)}
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-            <span className="text-blue-600 font-medium text-sm">
+          <div className="w-10 h-10 bg-[#e0f7fa] rounded-full flex items-center justify-center">
+            <span className="text-[#012e58] font-medium text-sm">
               {patient.fullName
                 ?.split(" ")
                 .map((n) => n[0])
@@ -121,10 +121,8 @@ const PatientQueue: React.FC = () => {
             </span>
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">
-              {patient.fullName}
-            </h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="font-semibold text-[#0B2D4D]">{patient.fullName}</h3>
+            <p className="text-sm text-[#1a4b7a]">
               {patient.gender}, {patient.age} years • UHID:{" "}
               {patient.uhid || "N/A"}
             </p>
@@ -142,17 +140,17 @@ const PatientQueue: React.FC = () => {
       <div className="grid grid-cols-2 gap-4 text-sm">
         <div className="flex items-center space-x-2">
           <Phone className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-600">{patient.contactNumber}</span>
+          <span className="text-[#1a4b7a]">{patient.contactNumber}</span>
         </div>
         <div className="flex items-center space-x-2">
           <Clock className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-600">
+          <span className="text-[#1a4b7a]">
             Wait: {patient.waitTime || 0} min
           </span>
         </div>
         <div className="flex items-center space-x-2">
           <Tag className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-600">{patient.visitType}</span>
+          <span className="text-[#1a4b7a]">{patient.visitType}</span>
         </div>
         <div className="flex items-center space-x-2">
           <IdCard className="w-4 h-4 text-gray-400" />
@@ -170,10 +168,10 @@ const PatientQueue: React.FC = () => {
 
       <div className="mt-3 pt-3 border-t border-gray-100">
         <div className="flex items-center justify-between text-sm mb-3">
-          <span className="text-gray-600">
+          <span className="text-[#1a4b7a]">
             Dr. {patient.doctorAssigned || "Not Assigned"}
           </span>
-          <span className="text-gray-600">{patient.paymentMethod}</span>
+          <span className="text-[#1a4b7a]">{patient.paymentMethod}</span>
         </div>
 
         {/* ✅ Action Buttons */}
@@ -186,7 +184,7 @@ const PatientQueue: React.FC = () => {
           </button>
           <button
             onClick={(e) => handleDoctorClick(patient, e)}
-            className="flex-1 px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+            className="flex-1 px-3 py-1 text-sm bg-[#e0f7fa] text-[#012e58] rounded-lg hover:bg-[#b3e5fc]"
           >
             Doctor
           </button>
@@ -198,8 +196,8 @@ const PatientQueue: React.FC = () => {
   // ✅ If Vitals page selected, show it directly with patient data
   if (showVitals) {
     return (
-      <VitalsAssessment 
-        selectedPatient={vitalsPatient} 
+      <VitalsAssessment
+        selectedPatient={vitalsPatient}
         onBack={handleBackFromVitals}
       />
     );
@@ -208,29 +206,29 @@ const PatientQueue: React.FC = () => {
   // ✅ If Doctor module selected, show it directly with patient data
   if (showDoctor) {
     return (
-      <DoctorModule 
-        selectedPatient={doctorPatient} 
+      <DoctorModule
+        selectedPatient={doctorPatient}
         onBack={handleBackFromDoctor}
       />
     );
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-[#F8F9FA] min-h-screen">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <Users className="w-8 h-8 text-blue-600" />
+          <Users className="w-8 h-8 text-[#012e58]" />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Pre-OPD Queue</h1>
-            <p className="text-gray-600">
+            <h1 className="text-3xl font-bold text-[#0B2D4D]">Pre-OPD Queue</h1>
+            <p className="text-[#1a4b7a]">
               Manage patient queue and appointments
             </p>
           </div>
         </div>
         <div className="flex items-center space-x-4">
           <div className="text-right">
-            <p className="text-sm text-gray-500">Patients in OPD Queue</p>
-            <p className="text-2xl font-bold text-blue-600">
+            <p className="text-sm text-[#1a4b7a]">Patients in OPD Queue</p>
+            <p className="text-2xl font-bold text-[#012e58]">
               {patients.filter((p) => p.patientType === "OPD").length}
             </p>
           </div>
@@ -251,37 +249,51 @@ const PatientQueue: React.FC = () => {
         <div className="space-y-6">
           {selectedPatient && selectedPatient.patientType === "OPD" ? (
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
                 Patient Details
               </h3>
               <div className="space-y-3 text-sm">
                 <div>
-                  <span className="font-medium text-gray-700">Full Name:</span>
-                  <p className="text-gray-600 mt-1">{selectedPatient.fullName}</p>
+                  <span className="font-medium text-[#0B2D4D]">Full Name:</span>
+                  <p className="text-[#1a4b7a] mt-1">
+                    {selectedPatient.fullName}
+                  </p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Contact:</span>
-                  <p className="text-gray-600 mt-1">{selectedPatient.contactNumber}</p>
+                  <span className="font-medium text-[#0B2D4D]">Contact:</span>
+                  <p className="text-[#1a4b7a] mt-1">
+                    {selectedPatient.contactNumber}
+                  </p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Address:</span>
-                  <p className="text-gray-600 mt-1">{selectedPatient.address}</p>
+                  <span className="font-medium text-[#0B2D4D]">Address:</span>
+                  <p className="text-[#1a4b7a] mt-1">
+                    {selectedPatient.address}
+                  </p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Doctor Assigned:</span>
-                  <p className="text-gray-600 mt-1">Dr. {selectedPatient.doctorAssigned || "Not Assigned"}</p>
+                  <span className="font-medium text-[#0B2D4D]">
+                    Doctor Assigned:
+                  </span>
+                  <p className="text-[#1a4b7a] mt-1">
+                    Dr. {selectedPatient.doctorAssigned || "Not Assigned"}
+                  </p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Chronic Conditions:</span>
+                  <span className="font-medium text-[#0B2D4D]">
+                    Chronic Conditions:
+                  </span>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {selectedPatient.chronicConditions?.map((condition, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full"
-                      >
-                        {condition}
-                      </span>
-                    ))}
+                    {selectedPatient.chronicConditions?.map(
+                      (condition, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full"
+                        >
+                          {condition}
+                        </span>
+                      )
+                    )}
                   </div>
                 </div>
               </div>
@@ -289,7 +301,7 @@ const PatientQueue: React.FC = () => {
           ) : (
             <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
               <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-600">
+              <p className="text-[#1a4b7a]">
                 Select an OPD patient to view details and actions
               </p>
             </div>

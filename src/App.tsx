@@ -18,6 +18,7 @@ import PatientQueue from "./components/queue/PatientQueue";
 import { DoctorModule } from "./components/doctor/DoctorModule";
 import { PharmacyDashboard } from "./components/pharmacy/PharmacyDashboard";
 import StaffDashboard from "./components/Staff/StaffDashboard";
+import { PharmacyModule } from "./components/pharmacy/PharmacyModule";
 
 // A layout component for all authenticated pages
 const AuthenticatedLayout: React.FC<{
@@ -96,7 +97,7 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["pharmacist"]}>
                 <AuthenticatedLayout currentSection="pharmacy">
-                  <PharmacyDashboard />
+                  <PharmacyModule />
                 </AuthenticatedLayout>
               </ProtectedRoute>
             }

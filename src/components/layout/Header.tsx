@@ -17,7 +17,7 @@ export const Header: React.FC<HeaderProps> = ({ currentSection }) => {
           </div>
           <div className="hidden md:block">
             <span className="text-gray-400">|</span>
-            <span className="ml-4 text-lg font-medium text-gray-700 capitalize">
+            <span className="ml-4 text-lg font-medium text-[#0B2D4D] capitalize">
               {currentSection}
             </span>
           </div>
@@ -25,10 +25,10 @@ export const Header: React.FC<HeaderProps> = ({ currentSection }) => {
 
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            <button className="p-2 text-gray-400 hover:text-[#012e58] hover:bg-[#e0f7fa] rounded-lg transition-colors">
               <Bell className="w-5 h-5" />
             </button>
-            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            <button className="p-2 text-gray-400 hover:text-[#012e58] hover:bg-[#e0f7fa] rounded-lg transition-colors">
               <Settings className="w-5 h-5" />
             </button>
           </div>
@@ -38,10 +38,10 @@ export const Header: React.FC<HeaderProps> = ({ currentSection }) => {
               <User className="w-4 h-4 text-gray-600" />
             </div>
             <div className="hidden sm:block">
-              <p className="text-sm font-medium text-gray-900">
+              <p className="text-sm font-medium text-[#0B2D4D]">
                 Dr. Sarah Wilson
               </p>
-              <p className="text-xs text-gray-500">General Physician</p>
+              <p className="text-xs text-[#1a4b7a]">General Physician</p>
             </div>
           </div>
         </div>

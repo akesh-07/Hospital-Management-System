@@ -128,28 +128,28 @@ const PrescriptionModule: React.FC<{
   };
 
   return (
-    <div className="bg-gray-50">
+    <div className="bg-[#F8F9FA]">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
-            <FileText className="w-8 h-8 text-blue-600" />
+            <FileText className="w-8 h-8 text-[#012e58]" />
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-[#0B2D4D]">
                 Prescription & Advice
               </h1>
-              <p className="text-gray-600">
+              <p className="text-[#1a4b7a]">
                 Create detailed prescription and treatment plan
               </p>
             </div>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <p className="font-semibold text-gray-900">
+            <p className="font-semibold text-[#0B2D4D]">
               {selectedPatient.fullName}
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-[#1a4b7a]">
               {selectedPatient.uhid} • {selectedPatient.age}Y
             </p>
-            <p className="text-sm text-blue-600 font-medium">
+            <p className="text-sm text-[#012e58] font-medium">
               {consultation.diagnosis || "Pending Diagnosis"}
             </p>
           </div>
@@ -158,13 +158,13 @@ const PrescriptionModule: React.FC<{
         <div className="space-y-6">
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-[#0B2D4D]">
                 Medications
               </h3>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={addMedication}
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="flex items-center space-x-2 px-4 py-2 bg-[#012e58] text-white rounded-lg hover:bg-[#1a4b7a] transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add Medication</span>
@@ -176,10 +176,10 @@ const PrescriptionModule: React.FC<{
               {medications.map((medication, index) => (
                 <div
                   key={medication.id}
-                  className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+                  className="border border-gray-200 rounded-lg p-4 bg-[#F8F9FA]"
                 >
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium text-gray-900">
+                    <h4 className="font-medium text-[#0B2D4D]">
                       Medication {index + 1}
                     </h4>
                     {medications.length > 1 && (
@@ -194,7 +194,7 @@ const PrescriptionModule: React.FC<{
 
                   <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-[#1a4b7a] mb-1">
                         Medication Name
                       </label>
                       <input
@@ -208,7 +208,7 @@ const PrescriptionModule: React.FC<{
                             e.target.value
                           )
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent"
                         placeholder="Enter medication"
                       />
                       <datalist id={`medications-${medication.id}`}>
@@ -219,7 +219,7 @@ const PrescriptionModule: React.FC<{
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-[#1a4b7a] mb-1">
                         Dosage
                       </label>
                       <input
@@ -233,7 +233,7 @@ const PrescriptionModule: React.FC<{
                             e.target.value
                           )
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent"
                         placeholder="e.g., 500mg"
                       />
                       <datalist id={`dosage-${medication.id}`}>
@@ -244,7 +244,7 @@ const PrescriptionModule: React.FC<{
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-[#1a4b7a] mb-1">
                         Frequency
                       </label>
                       <select
@@ -256,7 +256,7 @@ const PrescriptionModule: React.FC<{
                             e.target.value
                           )
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent"
                       >
                         <option value="">Select frequency</option>
                         {frequencyOptions.map((freq) => (
@@ -268,7 +268,7 @@ const PrescriptionModule: React.FC<{
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-[#1a4b7a] mb-1">
                         Duration
                       </label>
                       <select
@@ -280,7 +280,7 @@ const PrescriptionModule: React.FC<{
                             e.target.value
                           )
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent"
                       >
                         <option value="">Select duration</option>
                         {durationOptions.map((dur) => (
@@ -292,7 +292,7 @@ const PrescriptionModule: React.FC<{
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-[#1a4b7a] mb-1">
                         Instructions
                       </label>
                       <input
@@ -305,7 +305,7 @@ const PrescriptionModule: React.FC<{
                             e.target.value
                           )
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent"
                         placeholder="e.g., After meals"
                       />
                     </div>
@@ -317,7 +317,7 @@ const PrescriptionModule: React.FC<{
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
                 General Advice
               </h3>
               <div className="space-y-3">
@@ -330,9 +330,9 @@ const PrescriptionModule: React.FC<{
                       type="checkbox"
                       checked={advice.general.includes(item)}
                       onChange={() => toggleAdvice("general", item)}
-                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="mt-1 w-4 h-4 text-[#012e58] border-gray-300 rounded focus:ring-[#1a4b7a]"
                     />
-                    <span className="text-sm text-gray-700">{item}</span>
+                    <span className="text-sm text-[#1a4b7a]">{item}</span>
                   </label>
                 ))}
               </div>
@@ -346,7 +346,7 @@ const PrescriptionModule: React.FC<{
             </div>
 
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
                 Diet Plan
               </h3>
               <div className="space-y-3">
@@ -359,9 +359,9 @@ const PrescriptionModule: React.FC<{
                       type="checkbox"
                       checked={advice.diet.includes(plan)}
                       onChange={() => toggleAdvice("diet", plan)}
-                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="mt-1 w-4 h-4 text-[#012e58] border-gray-300 rounded focus:ring-[#1a4b7a]"
                     />
-                    <span className="text-sm text-gray-700">{plan}</span>
+                    <span className="text-sm text-[#1a4b7a]">{plan}</span>
                   </label>
                 ))}
               </div>
@@ -369,7 +369,7 @@ const PrescriptionModule: React.FC<{
           </div>
 
           <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
               Follow-up Schedule
             </h3>
             <div className="flex items-center space-x-4">
@@ -386,9 +386,9 @@ const PrescriptionModule: React.FC<{
                       },
                     }))
                   }
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="w-4 h-4 text-[#012e58] border-gray-300 rounded focus:ring-[#1a4b7a]"
                 />
-                <span className="text-gray-700">Schedule follow-up</span>
+                <span className="text-[#1a4b7a]">Schedule follow-up</span>
               </label>
 
               {advice.followUp.enabled && (
@@ -406,7 +406,7 @@ const PrescriptionModule: React.FC<{
                         },
                       }))
                     }
-                    className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent"
                     placeholder="1"
                   />
                   <select
@@ -420,7 +420,7 @@ const PrescriptionModule: React.FC<{
                         },
                       }))
                     }
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent"
                   >
                     <option value="Days">Days</option>
                     <option value="Months">Months</option>

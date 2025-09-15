@@ -146,23 +146,23 @@ const LoginPage: React.FC = () => {
 
   // The rest of the component's JSX remains the same
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#e0f7fa] via-white to-[#e0f2f1] flex items-center justify-center p-4">
       <div className="relative w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4 shadow-lg">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#012e58] rounded-full mb-4 shadow-lg">
             <Activity className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          <h1 className="text-3xl font-bold text-[#0B2D4D] mb-2">
             MediCare Hospital
           </h1>
-          <p className="text-gray-600">Management System Portal</p>
+          <p className="text-[#1a4b7a]">Management System Portal</p>
         </div>
         <div className="bg-white rounded-2xl shadow-2xl p-8 backdrop-blur-sm border border-gray-100">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+            <h2 className="text-2xl font-semibold text-[#0B2D4D] mb-2">
               Welcome Back
             </h2>
-            <p className="text-gray-600">Please sign in to your account</p>
+            <p className="text-[#1a4b7a]">Please sign in to your account</p>
           </div>
           {loginError && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -173,7 +173,7 @@ const LoginPage: React.FC = () => {
             <div className="space-y-2">
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-[#0B2D4D]"
               >
                 Email Address
               </label>
@@ -185,7 +185,7 @@ const LoginPage: React.FC = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                  className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
                     errors.email
                       ? "border-red-500 bg-red-50"
                       : "border-gray-300"
@@ -202,7 +202,7 @@ const LoginPage: React.FC = () => {
             <div className="space-y-2">
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-[#0B2D4D]"
               >
                 Password
               </label>
@@ -214,7 +214,7 @@ const LoginPage: React.FC = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className={`w-full pl-11 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                  className={`w-full pl-11 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
                     errors.password
                       ? "border-red-500 bg-red-50"
                       : "border-gray-300"
@@ -240,16 +240,16 @@ const LoginPage: React.FC = () => {
               )}
             </div>
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-[#0B2D4D]">
                 Select Your Role
               </label>
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className={`w-full flex items-center justify-between pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                  className={`w-full flex items-center justify-between pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
                     errors.role ? "border-red-500 bg-red-50" : "border-gray-300"
-                  } ${formData.role ? "text-gray-800" : "text-gray-500"}`}
+                  } ${formData.role ? "text-[#0B2D4D]" : "text-gray-500"}`}
                 >
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <span className="flex items-center gap-2">
@@ -275,10 +275,10 @@ const LoginPage: React.FC = () => {
                         key={role.value}
                         type="button"
                         onClick={() => handleRoleSelect(role.value)}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-blue-50 transition-colors duration-150 first:rounded-t-lg last:rounded-b-lg"
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#e0f7fa] transition-colors duration-150 first:rounded-t-lg last:rounded-b-lg"
                       >
                         <span className="text-lg">{role.icon}</span>
-                        <span className="text-gray-800">{role.label}</span>
+                        <span className="text-[#0B2D4D]">{role.label}</span>
                       </button>
                     ))}
                   </div>
@@ -294,13 +294,13 @@ const LoginPage: React.FC = () => {
               <label className="flex items-center">
                 <input
                   type="checkbox"
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2"
+                  className="rounded border-gray-300 text-[#012e58] focus:ring-[#1a4b7a] focus:ring-2"
                 />
-                <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                <span className="ml-2 text-sm text-[#1a4b7a]">Remember me</span>
               </label>
               <a
                 href="#"
-                className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                className="text-sm text-[#012e58] hover:text-[#1a4b7a] transition-colors"
               >
                 Forgot password?
               </a>
@@ -308,7 +308,7 @@ const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
+              className="w-full bg-gradient-to-r from-[#012e58] to-[#1a4b7a] hover:from-[#1a4b7a] hover:to-[#012e58] text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-[#1a4b7a] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center gap-2">
@@ -321,11 +321,11 @@ const LoginPage: React.FC = () => {
             </button>
           </form>
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-[#1a4b7a]">
               Need help? Contact{" "}
               <a
                 href="#"
-                className="text-blue-600 hover:text-blue-800 transition-colors"
+                className="text-[#012e58] hover:text-[#1a4b7a] transition-colors"
               >
                 IT Support
               </a>

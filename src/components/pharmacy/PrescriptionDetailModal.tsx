@@ -1,5 +1,3 @@
-// You can place this inside PrescriptionFulfillment.tsx or in its own file.
-
 import { X, RefreshCw, CheckCircle, Printer } from "lucide-react";
 import {
   PharmacyPrescription,
@@ -23,11 +21,9 @@ interface PrescriptionDetailModalProps {
   onToggleDispense: (prescriptionId: string, medicationId: string) => void;
 }
 
-export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = ({
-  prescription,
-  onClose,
-  onToggleDispense,
-}) => {
+export const PrescriptionDetailModal: React.FC<
+  PrescriptionDetailModalProps
+> = ({ prescription, onClose, onToggleDispense }) => {
   return (
     // Modal Overlay
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
@@ -36,15 +32,15 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
         {/* Modal Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-[#0B2D4D]">
               Prescription Details
             </h2>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-[#1a4b7a]">
               Patient:{" "}
               <span className="font-medium">{prescription.patientName}</span>{" "}
               (UHID: {prescription.uhid})
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-[#1a4b7a]">
               Prescribed by Dr. {prescription.doctorName} on{" "}
               {new Date(prescription.prescriptionDate).toLocaleDateString()}
             </p>
@@ -59,12 +55,12 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
 
         {/* Modal Body with Table */}
         <div className="p-6 overflow-y-auto">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
             Medications to Dispense
           </h3>
           <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="w-full text-sm text-left text-gray-700">
-              <thead className="text-xs text-gray-800 uppercase bg-gray-50">
+            <table className="w-full text-sm text-left text-[#1a4b7a]">
+              <thead className="text-xs text-[#0B2D4D] uppercase bg-[#F8F9FA]">
                 <tr>
                   <th scope="col" className="px-6 py-3">
                     Dispense
@@ -87,7 +83,7 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
                 {prescription.medications.map((med) => (
                   <tr
                     key={med.id}
-                    className="bg-white border-b hover:bg-gray-50"
+                    className="bg-white border-b hover:bg-[#e0f7fa]"
                   >
                     <td className="px-6 py-4">
                       <input
@@ -96,10 +92,10 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
                         onChange={() =>
                           onToggleDispense(prescription.id, med.id)
                         }
-                        className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                        className="w-5 h-5 text-[#012e58] border-gray-300 rounded focus:ring-[#1a4b7a] focus:ring-2"
                       />
                     </td>
-                    <td className="px-6 py-4 font-medium text-gray-900">
+                    <td className="px-6 py-4 font-medium text-[#0B2D4D]">
                       {med.drugName}
                       <p className="text-xs text-gray-500 font-normal">
                         {med.dosage}
@@ -107,7 +103,7 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
                     </td>
                     <td className="px-6 py-4">
                       {med.frequency} &bull; {med.duration}
-                      <p className="text-xs text-blue-600">
+                      <p className="text-xs text-[#012e58]">
                         {med.instructions}
                       </p>
                     </td>
@@ -120,7 +116,7 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
                     <td className="px-6 py-4">
                       {!med.dispensed ? (
                         <div className="flex items-center space-x-2">
-                          <button className="flex items-center space-x-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full hover:bg-blue-200">
+                          <button className="flex items-center space-x-1 px-2 py-1 bg-[#e0f7fa] text-[#012e58] text-xs rounded-full hover:bg-[#b3e5fc]">
                             <RefreshCw className="w-3 h-3" />
                             <span>Suggest</span>
                           </button>
@@ -140,18 +136,18 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
         </div>
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-end space-x-4 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+        <div className="flex items-center justify-end space-x-4 p-6 border-t border-gray-200 bg-[#F8F9FA] rounded-b-lg">
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100"
           >
             Close
           </button>
-          <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+          <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-[#1a4b7a] rounded-lg hover:bg-[#012e58]">
             <Printer className="w-4 h-4" />
             <span>Print Slip</span>
           </button>
-          <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">
+          <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-[#012e58] rounded-lg hover:bg-[#1a4b7a]">
             <CheckCircle className="w-4 h-4" />
             <span>Complete Dispensing</span>
           </button>
