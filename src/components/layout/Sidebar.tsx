@@ -58,7 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSection }) => {
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-3">
-            <div className="w-[120px]">
+            <div className="">
               <img src={HMS_LOGO} alt="logo" />
             </div>
           </div>
