@@ -12,7 +12,7 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { Header } from "./components/layout/Header";
 import { Sidebar } from "./components/layout/Sidebar";
 import LoginPage from "./components/auth/LoginPage";
-import Dashboard from "./components/dashboard/Dashboard";
+import { Dashboard } from "./components/dashboard/Dashboard";
 import { PatientRegistration } from "./components/registration/PatientRegistration";
 import PatientQueue from "./components/queue/PatientQueue";
 import { DoctorModule } from "./components/doctor/DoctorModule";
