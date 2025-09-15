@@ -43,7 +43,7 @@ function App() {
           {/* Public route for the Login page */}
           <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} />
-  <Route path="/signup" element={<SignupPage />} />
+          <Route path="/signup" element={<SignupPage />} />
           {/* Common Dashboard for all roles */}
           <Route
             path="/dashboard"
