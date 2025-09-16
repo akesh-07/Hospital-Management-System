@@ -1,18 +1,18 @@
 // src/components/DoctorForm.tsx
 import React, { useState } from "react";
 import {
-  UserPlus,
   Save,
   X,
   CheckCircle,
-  Calendar,
   HeartPulse,
   UserCog,
+  Mail,
+  Lock,
 } from "lucide-react";
-import { db } from "../../firebase"; // make sure this is your firebase config file
+import { db } from "../../firebase"; // your firebase config file
 import { collection, addDoc } from "firebase/firestore";
 
-// Helper component for section headers to maintain consistency
+// Section Header Component
 const SectionHeader: React.FC<{ icon: React.ElementType; title: string }> = ({
   icon: Icon,
   title,
@@ -39,11 +39,15 @@ const DoctorForm: React.FC = () => {
     address: "",
     experience: "",
     specialization: "",
+    email: "",
+    password: "",
   });
 
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setDoctor({
       ...doctor,
       [e.target.name]: e.target.value,
@@ -69,6 +73,8 @@ const DoctorForm: React.FC = () => {
         address: "",
         experience: "",
         specialization: "",
+        email: "",
+        password: "",
       });
     } catch (err) {
       console.error("Error adding doctor:", err);
@@ -88,6 +94,8 @@ const DoctorForm: React.FC = () => {
       address: "",
       experience: "",
       specialization: "",
+      email: "",
+      password: "",
     });
     setShowSuccess(false);
   };
@@ -110,7 +118,7 @@ const DoctorForm: React.FC = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-            {/* Left Column for Personal Details */}
+            {/* Left Column - Personal Details */}
             <div className="space-y-4">
               <div className="bg-white p-4 rounded-xl border border-gray-200 transition-shadow hover:shadow-md">
                 <SectionHeader icon={UserCog} title="Personal Details" />
@@ -183,9 +191,34 @@ const DoctorForm: React.FC = () => {
                   </select>
                 </div>
               </div>
+
+              {/* Login Credentials */}
+              <div className="bg-white p-4 rounded-xl border border-gray-200 transition-shadow hover:shadow-md">
+                <SectionHeader icon={Mail} title="Credentials" />
+                <div className="grid grid-cols-1 gap-3">
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    name="email"
+                    className={inputStyle}
+                    value={doctor.email}
+                    onChange={handleChange}
+                    required
+                  />
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    name="password"
+                    className={inputStyle}
+                    value={doctor.password}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Right Column for Professional Details */}
+            {/* Right Column - Professional Details */}
             <div className="space-y-4">
               <div className="bg-white p-4 rounded-xl border border-gray-200 transition-shadow hover:shadow-md">
                 <SectionHeader icon={HeartPulse} title="Professional Details" />
