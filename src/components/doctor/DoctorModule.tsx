@@ -1,3 +1,4 @@
+import Ai from "./ai";
 import React, { useState, useEffect } from "react";
 import {
   Stethoscope,
@@ -674,10 +675,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
 
         {activeTab === "ai-assist" && selectedPatient && (
           <div className="space-y-4">
-            <AIAssistTab
-              consultation={consultation}
-              selectedPatient={selectedPatient}
-            />
+            <Ai consultation={consultation} selectedPatient={selectedPatient} />
           </div>
         )}
 
