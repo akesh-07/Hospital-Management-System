@@ -1,5 +1,5 @@
 import Ai from "./ai";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Stethoscope,
   FileText,
@@ -43,6 +43,11 @@ import { Vitals } from "../../types";
 import PatientQueue from "../queue/PatientQueue";
 import { Patient } from "../../types";
 import PrescriptionModule from "../prescription/PrescriptionModule";
+import * as pdfjsLib from "pdfjs-dist";
+import mammoth from "mammoth";
+
+// Setup for PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`;
 
 interface DoctorModuleProps {
   selectedPatient?: Patient | null;
@@ -82,41 +87,78 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
     diagnosis: "",
     notes: "",
   });
-
-  const [uploadedFileContent, setUploadedFileContent] = useState<string[]>([]);
+  const [uploadedFilesData, setUploadedFilesData] = useState<
+    Record<string, string>
+  >({});
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [aiSummary, setAiSummary] = useState("");
   const [isAiSummaryLoading, setIsAiSummaryLoading] = useState(false);
+  const fileInputRefs = {
+    "Discharge Summary": useRef<HTMLInputElement>(null),
+    "X-Ray (PDF)": useRef<HTMLInputElement>(null),
+    "USG (PDF)": useRef<HTMLInputElement>(null),
+    "Investigation ROP": useRef<HTMLInputElement>(null),
+  };
 
   // --- File Handling and Text Extraction ---
   const extractTextFromFile = async (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
-      if (file.type === "text/plain") {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          resolve(event.target?.result as string);
-        };
-        reader.onerror = (error) => {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          if (file.type === "application/pdf") {
+            const loadingTask = pdfjsLib.getDocument(
+              event.target?.result as ArrayBuffer
+            );
+            const pdf = await loadingTask.promise;
+            let text = "";
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const content = await page.getTextContent();
+              text += content.items.map((item: any) => item.str).join(" ");
+            }
+            resolve(text);
+          } else if (
+            file.type ===
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          ) {
+            const arrayBuffer = event.target?.result as ArrayBuffer;
+            const result = await mammoth.extractRawText({ arrayBuffer });
+            resolve(result.value);
+          } else if (file.type === "text/plain") {
+            resolve(event.target?.result as string);
+          } else {
+            reject(new Error("Unsupported file type"));
+          }
+        } catch (error) {
           reject(error);
-        };
-        reader.readAsText(file);
+        }
+      };
+      reader.onerror = (error) => {
+        reject(error);
+      };
+
+      if (
+        file.type === "application/pdf" ||
+        file.type ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ) {
+        reader.readAsArrayBuffer(file);
       } else {
-        // Placeholder for PDF/DOCX extraction
-        resolve(
-          `Text extraction for ${file.type} is not implemented in this demo.`
-        );
+        reader.readAsText(file);
       }
     });
   };
 
   const handleFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
+    fileType: string
   ) => {
     const file = event.target.files?.[0];
     if (file) {
       try {
         const text = await extractTextFromFile(file);
-        setUploadedFileContent((prev) => [...prev, text]);
+        setUploadedFilesData((prev) => ({ ...prev, [fileType]: text }));
       } catch (error) {
         console.error("Error extracting text from file:", error);
       }
@@ -130,7 +172,9 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
 
     const combinedData = `
       Uploaded Medical History:
-      ${uploadedFileContent.join("\n\n")}
+      ${Object.entries(uploadedFilesData)
+        .map(([fileType, text]) => `${fileType}:\n${text}`)
+        .join("\n\n")}
 
       Chief Complaints:
       ${consultation.symptoms
@@ -534,25 +578,28 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
               <div className="bg-white p-4 rounded-lg border border-gray-200 transition-shadow hover:shadow-md">
                 <SectionHeader icon={FileDown} title="Medical History" />
                 <div className="space-y-2">
-                  {[
-                    "Discharge Summary",
-                    "X-Ray (PDF)",
-                    "USG (PDF)",
-                    "Investigation ROP",
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      <label className="flex-1 flex items-center space-x-2 w-full px-3 py-2 text-xs bg-gradient-to-r from-[#012e58]/5 to-[#012e58]/10 hover:from-[#012e58]/10 hover:to-[#012e58]/15 rounded-md border border-gray-200 transition-all duration-200 group cursor-pointer">
-                        <Upload className="w-3 h-3 text-[#012e58]" />
+                  {Object.keys(fileInputRefs).map((name) => (
+                    <div key={name}>
+                      <input
+                        type="file"
+                        accept=".pdf,.docx,.txt"
+                        ref={fileInputRefs[name as keyof typeof fileInputRefs]}
+                        onChange={(e) => handleFileUpload(e, name)}
+                        style={{ display: "none" }}
+                      />
+                      <button
+                        onClick={() =>
+                          fileInputRefs[
+                            name as keyof typeof fileInputRefs
+                          ].current?.click()
+                        }
+                        className="flex items-center space-x-2 w-full px-3 py-2 text-xs bg-gradient-to-r from-[#012e58]/5 to-[#012e58]/10 hover:from-[#012e58]/10 hover:to-[#012e58]/15 rounded-md border border-gray-200 transition-all duration-200 group"
+                      >
+                        <Upload className="w-3 h-3 text-[#012e58] group-hover:scale-110 transition-transform" />
                         <span className="font-medium text-[#0B2D4D]">
-                          {item}
+                          {name}
                         </span>
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept=".pdf,.docx,.txt"
-                          onChange={handleFileUpload}
-                        />
-                      </label>
+                      </button>
                     </div>
                   ))}
                 </div>
