@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Copy, Plus, Bot, User } from "lucide-react";
+import { Copy, Plus, Bot, User, Brain, Loader } from "lucide-react";
+import { Patient } from "../../types";
 
 // Type definitions
 interface DiagnosisData {
@@ -33,44 +34,147 @@ interface MedicationRow {
   doctorAdvice: string;
 }
 
-const MedicalDashboard: React.FC = () => {
+const MedicalDashboard: React.FC<{
+  consultation: any;
+  selectedPatient: Patient;
+}> = ({ consultation, selectedPatient }) => {
   // State management
   const [diagnosis, setDiagnosis] = useState<DiagnosisData>({
-    aiSuggested: "Type 2 Diabetes Mellitus (E11.9)",
+    aiSuggested: "",
     doctorEntry: "",
   });
 
   const [labInvestigation, setLabInvestigation] =
     useState<LabInvestigationData>({
-      aiSuggestion:
-        "Complete metabolic panel recommended for diabetic monitoring",
+      aiSuggestion: "",
       doctorEntry: "",
-      aiTests: { cbc: true, lft: true, rft: false },
+      aiTests: { cbc: false, lft: false, rft: false },
       doctorTests: { cbc: false, lft: false, rft: false },
     });
 
-  const [medicationRows, setMedicationRows] = useState<MedicationRow[]>([
-    {
-      id: "1",
-      sno: 1,
-      aiMedication: "Metformin 500mg",
-      aiTime: "8:00 AM, 8:00 PM",
-      aiAdvice: "Take with meals",
-      doctorMedication: "",
-      doctorTime: "",
-      doctorAdvice: "",
-    },
-  ]);
+  const [medicationRows, setMedicationRows] = useState<MedicationRow[]>([]);
 
-  // AI Auto Suggestion Lab data
-  const aiLabSuggestions = [
-    { test: "CBC", suggestion: "ingseation" },
-    { test: "LFT", suggestion: "Information anaysis" },
-    { test: "RFT", suggestion: "Einoricicin" },
-  ];
+  const [isLoading, setIsLoading] = useState(false);
 
   // Lab Results data
   const labResults = ["ECG", "X-RAY", "TCA-troraric", "In-xity coavortiatric"];
+
+  const handleGenerateSuggestions = async () => {
+    setIsLoading(true);
+
+    const systemPrompt = `You are an expert medical AI assistant. Based on the provided patient consultation details, generate a concise and structured JSON object with suggestions for the attending doctor. The JSON object must have the following keys:
+1.  "diagnosis": A string with a likely diagnosis and its corresponding ICD-10 code (e.g., "Type 2 Diabetes Mellitus (E11.9)").
+2.  "labInvestigationSuggestion": A brief string recommending relevant lab tests (e.g., "Complete metabolic panel recommended for diabetic monitoring").
+3.  "labTests": A JSON object with boolean flags for the following specific tests: "cbc", "lft", "rft". Set to true if recommended.
+4.  "medications": An array of JSON objects for prescriptions. Each object should have three string keys: "medication" (e.g., "Metformin 500mg"), "time" (e.g., "8:00 AM, 8:00 PM"), and "advice" (e.g., "Take with meals"). Provide 1 to 3 medication suggestions.
+
+Do not include any explanatory text or markdown formatting outside of the JSON object.`;
+
+    const userPrompt = `
+      Patient Information:
+      - Name: ${selectedPatient.fullName}
+      - Age: ${selectedPatient.age}
+      - Gender: ${selectedPatient.gender}
+      - Chronic Conditions: ${
+        selectedPatient.chronicConditions?.join(", ") || "None"
+      }
+
+      Consultation Details from Assessment:
+      - Symptoms: ${consultation.symptoms?.join(", ") || "Not specified"}
+      - Duration: ${consultation.duration || "Not specified"}
+      - Aggravating Factors: ${
+        consultation.aggravatingFactors?.join(", ") || "Not specified"
+      }
+      - General Examination: ${
+        consultation.generalExamination?.join(", ") || "Not specified"
+      }
+      - Systemic Examination: ${
+        consultation.systemicExamination?.join(", ") || "Not specified"
+      }
+    `;
+
+    try {
+      const response = await fetch(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer ",
+          },
+          body: JSON.stringify({
+            model: "llama-3.1-8b-instant",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+            temperature: 0.7,
+            response_format: { type: "json_object" },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      const content = data?.choices?.[0]?.message?.content?.trim();
+
+      if (content) {
+        try {
+          const aiResponse = JSON.parse(content);
+
+          // Populate Diagnosis
+          if (aiResponse.diagnosis) {
+            setDiagnosis((prev) => ({
+              ...prev,
+              aiSuggested: aiResponse.diagnosis,
+            }));
+          }
+
+          // Populate Lab Investigations
+          if (aiResponse.labInvestigationSuggestion || aiResponse.labTests) {
+            setLabInvestigation((prev) => ({
+              ...prev,
+              aiSuggestion:
+                aiResponse.labInvestigationSuggestion || prev.aiSuggestion,
+              aiTests: {
+                cbc: aiResponse.labTests?.cbc ?? false,
+                lft: aiResponse.labTests?.lft ?? false,
+                rft: aiResponse.labTests?.rft ?? false,
+              },
+            }));
+          }
+
+          // Populate Medications
+          if (Array.isArray(aiResponse.medications)) {
+            const newMedicationRows = aiResponse.medications.map(
+              (med: any, index: number) => ({
+                id: String(index + 1),
+                sno: index + 1,
+                aiMedication: med.medication || "",
+                aiTime: med.time || "",
+                aiAdvice: med.advice || "",
+                doctorMedication: "",
+                doctorTime: "",
+                doctorAdvice: "",
+              })
+            );
+            if (newMedicationRows.length > 0) {
+              setMedicationRows(newMedicationRows);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to parse AI response JSON:", e);
+        }
+      }
+    } catch (err) {
+      console.error("Error calling Groq API:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Copy functions
   const copyToField = (
@@ -127,6 +231,29 @@ const MedicalDashboard: React.FC = () => {
 
   return (
     <div className="space-y-3 p-2 bg-gray-100 min-h-screen font-sans text-xs">
+      <div className="bg-white p-2 rounded shadow border border-gray-200">
+        <button
+          onClick={handleGenerateSuggestions}
+          disabled={isLoading}
+          className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-[#012e58] to-[#1a4b7a] text-white rounded-lg hover:from-[#1a4b7a] hover:to-[#012e58] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? (
+            <>
+              <Loader className="w-5 h-5 animate-spin" />
+              <span className="text-sm font-semibold">
+                Generating AI Suggestions...
+              </span>
+            </>
+          ) : (
+            <>
+              <Brain className="w-5 h-5" />
+              <span className="text-sm font-semibold">
+                Generate AI Suggestions from Assessment
+              </span>
+            </>
+          )}
+        </button>
+      </div>
       {/* Diagnosis */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         <div className="w-full bg-white p-2 rounded shadow border border-gray-200">
@@ -229,27 +356,19 @@ const MedicalDashboard: React.FC = () => {
             </h3>
           </div>
           <div className="p-2 space-y-1">
-            {aiLabSuggestions.map((item, idx) => (
-              <div
-                key={idx}
-                className="flex justify-between items-center p-2 bg-gradient-to-r from-[#012e58]/5 to-[#012e58]/10 rounded border border-gray-200 hover:shadow-sm transition-all"
+            <div className="flex justify-between items-center p-2 bg-gradient-to-r from-[#012e58]/5 to-[#012e58]/10 rounded border border-gray-200 hover:shadow-sm transition-all">
+              <span className="font-medium text-[#0B2D4D] text-xs">
+                {labInvestigation.aiSuggestion}
+              </span>
+              <button
+                onClick={() =>
+                  copyToField(labInvestigation.aiSuggestion, "labInvestigation")
+                }
+                className="px-1 py-0.5 border border-[#012e58] rounded text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-1 focus:ring-[#012e58] transition-all duration-300"
               >
-                <span className="font-medium text-[#0B2D4D] text-xs">
-                  {item.test}
-                </span>
-                <span className="text-xs text-[#1a4b7a]">
-                  {item.suggestion}
-                </span>
-                <button
-                  onClick={() =>
-                    copyToField(item.suggestion, "labInvestigation")
-                  }
-                  className="px-1 py-0.5 border border-[#012e58] rounded text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-1 focus:ring-[#012e58] transition-all duration-300"
-                >
-                  <Copy size={10} />
-                </button>
-              </div>
-            ))}
+                <Copy size={10} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
