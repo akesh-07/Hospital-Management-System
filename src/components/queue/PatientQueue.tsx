@@ -1,5 +1,5 @@
 // src/components/queue/PatientQueue.tsx
-
+import Cookies from "js-cookie";
 import React, { useEffect, useState } from "react";
 import {
   Users,
@@ -60,6 +60,14 @@ const PatientQueue: React.FC = () => {
   const [vitalsPatient, setVitalsPatient] = useState<Patient | null>(null);
   const [showDoctor, setShowDoctor] = useState(false);
   const [doctorPatient, setDoctorPatient] = useState<Patient | null>(null);
+  // 👤 Get user role from cookie
+  const storedRole = Cookies.get("userRole");
+  const currentUserRole =
+    storedRole === "doctor"
+      ? "Doctor"
+      : storedRole === "staff-nurse"
+      ? "Nurse"
+      : "";
 
   // 🔥 Fetch patients from Firestore
   useEffect(() => {
@@ -223,18 +231,23 @@ const PatientQueue: React.FC = () => {
             isOpen ? "mt-3 pt-3 opacity-100" : "max-h-0 opacity-0"
           }`}
         >
-          <button
-            onClick={(e) => handleVitalsClick(patient, e)}
-            className="flex-1 px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200"
-          >
-            Vitals
-          </button>
-          <button
-            onClick={(e) => handleDoctorClick(patient, e)}
-            className="flex-1 px-3 py-1 text-sm bg-[#e0f7fa] text-[#012e58] rounded-lg hover:bg-[#b3e5fc]"
-          >
-            Doctor
-          </button>
+          {currentUserRole === "Nurse" && (
+            <button
+              onClick={(e) => handleVitalsClick(patient, e)}
+              className="flex-1 px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200"
+            >
+              Vitals
+            </button>
+          )}
+
+          {currentUserRole === "Doctor" && (
+            <button
+              onClick={(e) => handleDoctorClick(patient, e)}
+              className="flex-1 px-3 py-1 text-sm bg-[#e0f7fa] text-[#012e58] rounded-lg hover:bg-[#b3e5fc]"
+            >
+              Doctor
+            </button>
+          )}
         </div>
       </div>
     </div>
