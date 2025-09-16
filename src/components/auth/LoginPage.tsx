@@ -11,7 +11,8 @@ import {
 } from "lucide-react";
 import HMS_LOGO from "../layout/hms-logo.png";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebase"; // Note: db import is no longer needed
+import { auth, db } from "../../firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 // Interface for the form data without the name field
 interface LoginForm {
@@ -122,15 +123,24 @@ const LoginPage: React.FC = () => {
     setLoginError("");
 
     try {
-      // Step 1: Authenticate with Firebase Auth using only email and password
       await signInWithEmailAndPassword(
         auth,
         formData.email,
         formData.password
       );
 
-      // Login is successful if signInWithEmailAndPassword doesn't throw an error
+      let userName = "User";
+      if (formData.role === "doctor") {
+        const q = query(collection(db, "doctors"), where("email", "==", formData.email));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          const doctorData = querySnapshot.docs[0].data();
+          userName = doctorData.doc_name;
+        }
+      }
+
       Cookies.set("userRole", formData.role, { expires: 7 });
+      Cookies.set("userName", userName, { expires: 7 });
 
       const selectedRole = userRoles.find(
         (role) => role.value === formData.role
@@ -144,6 +154,8 @@ const LoginPage: React.FC = () => {
       let errorMessage = "Login failed. Please try again.";
       if (error.code === "auth/invalid-email" || error.code === "auth/wrong-password" || error.code === "auth/user-not-found") {
         errorMessage = "Invalid email or password.";
+      } else if (error.code === "auth/network-request-failed") {
+        errorMessage = "Network error. Please check your connection.";
       }
       setLoginError(errorMessage);
     } finally {
