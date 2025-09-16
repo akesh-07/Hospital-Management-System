@@ -9,8 +9,9 @@ import {
   Mail,
   Lock,
 } from "lucide-react";
-import { db } from "../../firebase"; // your firebase config file
-import { collection, addDoc } from "firebase/firestore";
+import { db, auth } from "../../firebase"; // Import both db and auth
+import { doc, setDoc } from "firebase/firestore"; // Use setDoc instead of addDoc
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
 // Section Header Component
 const SectionHeader: React.FC<{ icon: React.ElementType; title: string }> = ({
@@ -56,8 +57,29 @@ const DoctorForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     try {
-      await addDoc(collection(db, "doctors"), doctor);
+      // Step 1: Create a new user in Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        doctor.email,
+        doctor.password
+      );
+
+      const user = userCredential.user;
+
+      // Step 2: Create a new object for Firestore, without the password
+      const { password, ...doctorData } = doctor;
+      
+      // Add a role field for role-based access control
+      const dataToStore = {
+        ...doctorData,
+        role: "doctor"
+      };
+
+      // Step 3: Use the user's UID to set the document in Firestore
+      await setDoc(doc(db, "doctors", user.uid), dataToStore);
+
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
 
@@ -76,9 +98,13 @@ const DoctorForm: React.FC = () => {
         email: "",
         password: "",
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error adding doctor:", err);
-      alert("Failed to add doctor ❌");
+      if (err.code === "auth/email-already-in-use") {
+        alert("This email is already registered. Please use a different one.");
+      } else {
+        alert("Failed to register doctor. Please try again.");
+      }
     }
   };
 
