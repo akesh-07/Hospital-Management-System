@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Cookies from "js-cookie"; // Import js-cookie library
+import Cookies from "js-cookie";
 import {
   Eye,
   EyeOff,
@@ -8,47 +8,46 @@ import {
   Lock,
   Mail,
   ChevronDown,
-  Activity,
-  Users,
 } from "lucide-react";
-import { useAuth, UserRole } from "../../contexts/AuthContext";
-import HMS_LOGO from "../layout/hms-logo.png"; // Import the logo image
+import HMS_LOGO from "../layout/hms-logo.png";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "../../firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
-// Updated interface to include the name field
+// Interface for the form data without the name field
 interface LoginForm {
   email: string;
   password: string;
-  role: UserRole | "" | string;
-  name: string;
+  role: string;
 }
 
 const userRoles = [
   {
-    value: "doctor" as UserRole,
+    value: "doctor",
     label: "Login as Doctor",
     icon: "👨‍⚕️",
     route: "/dashboard",
   },
   {
-    value: "pharmacist" as UserRole,
+    value: "pharmacist",
     label: "Login as Pharmacist",
     icon: "💊",
     route: "/dashboard",
   },
   {
-    value: "technician" as UserRole,
+    value: "technician",
     label: "Login as Technician",
     icon: "🔬",
     route: "/dashboard",
   },
   {
-    value: "receptionist" as UserRole,
+    value: "receptionist",
     label: "Login as Receptionist",
     icon: "📋",
     route: "/dashboard",
   },
   {
-    value: "staff-nurse" as UserRole,
+    value: "staff-nurse",
     label: "Login as Staff Nurse",
     icon: "👩‍⚕️",
     route: "/dashboard",
@@ -60,16 +59,13 @@ const LoginPage: React.FC = () => {
     email: "",
     password: "",
     role: "",
-    name: "", // Initialize the name field
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [errors, setErrors] = useState<Partial<LoginForm>>({});
   const [loginError, setLoginError] = useState("");
-  // New state to hold the user's name for display
-  const [userName, setUserName] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,7 +80,7 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  const handleRoleSelect = (role: UserRole) => {
+  const handleRoleSelect = (role: string) => {
     setFormData((prev) => ({ ...prev, role }));
     setIsDropdownOpen(false);
     if (errors.role) {
@@ -97,10 +93,6 @@ const LoginPage: React.FC = () => {
 
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginForm> = {};
-
-    if (!formData.name) {
-      newErrors.name = "Name is required";
-    }
 
     if (!formData.email) {
       newErrors.email = "Email is required";
@@ -127,38 +119,47 @@ const LoginPage: React.FC = () => {
 
     if (!validateForm()) return;
 
+    setIsLoading(true);
+    setLoginError("");
+
     try {
-      const success = await login(
+      await signInWithEmailAndPassword(
+        auth,
         formData.email,
-        formData.password,
-        formData.role as UserRole
+        formData.password
       );
 
-      if (success) {
-        // Get the name and role from the form data
-        const nameToStore = formData.name;
-        const roleToStore = formData.role;
-        // Set the name state for immediate display
-        setUserName(nameToStore);
-        // Set the cookies with the user's name and role
-        Cookies.set("userName", nameToStore, { expires: 7 });
-        Cookies.set("userRole", roleToStore, { expires: 7 });
-
-        const selectedRole = userRoles.find(
-          (role) => role.value === formData.role
-        );
-        if (selectedRole) {
-          navigate(selectedRole.route);
-        } else {
-          navigate("/dashboard"); // Fallback to dashboard
+      let userName = "User";
+      if (formData.role === "doctor") {
+        const q = query(collection(db, "doctors"), where("email", "==", formData.email));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          const doctorData = querySnapshot.docs[0].data();
+          userName = doctorData.doc_name;
         }
-      } else {
-        setLoginError(
-          "Invalid credentials. Please check your email, password, and role."
-        );
       }
-    } catch (error) {
-      setLoginError("Login failed. Please try again.");
+
+      Cookies.set("userRole", formData.role, { expires: 7 });
+      Cookies.set("userName", userName, { expires: 7 });
+
+      const selectedRole = userRoles.find(
+        (role) => role.value === formData.role
+      );
+      if (selectedRole) {
+        navigate(selectedRole.route);
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (error: any) {
+      let errorMessage = "Login failed. Please try again.";
+      if (error.code === "auth/invalid-email" || error.code === "auth/wrong-password" || error.code === "auth/user-not-found") {
+        errorMessage = "Invalid email or password.";
+      } else if (error.code === "auth/network-request-failed") {
+        errorMessage = "Network error. Please check your connection.";
+      }
+      setLoginError(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -182,35 +183,6 @@ const LoginPage: React.FC = () => {
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* New input field for Name */}
-            <div className="space-y-2">
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-[#0B2D4D]"
-              >
-                Full Name
-              </label>
-              <div className="relative">
-                <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
-                    errors.name ? "border-red-500 bg-red-50" : "border-gray-300"
-                  }`}
-                  placeholder="Enter your full name"
-                />
-              </div>
-              {errors.name && (
-                <p className="text-sm text-red-600 animate-fade-in">
-                  {errors.name}
-                </p>
-              )}
-            </div>
-
             <div className="space-y-2">
               <label
                 htmlFor="email"

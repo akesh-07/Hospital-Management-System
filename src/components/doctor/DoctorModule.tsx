@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import Ai from "./ai";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Stethoscope,
   FileText,
@@ -25,6 +26,9 @@ import {
   ClipboardList,
   Eye,
   BookOpen,
+  X,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import AIAssistTab from "./AIAssistTab";
 import { db } from "../../firebase";
@@ -39,6 +43,11 @@ import { Vitals } from "../../types";
 import PatientQueue from "../queue/PatientQueue";
 import { Patient } from "../../types";
 import PrescriptionModule from "../prescription/PrescriptionModule";
+import * as pdfjsLib from "pdfjs-dist";
+import mammoth from "mammoth";
+
+// Setup for PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`;
 
 interface DoctorModuleProps {
   selectedPatient?: Patient | null;
@@ -69,7 +78,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
   >("assessment");
   const [vitals, setVitals] = useState<Vitals | null>(null);
   const [consultation, setConsultation] = useState({
-    symptoms: [] as string[],
+    symptoms: [{ id: 1, symptom: "", duration: "", factors: "" }],
     duration: "",
     aggravatingFactors: [] as string[],
     generalExamination: [] as string[],
@@ -78,6 +87,147 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
     diagnosis: "",
     notes: "",
   });
+  const [uploadedFilesData, setUploadedFilesData] = useState<
+    Record<string, string>
+  >({});
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
+  const [aiSummary, setAiSummary] = useState("");
+  const [isAiSummaryLoading, setIsAiSummaryLoading] = useState(false);
+  const fileInputRefs = {
+    "Discharge Summary": useRef<HTMLInputElement>(null),
+    "X-Ray (PDF)": useRef<HTMLInputElement>(null),
+    "USG (PDF)": useRef<HTMLInputElement>(null),
+    "Investigation ROP": useRef<HTMLInputElement>(null),
+  };
+
+  // --- File Handling and Text Extraction ---
+  const extractTextFromFile = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          if (file.type === "application/pdf") {
+            const loadingTask = pdfjsLib.getDocument(
+              event.target?.result as ArrayBuffer
+            );
+            const pdf = await loadingTask.promise;
+            let text = "";
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const content = await page.getTextContent();
+              text += content.items.map((item: any) => item.str).join(" ");
+            }
+            resolve(text);
+          } else if (
+            file.type ===
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          ) {
+            const arrayBuffer = event.target?.result as ArrayBuffer;
+            const result = await mammoth.extractRawText({ arrayBuffer });
+            resolve(result.value);
+          } else if (file.type === "text/plain") {
+            resolve(event.target?.result as string);
+          } else {
+            reject(new Error("Unsupported file type"));
+          }
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = (error) => {
+        reject(error);
+      };
+
+      if (
+        file.type === "application/pdf" ||
+        file.type ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ) {
+        reader.readAsArrayBuffer(file);
+      } else {
+        reader.readAsText(file);
+      }
+    });
+  };
+
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    fileType: string
+  ) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      try {
+        const text = await extractTextFromFile(file);
+        setUploadedFilesData((prev) => ({ ...prev, [fileType]: text }));
+      } catch (error) {
+        console.error("Error extracting text from file:", error);
+      }
+    }
+  };
+
+  const handleAiSummary = async () => {
+    setIsSummaryModalOpen(true);
+    setIsAiSummaryLoading(true);
+    setAiSummary("");
+
+    const combinedData = `
+      Uploaded Medical History:
+      ${Object.entries(uploadedFilesData)
+        .map(([fileType, text]) => `${fileType}:\n${text}`)
+        .join("\n\n")}
+
+      Chief Complaints:
+      ${consultation.symptoms
+        .map(
+          (s) =>
+            `- Symptom: ${s.symptom}, Duration: ${s.duration}, Factors: ${s.factors}`
+        )
+        .join("\n")}
+
+      General Examination:
+      - Clinical Findings: ${consultation.generalExamination.join(", ")}
+      
+      Systemic Examination:
+      ${consultation.systemicExamination.join("\n")}
+    `;
+
+    try {
+      const response = await fetch(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer ",
+          },
+          body: JSON.stringify({
+            model: "llama-3.1-8b-instant",
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are a medical assistant. Summarize the patient's condition based on the provided data.",
+              },
+              {
+                role: "user",
+                content: combinedData,
+              },
+            ],
+          }),
+        }
+      );
+      const data = await response.json();
+      const summary =
+        data?.choices?.[0]?.message?.content?.trim() ||
+        "Could not generate summary.";
+      setAiSummary(summary);
+    } catch (error) {
+      console.error("Error generating AI summary:", error);
+      setAiSummary("An error occurred while generating the summary.");
+    } finally {
+      setIsAiSummaryLoading(false);
+    }
+  };
 
   // Fetch vitals from Firebase when a patient is selected
   useEffect(() => {
@@ -114,24 +264,38 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
     },
   ];
 
-  const toggleArrayItem = (
-    array: string[],
-    item: string,
-    setter: (fn: (prev: any) => any) => void
+  const handleSymptomChange = (
+    id: number,
+    field: "symptom" | "duration" | "factors",
+    value: string
   ) => {
-    setter((prev: any) => ({
+    setConsultation((prev) => ({
       ...prev,
-      [array === consultation.symptoms
-        ? "symptoms"
-        : array === consultation.aggravatingFactors
-        ? "aggravatingFactors"
-        : array === consultation.generalExamination
-        ? "generalExamination"
-        : array === consultation.systemicExamination
-        ? "systemicExamination"
-        : "investigations"]: array.includes(item)
-        ? array.filter((i) => i !== item)
-        : [...array, item],
+      symptoms: prev.symptoms.map((symptom) =>
+        symptom.id === id ? { ...symptom, [field]: value } : symptom
+      ),
+    }));
+  };
+
+  const addSymptomRow = () => {
+    setConsultation((prev) => ({
+      ...prev,
+      symptoms: [
+        ...prev.symptoms,
+        {
+          id: Date.now(),
+          symptom: "",
+          duration: "",
+          factors: "",
+        },
+      ],
+    }));
+  };
+
+  const removeSymptomRow = (id: number) => {
+    setConsultation((prev) => ({
+      ...prev,
+      symptoms: prev.symptoms.filter((symptom) => symptom.id !== id),
     }));
   };
 
@@ -414,30 +578,48 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
               <div className="bg-white p-4 rounded-lg border border-gray-200 transition-shadow hover:shadow-md">
                 <SectionHeader icon={FileDown} title="Medical History" />
                 <div className="space-y-2">
-                  {[
-                    { name: "Discharge Summary", icon: FileDown },
-                    { name: "X-Ray (PDF)", icon: FileDown },
-                    { name: "USG (PDF)", icon: FileDown },
-                    { name: "Investigation ROP", icon: FileDown },
-                  ].map((item, index) => (
-                    <button
-                      key={index}
-                      className="flex items-center space-x-2 w-full px-3 py-2 text-xs bg-gradient-to-r from-[#012e58]/5 to-[#012e58]/10 hover:from-[#012e58]/10 hover:to-[#012e58]/15 rounded-md border border-gray-200 transition-all duration-200 group"
-                    >
-                      <item.icon className="w-3 h-3 text-[#012e58] group-hover:scale-110 transition-transform" />
-                      <span className="font-medium text-[#0B2D4D]">
-                        {item.name}
-                      </span>
-                    </button>
+                  {Object.keys(fileInputRefs).map((name) => (
+                    <div key={name}>
+                      <input
+                        type="file"
+                        accept=".pdf,.docx,.txt"
+                        ref={fileInputRefs[name as keyof typeof fileInputRefs]}
+                        onChange={(e) => handleFileUpload(e, name)}
+                        style={{ display: "none" }}
+                      />
+                      <button
+                        onClick={() =>
+                          fileInputRefs[
+                            name as keyof typeof fileInputRefs
+                          ].current?.click()
+                        }
+                        className="flex items-center space-x-2 w-full px-3 py-2 text-xs bg-gradient-to-r from-[#012e58]/5 to-[#012e58]/10 hover:from-[#012e58]/10 hover:to-[#012e58]/15 rounded-md border border-gray-200 transition-all duration-200 group"
+                      >
+                        <Upload className="w-3 h-3 text-[#012e58] group-hover:scale-110 transition-transform" />
+                        <span className="font-medium text-[#0B2D4D]">
+                          {name}
+                        </span>
+                      </button>
+                    </div>
                   ))}
                 </div>
                 <div className="mt-3 pt-3 border-t border-gray-200">
-                  <div className="flex items-center justify-center space-x-1.5 text-[#012e58]">
-                    <Brain className="w-3 h-3" />
+                  <button
+                    onClick={handleAiSummary}
+                    disabled={isAiSummaryLoading}
+                    className="w-full flex items-center justify-center space-x-1.5 text-[#012e58] hover:bg-gray-100 p-2 rounded-md transition-colors"
+                  >
+                    {isAiSummaryLoading ? (
+                      <Loader className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Brain className="w-3 h-3" />
+                    )}
                     <span className="text-xs font-semibold">
-                      AI Assisted Summary
+                      {isAiSummaryLoading
+                        ? "Generating..."
+                        : "AI Assisted Summary"}
                     </span>
-                  </div>
+                  </button>
                 </div>
               </div>
             </div>
@@ -485,34 +667,78 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
                       <th className="p-2 text-left font-semibold text-xs">
                         Aggravating/Relieving Factors
                       </th>
+                      <th className="p-2 text-center font-semibold text-xs">
+                        Action
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="border-t border-gray-200">
-                      <td className="p-2">
-                        <input
-                          type="text"
-                          className={inputStyle}
-                          placeholder="Enter symptom"
-                        />
-                      </td>
-                      <td className="p-2">
-                        <input
-                          type="text"
-                          className={inputStyle}
-                          placeholder="Duration (e.g., 2 days)"
-                        />
-                      </td>
-                      <td className="p-2">
-                        <input
-                          type="text"
-                          className={inputStyle}
-                          placeholder="Factors that worsen/improve"
-                        />
-                      </td>
-                    </tr>
+                    {consultation.symptoms.map((symptom) => (
+                      <tr key={symptom.id} className="border-t border-gray-200">
+                        <td className="p-2">
+                          <input
+                            type="text"
+                            value={symptom.symptom}
+                            onChange={(e) =>
+                              handleSymptomChange(
+                                symptom.id,
+                                "symptom",
+                                e.target.value
+                              )
+                            }
+                            className={inputStyle}
+                            placeholder="Enter symptom"
+                          />
+                        </td>
+                        <td className="p-2">
+                          <input
+                            type="text"
+                            value={symptom.duration}
+                            onChange={(e) =>
+                              handleSymptomChange(
+                                symptom.id,
+                                "duration",
+                                e.target.value
+                              )
+                            }
+                            className={inputStyle}
+                            placeholder="Duration (e.g., 2 days)"
+                          />
+                        </td>
+                        <td className="p-2">
+                          <input
+                            type="text"
+                            value={symptom.factors}
+                            onChange={(e) =>
+                              handleSymptomChange(
+                                symptom.id,
+                                "factors",
+                                e.target.value
+                              )
+                            }
+                            className={inputStyle}
+                            placeholder="Factors that worsen/improve"
+                          />
+                        </td>
+                        <td className="p-2 text-center">
+                          <button
+                            onClick={() => removeSymptomRow(symptom.id)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
+                <button
+                  onClick={addSymptomRow}
+                  className="w-full mt-2 flex items-center justify-center space-x-1.5 p-2 text-xs font-medium text-[#012e58] bg-gray-100 hover:bg-gray-200 rounded-md"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Add Symptom</span>
+                </button>
               </div>
             </div>
 
@@ -674,10 +900,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
 
         {activeTab === "ai-assist" && selectedPatient && (
           <div className="space-y-4">
-            <AIAssistTab
-              consultation={consultation}
-              selectedPatient={selectedPatient}
-            />
+            <Ai consultation={consultation} selectedPatient={selectedPatient} />
           </div>
         )}
 
@@ -695,6 +918,25 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
           </div>
         </div>
       </div>
+      {isSummaryModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">AI Summary</h2>
+              <button onClick={() => setIsSummaryModalOpen(false)}>
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            {isAiSummaryLoading ? (
+              <div className="flex justify-center items-center">
+                <Loader className="w-8 h-8 animate-spin" />
+              </div>
+            ) : (
+              <p>{aiSummary}</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,18 +1,19 @@
 // src/components/DoctorForm.tsx
 import React, { useState } from "react";
 import {
-  UserPlus,
   Save,
   X,
   CheckCircle,
-  Calendar,
   HeartPulse,
   UserCog,
+  Mail,
+  Lock,
 } from "lucide-react";
-import { db } from "../../firebase"; // make sure this is your firebase config file
-import { collection, addDoc } from "firebase/firestore";
+import { db, auth } from "../../firebase"; // Import both db and auth
+import { doc, setDoc } from "firebase/firestore"; // Use setDoc instead of addDoc
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
-// Helper component for section headers to maintain consistency
+// Section Header Component
 const SectionHeader: React.FC<{ icon: React.ElementType; title: string }> = ({
   icon: Icon,
   title,
@@ -39,11 +40,15 @@ const DoctorForm: React.FC = () => {
     address: "",
     experience: "",
     specialization: "",
+    email: "",
+    password: "",
   });
 
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setDoctor({
       ...doctor,
       [e.target.name]: e.target.value,
@@ -52,8 +57,29 @@ const DoctorForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     try {
-      await addDoc(collection(db, "doctors"), doctor);
+      // Step 1: Create a new user in Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        doctor.email,
+        doctor.password
+      );
+
+      const user = userCredential.user;
+
+      // Step 2: Create a new object for Firestore, without the password
+      const { password, ...doctorData } = doctor;
+      
+      // Add a role field for role-based access control
+      const dataToStore = {
+        ...doctorData,
+        role: "doctor"
+      };
+
+      // Step 3: Use the user's UID to set the document in Firestore
+      await setDoc(doc(db, "doctors", user.uid), dataToStore);
+
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
 
@@ -69,10 +95,16 @@ const DoctorForm: React.FC = () => {
         address: "",
         experience: "",
         specialization: "",
+        email: "",
+        password: "",
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error adding doctor:", err);
-      alert("Failed to add doctor ❌");
+      if (err.code === "auth/email-already-in-use") {
+        alert("This email is already registered. Please use a different one.");
+      } else {
+        alert("Failed to register doctor. Please try again.");
+      }
     }
   };
 
@@ -88,6 +120,8 @@ const DoctorForm: React.FC = () => {
       address: "",
       experience: "",
       specialization: "",
+      email: "",
+      password: "",
     });
     setShowSuccess(false);
   };
@@ -110,7 +144,7 @@ const DoctorForm: React.FC = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-            {/* Left Column for Personal Details */}
+            {/* Left Column - Personal Details */}
             <div className="space-y-4">
               <div className="bg-white p-4 rounded-xl border border-gray-200 transition-shadow hover:shadow-md">
                 <SectionHeader icon={UserCog} title="Personal Details" />
@@ -183,9 +217,34 @@ const DoctorForm: React.FC = () => {
                   </select>
                 </div>
               </div>
+
+              {/* Login Credentials */}
+              <div className="bg-white p-4 rounded-xl border border-gray-200 transition-shadow hover:shadow-md">
+                <SectionHeader icon={Mail} title="Credentials" />
+                <div className="grid grid-cols-1 gap-3">
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    name="email"
+                    className={inputStyle}
+                    value={doctor.email}
+                    onChange={handleChange}
+                    required
+                  />
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    name="password"
+                    className={inputStyle}
+                    value={doctor.password}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Right Column for Professional Details */}
+            {/* Right Column - Professional Details */}
             <div className="space-y-4">
               <div className="bg-white p-4 rounded-xl border border-gray-200 transition-shadow hover:shadow-md">
                 <SectionHeader icon={HeartPulse} title="Professional Details" />
