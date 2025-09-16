@@ -1,308 +1,350 @@
-// src/components/DoctorForm.tsx
+// src/components/auth/LoginPage.tsx
+
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
 import {
-  Save,
-  X,
-  CheckCircle,
-  HeartPulse,
-  UserCog,
-  Mail,
+  Eye,
+  EyeOff,
+  User,
   Lock,
+  Mail,
+  ChevronDown,
 } from "lucide-react";
-import { db, auth } from "../../firebase"; // Import both db and auth
-import { doc, setDoc } from "firebase/firestore"; // Use setDoc instead of addDoc
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import HMS_LOGO from "../layout/hms-logo.png";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "../../firebase";
+import { useAuth } from "../../contexts/AuthContext";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
-// Section Header Component
-const SectionHeader: React.FC<{ icon: React.ElementType; title: string }> = ({
-  icon: Icon,
-  title,
-}) => (
-  <div className="flex items-center space-x-2 mb-4">
-    <div className="bg-accent-blue/10 p-1.5 rounded-lg">
-      <Icon className="w-5 h-5 text-accent-blue" />
-    </div>
-    <h2 className="text-lg font-bold text-primary-dark tracking-tight">
-      {title}
-    </h2>
-  </div>
-);
+// Interface for the form data without the name field
+interface LoginForm {
+  email: string;
+  password: string;
+  role: string;
+}
 
-const DoctorForm: React.FC = () => {
-  const [doctor, setDoctor] = useState({
-    nmr_id: "",
-    doc_id: "",
-    doc_name: "",
-    mobile: "",
-    adhar: "",
-    age: "",
-    gender: "",
-    address: "",
-    experience: "",
-    specialization: "",
+const userRoles = [
+  {
+    value: "doctor",
+    label: "Login as Doctor",
+    icon: "👨‍⚕️",
+    route: "/dashboard",
+  },
+  {
+    value: "pharmacist",
+    label: "Login as Pharmacist",
+    icon: "💊",
+    route: "/dashboard",
+  },
+  {
+    value: "technician",
+    label: "Login as Technician",
+    icon: "🔬",
+    route: "/dashboard",
+  },
+  {
+    value: "receptionist",
+    label: "Login as Receptionist",
+    icon: "📋",
+    route: "/dashboard",
+  },
+  {
+    value: "staff-nurse",
+    label: "Login as Staff Nurse",
+    icon: "👩‍⚕️",
+    route: "/dashboard",
+  },
+];
+
+const LoginPage: React.FC = () => {
+  const [formData, setFormData] = useState<LoginForm>({
     email: "",
     password: "",
+    role: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [errors, setErrors] = useState<Partial<LoginForm>>({});
+  const [loginError, setLoginError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [showSuccess, setShowSuccess] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setDoctor({
-      ...doctor,
-      [e.target.name]: e.target.value,
-    });
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (errors[name as keyof LoginForm]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+    if (loginError) {
+      setLoginError("");
+    }
+  };
+
+  const handleRoleSelect = (role: string) => {
+    setFormData((prev) => ({ ...prev, role }));
+    setIsDropdownOpen(false);
+    if (errors.role) {
+      setErrors((prev) => ({ ...prev, role: "" }));
+    }
+    if (loginError) {
+      setLoginError("");
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Partial<LoginForm> = {};
+
+    if (!formData.email) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    if (!formData.role) {
+      newErrors.role = "Please select your role";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+    setLoginError("");
+
     try {
-      // Step 1: Create a new user in Firebase Authentication
-      const userCredential = await createUserWithEmailAndPassword(
+      // Step 1: Authenticate with Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(
         auth,
-        doctor.email,
-        doctor.password
+        formData.email,
+        formData.password
       );
 
-      const user = userCredential.user;
+      // Step 2: Call the login function from AuthContext with email and role
+      const success = await login(formData.email, formData.role as UserRole);
 
-      // Step 2: Create a new object for Firestore, without the password
-      const { password, ...doctorData } = doctor;
-      
-      // Add a role field for role-based access control
-      const dataToStore = {
-        ...doctorData,
-        role: "doctor"
-      };
-
-      // Step 3: Use the user's UID to set the document in Firestore
-      await setDoc(doc(db, "doctors", user.uid), dataToStore);
-
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
-
-      // Reset form
-      setDoctor({
-        nmr_id: "",
-        doc_id: "",
-        doc_name: "",
-        mobile: "",
-        adhar: "",
-        age: "",
-        gender: "",
-        address: "",
-        experience: "",
-        specialization: "",
-        email: "",
-        password: "",
-      });
-    } catch (err: any) {
-      console.error("Error adding doctor:", err);
-      if (err.code === "auth/email-already-in-use") {
-        alert("This email is already registered. Please use a different one.");
+      if (success) {
+        const selectedRole = userRoles.find(
+          (role) => role.value === formData.role
+        );
+        if (selectedRole) {
+          navigate(selectedRole.route);
+        } else {
+          navigate("/dashboard");
+        }
       } else {
-        alert("Failed to register doctor. Please try again.");
+        setLoginError("Login failed. User data not found in Firestore.");
       }
+    } catch (error: any) {
+      let errorMessage = "Login failed. Please try again.";
+      if (error.code === "auth/invalid-email" || error.code === "auth/wrong-password" || error.code === "auth/user-not-found") {
+        errorMessage = "Invalid email or password.";
+      }
+      setLoginError(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const clearForm = () => {
-    setDoctor({
-      nmr_id: "",
-      doc_id: "",
-      doc_name: "",
-      mobile: "",
-      adhar: "",
-      age: "",
-      gender: "",
-      address: "",
-      experience: "",
-      specialization: "",
-      email: "",
-      password: "",
-    });
-    setShowSuccess(false);
-  };
-
-  const inputStyle =
-    "p-2.5 border border-gray-300 rounded-lg w-full bg-gray-50 focus:ring-2 focus:ring-accent-blue focus:border-accent-blue transition duration-200 ease-in-out text-primary-light placeholder:text-gray-500 text-sm";
+  const selectedRole = userRoles.find((role) => role.value === formData.role);
 
   return (
-    <div className="p-4 bg-gray-100 min-h-screen font-sans">
-      <div className="max-w-4xl mx-auto bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
-        {/* Success Message */}
-        {showSuccess && (
-          <div className="mb-4 bg-accent-blue/10 border-l-4 border-accent-blue text-blue-900 p-3 rounded-r-lg flex items-center space-x-3">
-            <CheckCircle className="w-5 h-5 text-accent-blue" />
-            <span className="font-medium">
-              Doctor registered successfully!
-            </span>
-          </div>
-        )}
+    <div className="min-h-screen bg-gradient-to-br from-[#e0f7fa] via-white to-[#e0f2f1] flex items-center justify-center p-4">
+      <div className="relative w-full max-w-md">
+        <div className="text-center mb-6">
+          <img
+            src={HMS_LOGO}
+            alt="Clinexa Hospital"
+            className="mx-auto w-40 sm:w-48 md:w-56 lg:w-64 object-contain"
+          />
+        </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-            {/* Left Column - Personal Details */}
-            <div className="space-y-4">
-              <div className="bg-white p-4 rounded-xl border border-gray-200 transition-shadow hover:shadow-md">
-                <SectionHeader icon={UserCog} title="Personal Details" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input
-                    type="text"
-                    placeholder="NMR ID"
-                    name="nmr_id"
-                    className={inputStyle}
-                    value={doctor.nmr_id}
-                    onChange={handleChange}
-                    required
-                  />
-                  <input
-                    type="text"
-                    placeholder="Doc ID"
-                    name="doc_id"
-                    className={inputStyle}
-                    value={doctor.doc_id}
-                    onChange={handleChange}
-                    required
-                  />
-                  <input
-                    type="text"
-                    placeholder="Doctor's Name"
-                    name="doc_name"
-                    className={`${inputStyle} sm:col-span-2`}
-                    value={doctor.doc_name}
-                    onChange={handleChange}
-                    required
-                  />
-                  <input
-                    type="text"
-                    placeholder="Adhar"
-                    name="adhar"
-                    className={inputStyle}
-                    value={doctor.adhar}
-                    onChange={handleChange}
-                    required
-                  />
-                  <input
-                    type="text"
-                    placeholder="Mobile Number"
-                    name="mobile"
-                    className={inputStyle}
-                    value={doctor.mobile}
-                    onChange={handleChange}
-                    required
-                  />
-                  <input
-                    type="number"
-                    placeholder="Age"
-                    name="age"
-                    className={inputStyle}
-                    value={doctor.age}
-                    onChange={handleChange}
-                    required
-                  />
-                  <select
-                    name="gender"
-                    className={inputStyle}
-                    value={doctor.gender}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Login Credentials */}
-              <div className="bg-white p-4 rounded-xl border border-gray-200 transition-shadow hover:shadow-md">
-                <SectionHeader icon={Mail} title="Credentials" />
-                <div className="grid grid-cols-1 gap-3">
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    name="email"
-                    className={inputStyle}
-                    value={doctor.email}
-                    onChange={handleChange}
-                    required
-                  />
-                  <input
-                    type="password"
-                    placeholder="Password"
-                    name="password"
-                    className={inputStyle}
-                    value={doctor.password}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
+        <div className="bg-white rounded-2xl shadow-2xl p-8 backdrop-blur-sm border border-gray-100">
+          {loginError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{loginError}</p>
             </div>
-
-            {/* Right Column - Professional Details */}
-            <div className="space-y-4">
-              <div className="bg-white p-4 rounded-xl border border-gray-200 transition-shadow hover:shadow-md">
-                <SectionHeader icon={HeartPulse} title="Professional Details" />
-                <div className="grid grid-cols-1 gap-3">
-                  <input
-                    type="text"
-                    placeholder="Specialization"
-                    name="specialization"
-                    className={inputStyle}
-                    value={doctor.specialization}
-                    onChange={handleChange}
-                    required
-                  />
-                  <input
-                    type="text"
-                    placeholder="Experience"
-                    name="experience"
-                    className={inputStyle}
-                    value={doctor.experience}
-                    onChange={handleChange}
-                    required
-                  />
-                  <input
-                    type="text"
-                    placeholder="Address"
-                    name="address"
-                    className={inputStyle}
-                    value={doctor.address}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-[#0B2D4D]"
+              >
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
+                    errors.email
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-300"
+                  }`}
+                  placeholder="Enter your email"
+                />
               </div>
+              {errors.email && (
+                <p className="text-sm text-red-600 animate-fade-in">
+                  {errors.email}
+                </p>
+              )}
             </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-4 mt-6 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              className="group flex items-center px-5 py-2.5 border border-accent-blue rounded-lg text-accent-blue bg-white hover:bg-accent-blue hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-blue transition-all duration-300 font-medium"
-              onClick={clearForm}
-            >
-              <X className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:rotate-90" />
-              Clear Form
-            </button>
+            <div className="space-y-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-[#0B2D4D]"
+              >
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className={`w-full pl-11 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
+                    errors.password
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-300"
+                  }`}
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-sm text-red-600 animate-fade-in">
+                  {errors.password}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-[#0B2D4D]">
+                Select Your Role
+              </label>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className={`w-full flex items-center justify-between pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
+                    errors.role ? "border-red-500 bg-red-50" : "border-gray-300"
+                  } ${formData.role ? "text-[#0B2D4D]" : "text-gray-500"}`}
+                >
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <span className="flex items-center gap-2">
+                    {selectedRole ? (
+                      <>
+                        <span>{selectedRole.icon}</span>
+                        <span>{selectedRole.label}</span>
+                      </>
+                    ) : (
+                      "Select your role"
+                    )}
+                  </span>
+                  <ChevronDown
+                    className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
+                      isDropdownOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                {isDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 animate-fade-in">
+                    {userRoles.map((role) => (
+                      <button
+                        key={role.value}
+                        type="button"
+                        onClick={() => handleRoleSelect(role.value)}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#e0f7fa] transition-colors duration-150 first:rounded-t-lg last:rounded-b-lg"
+                      >
+                        <span className="text-lg">{role.icon}</span>
+                        <span className="text-[#0B2D4D]">{role.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {errors.role && (
+                <p className="text-sm text-red-600 animate-fade-in">
+                  {errors.role}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center justify-between">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  className="rounded border-gray-300 text-[#012e58] focus:ring-[#1a4b7a] focus:ring-2"
+                />
+                <span className="ml-2 text-sm text-[#1a4b7a]">Remember me</span>
+              </label>
+              <a
+                href="#"
+                className="text-sm text-[#012e58] hover:text-[#1a4b7a] transition-colors"
+              >
+                Forgot password?
+              </a>
+            </div>
             <button
               type="submit"
-              className="flex items-center px-6 py-2.5 bg-primary-dark text-white font-semibold rounded-lg shadow-md hover:bg-primary-dark/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-all duration-300"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-[#012e58] to-[#1a4b7a] hover:from-[#1a4b7a] hover:to-[#012e58] text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-[#1a4b7a] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
             >
-              <Save className="w-4 h-4 mr-2" />
-              Register Doctor
+              {isLoading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Signing In...</span>
+                </div>
+              ) : (
+                "Sign In"
+              )}
             </button>
+          </form>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-[#1a4b7a]">
+              Need help? Contact{" "}
+              <a
+                href="#"
+                className="text-[#012e58] hover:text-[#1a4b7a] transition-colors"
+              >
+                IT Support
+              </a>
+            </p>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
 };
 
-export default DoctorForm;
+export default LoginPage;
