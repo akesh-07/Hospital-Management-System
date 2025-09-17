@@ -159,9 +159,6 @@ export const Dashboard: React.FC = () => {
           <h1 className="text-xl font-bold text-[#0B2D4D] mb-1">
             Basic Analytics
           </h1>
-          <p className="text-sm text-[#1a4b7a]">
-            Welcome back, {userName || "User"}. Here's your overview.
-          </p>
         </div>
 
         {/* Main Content Area */}

@@ -1,6 +1,14 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, UserPlus, Users, Stethoscope, Pill } from "lucide-react";
+import {
+  Home,
+  UserPlus,
+  Users,
+  Stethoscope,
+  Pill,
+  GitGraph,
+  LineChart,
+} from "lucide-react";
 import { UserRole } from "../../contexts/AuthContext";
 import { useAuth } from "../../contexts/AuthContext";
 import HMS_LOGO from "./HMS-bgr.png";
@@ -10,7 +18,6 @@ interface SidebarProps {
 }
 
 const allNavigationItems = [
-  { id: "dashboard", label: "Dashboard", icon: Home, path: "/dashboard" },
   {
     id: "registration",
     label: "Registration",
@@ -18,8 +25,9 @@ const allNavigationItems = [
     path: "/registration",
   },
   { id: "queue", label: "Pre-OPD", icon: Users, path: "/pre-opd" },
-  { id: "doctor", label: "Doctor", icon: Stethoscope, path: "/doctor" }, // Added a doctor-specific route
+  // { id: "doctor", label: "Doctor", icon: Stethoscope, path: "/doctor" }, // Added a doctor-specific route
   { id: "pharmacy", label: "Pharmacy", icon: Pill, path: "/pharmacy" },
+  { id: "dashboard", label: "Analytics", icon: LineChart, path: "/dashboard" },
 ];
 
 const rolePermissions: Record<UserRole, string[]> = {
@@ -98,17 +106,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSection }) => {
       </nav>
 
       {/* System Status - matching original bottom section */}
-      <div className="p-4 mt-8 border-t border-white/10">
-        <div className="bg-white/10 p-4 rounded-lg backdrop-blur-sm">
-          <div className="flex items-center space-x-2 mb-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium text-white/90">
-              System Status
-            </span>
-          </div>
-          <p className="text-xs text-white/70">All systems operational</p>
-        </div>
-      </div>
     </aside>
   );
 };

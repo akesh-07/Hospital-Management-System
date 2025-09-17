@@ -244,7 +244,7 @@ const PatientQueue: React.FC = () => {
               onClick={(e) => handleDoctorClick(patient, e)}
               className="flex-1 px-3 py-1 text-sm bg-[#e0f7fa] text-[#012e58] rounded-lg hover:bg-[#b3e5fc]"
             >
-              Doctor
+              Start Consultation
             </button>
           )}
         </div>
