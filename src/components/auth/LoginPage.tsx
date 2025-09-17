@@ -20,31 +20,31 @@ const userRoles = [
     value: "doctor",
     label: "Login as Doctor",
     icon: "👨‍⚕️",
-    route: "/dashboard",
+    route: "/pre-opd", // Corrected route for Doctor
   },
   {
     value: "pharmacist",
     label: "Login as Pharmacist",
     icon: "💊",
-    route: "/dashboard",
+    route: "/pharmacy", // Corrected route for Pharmacist
   },
   {
     value: "technician",
     label: "Login as Technician",
     icon: "🔬",
-    route: "/dashboard",
+    route: "/dashboard", // Defaulting to dashboard
   },
   {
     value: "receptionist",
     label: "Login as Receptionist",
     icon: "📋",
-    route: "/dashboard",
+    route: "/registration", // Corrected route for Receptionist
   },
   {
     value: "staff-nurse",
     label: "Login as Staff Nurse",
     icon: "👩‍⚕️",
-    route: "/dashboard",
+    route: "/pre-opd", // Corrected route for Staff Nurse
   },
 ];
 
@@ -149,12 +149,15 @@ const LoginPage: React.FC = () => {
         name: userName,
       });
 
+      // Find the correct route based on the selected role
       const selectedRole = userRoles.find(
         (role) => role.value === formData.role
       );
+
       if (selectedRole) {
         navigate(selectedRole.route);
       } else {
+        // Fallback for roles not in the list
         navigate("/dashboard");
       }
     } catch (error: any) {
