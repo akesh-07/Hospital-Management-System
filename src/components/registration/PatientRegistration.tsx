@@ -7,6 +7,7 @@ import {
   Calendar,
   HeartPulse,
   UserCog,
+  Upload,
 } from "lucide-react";
 import { db } from "../../firebase";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
@@ -43,13 +44,24 @@ export const PatientRegistration: React.FC = () => {
     preferredLanguage: "English",
     doctorAssigned: "",
     chronicConditions: [] as string[],
+    // Added new state for files
+    files: null as FileList | null,
   });
 
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Handle file input change
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, files: e.target.files });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // You would typically upload files to a storage service like Firebase Storage here.
+      // For this example, we'll just log the files to the console.
+      console.log("Files to upload:", formData.files);
+
       await addDoc(collection(db, "patients"), {
         ...formData,
         createdAt: Timestamp.now(),
@@ -74,6 +86,7 @@ export const PatientRegistration: React.FC = () => {
         preferredLanguage: "English",
         doctorAssigned: "",
         chronicConditions: [],
+        files: null,
       });
     } catch (error) {
       console.error("Error adding patient:", error);
@@ -117,6 +130,7 @@ export const PatientRegistration: React.FC = () => {
       preferredLanguage: "English",
       doctorAssigned: "",
       chronicConditions: [],
+      files: null,
     });
     setShowSuccess(false);
   };
@@ -138,8 +152,6 @@ export const PatientRegistration: React.FC = () => {
         )}
 
         <div className="flex-grow overflow-y-auto pr-2 custom-scrollbar">
-          {" "}
-          {/* 👈 Scrollable container added */}
           <form onSubmit={handleSubmit} className="h-full">
             {/* Two Column Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -318,7 +330,7 @@ export const PatientRegistration: React.FC = () => {
                       ))}
                     </div>
                   </div>
-                  {/* Preferences */}
+                  {/* Additional Preferences & File Upload */}
                   <div>
                     <h3 className="text-sm font-semibold text-primary-light mb-2">
                       Additional Preferences
@@ -365,6 +377,27 @@ export const PatientRegistration: React.FC = () => {
                           })
                         }
                       />
+                      {/* File Upload Button */}
+                      <label className="sm:col-span-2 block cursor-pointer">
+                        <span className="sr-only">Choose file</span>
+                        <div
+                          className={`${inputStyle} flex items-center justify-between text-gray-500`}
+                        >
+                          <span className="truncate">
+                            {formData.files && formData.files.length > 0
+                              ? `${formData.files.length} file(s) selected`
+                              : "Upload past medical documents"}
+                          </span>
+                          <Upload className="w-4 h-4 text-gray-400" />
+                        </div>
+                        <input
+                          type="file"
+                          className="hidden"
+                          onChange={handleFileChange}
+                          multiple
+                          accept=".pdf, .docx"
+                        />
+                      </label>
                     </div>
                   </div>
                 </div>
@@ -386,7 +419,7 @@ export const PatientRegistration: React.FC = () => {
           <button
             type="submit"
             className="flex items-center px-6 py-2.5 bg-primary-dark text-white font-semibold rounded-lg shadow-md hover:bg-primary-dark/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-all duration-300"
-            onClick={handleSubmit} // Re-add onClick handler for submit button
+            onClick={handleSubmit}
           >
             <Save className="w-4 h-4 mr-2" />
             Register Patient

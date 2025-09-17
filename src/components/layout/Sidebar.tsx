@@ -6,7 +6,6 @@ import {
   Users,
   Stethoscope,
   Pill,
-  GitGraph,
   LineChart,
 } from "lucide-react";
 import { UserRole } from "../../contexts/AuthContext";
@@ -25,13 +24,12 @@ const allNavigationItems = [
     path: "/registration",
   },
   { id: "queue", label: "Pre-OPD", icon: Users, path: "/pre-opd" },
-  // { id: "doctor", label: "Doctor", icon: Stethoscope, path: "/doctor" }, // Added a doctor-specific route
   { id: "pharmacy", label: "Pharmacy", icon: Pill, path: "/pharmacy" },
   { id: "dashboard", label: "Analytics", icon: LineChart, path: "/dashboard" },
 ];
 
 const rolePermissions: Record<UserRole, string[]> = {
-  doctor: ["dashboard", "queue", "doctor"],
+  doctor: ["dashboard", "queue"], // Removed "doctor" as it's not in allNavigationItems
   pharmacist: ["dashboard", "pharmacy"],
   "staff-nurse": ["dashboard", "queue"],
   receptionist: ["dashboard", "registration", "queue"],
