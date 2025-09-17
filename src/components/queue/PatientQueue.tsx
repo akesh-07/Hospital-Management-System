@@ -1,5 +1,4 @@
-// src/components/queue/PatientQueue.tsx
-
+import Cookies from "js-cookie";
 import React, { useEffect, useState } from "react";
 import {
   Users,
@@ -60,6 +59,14 @@ const PatientQueue: React.FC = () => {
   const [vitalsPatient, setVitalsPatient] = useState<Patient | null>(null);
   const [showDoctor, setShowDoctor] = useState(false);
   const [doctorPatient, setDoctorPatient] = useState<Patient | null>(null);
+  // 👤 Get user role from cookie
+  const storedRole = Cookies.get("userRole");
+  const currentUserRole =
+    storedRole === "doctor"
+      ? "Doctor"
+      : storedRole === "staff-nurse"
+      ? "Nurse"
+      : "";
 
   // 🔥 Fetch patients from Firestore
   useEffect(() => {
@@ -116,7 +123,7 @@ const PatientQueue: React.FC = () => {
       onClick={onToggle}
     >
       {/* --- First Line: 6-Column Layout --- */}
-      <div className="flex justify-around gap-6 text-sm items-center">
+      <div className="flex justify-between gap-6 text-sm items-center">
         {/* Patient Name and Details */}
         <div className="col-span-2 rounded-none flex items-center space-x-3">
           <div className="w-10 h-10 bg-[#e0f7fa] rounded-full flex items-center justify-center">
@@ -154,6 +161,7 @@ const PatientQueue: React.FC = () => {
             </span>
           </div>
         </div>
+
         <div className="flex justify-between items-center mb-2">
           <span
             className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(
@@ -174,7 +182,7 @@ const PatientQueue: React.FC = () => {
 
       {/* --- Detailed Info (Accordion Content) with Transition --- */}
       <div
-        className={`grid grid-cols-3 gap-4 text-sm overflow-hidden transition-all duration-300 ease-in-out ${
+        className={`grid grid-cols-3 justify-a gap-4 text-sm overflow-hidden transition-all duration-300 ease-in-out ${
           isOpen
             ? "max-h-96 opacity-100 pt-4 mt-3 border-t border-gray-200"
             : "max-h-0 opacity-0"
@@ -200,10 +208,7 @@ const PatientQueue: React.FC = () => {
             {patient.abhaId ? "ABHA Linked" : "No ABHA"}
           </span>
         </div>
-        <div className="">
-          <span className="font-medium text-[#0B2D4D]">Address:</span>
-          <p className="text-[#1a4b7a] mt-1">{patient.address}</p>
-        </div>
+
         <div className="">
           <span className="font-medium text-[#0B2D4D]">
             Chronic Conditions:
@@ -225,18 +230,23 @@ const PatientQueue: React.FC = () => {
             isOpen ? "mt-3 pt-3 opacity-100" : "max-h-0 opacity-0"
           }`}
         >
-          <button
-            onClick={(e) => handleVitalsClick(patient, e)}
-            className="flex-1 px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200"
-          >
-            Vitals
-          </button>
-          <button
-            onClick={(e) => handleDoctorClick(patient, e)}
-            className="flex-1 px-3 py-1 text-sm bg-[#e0f7fa] text-[#012e58] rounded-lg hover:bg-[#b3e5fc]"
-          >
-            Doctor
-          </button>
+          {currentUserRole === "Nurse" && (
+            <button
+              onClick={(e) => handleVitalsClick(patient, e)}
+              className="flex-1 px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200"
+            >
+              Vitals
+            </button>
+          )}
+
+          {currentUserRole === "Doctor" && (
+            <button
+              onClick={(e) => handleDoctorClick(patient, e)}
+              className="flex-1 px-3 py-1 text-sm bg-[#e0f7fa] text-[#012e58] rounded-lg hover:bg-[#b3e5fc]"
+            >
+              Start Consultation
+            </button>
+          )}
         </div>
       </div>
     </div>

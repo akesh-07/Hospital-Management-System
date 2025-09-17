@@ -5,6 +5,15 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
+import {
+  User as FirebaseUser,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+} from "firebase/auth";
+import Cookies from "js-cookie";
+import { auth, db } from "../firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 export type UserRole =
   | "doctor"
@@ -23,9 +32,10 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string, role: UserRole) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
   isLoading: boolean;
+  setUser: (user: User | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -46,19 +56,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing session on app load
   useEffect(() => {
-    const savedUser = localStorage.getItem("hospital_user");
-    if (savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-      } catch (error) {
-        console.error("Error parsing saved user:", error);
-        localStorage.removeItem("hospital_user");
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const userRole = Cookies.get("userRole");
+        const userName = Cookies.get("userName");
+
+        // Check if both cookies exist
+        if (userRole && userName) {
+          setUser({
+            id: firebaseUser.uid,
+            email: firebaseUser.email || "",
+            role: userRole as UserRole,
+            name: userName,
+          });
+        } else {
+          // If cookies are missing, but a Firebase user exists, we have an inconsistency.
+          // This can happen on app start or if cookies are cleared.
+          // Re-fetch user data from Firestore to ensure integrity.
+          const q = query(
+            collection(db, "doctors"), // Assuming 'doctors' is the primary source
+            where("email", "==", firebaseUser.email)
+          );
+          const querySnapshot = await getDocs(q);
+          if (!querySnapshot.empty) {
+            const doctorData = querySnapshot.docs[0].data();
+            const fetchedRole = "doctor"; // Assume doctor if found in doctors collection
+            const fetchedName = doctorData.doc_name;
+
+            Cookies.set("userRole", fetchedRole, { expires: 7 });
+            Cookies.set("userName", fetchedName, { expires: 7 });
+
+            setUser({
+              id: firebaseUser.uid,
+              email: firebaseUser.email || "",
+              role: fetchedRole as UserRole,
+              name: fetchedName,
+            });
+          }
+        }
+      } else {
+        setUser(null);
+        Cookies.remove("userRole");
+        Cookies.remove("userName");
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const login = async (
@@ -66,35 +111,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     password: string,
     role: UserRole
   ): Promise<boolean> => {
-    setIsLoading(true);
-
-    // Simulate API call - replace with actual authentication logic
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Mock authentication - in real app, validate against backend
-        if (email && password && role) {
-          const mockUser: User = {
-            id: `${role}_${Date.now()}`,
-            email,
-            role,
-            name: `${role.charAt(0).toUpperCase() + role.slice(1)} User`,
-          };
-
-          setUser(mockUser);
-          localStorage.setItem("hospital_user", JSON.stringify(mockUser));
-          setIsLoading(false);
-          resolve(true);
-        } else {
-          setIsLoading(false);
-          resolve(false);
-        }
-      }, 1500); // Simulate network delay
-    });
+    try {
+      // The actual login logic is now handled by the LoginPage component
+      // This context function is just to be consistent with the provided structure.
+      // Since LoginPage handles it, we can leave this simple or remove it.
+      // For now, let's keep it but note that its use is optional with the new structure.
+      await signInWithEmailAndPassword(auth, email, password);
+      return true;
+    } catch (error) {
+      console.error("Login failed:", error);
+      return false;
+    }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("hospital_user");
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      // onAuthStateChanged will handle clearing the user state and cookies
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   const value: AuthContextType = {
@@ -103,6 +139,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     isAuthenticated: !!user,
     isLoading,
+    setUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

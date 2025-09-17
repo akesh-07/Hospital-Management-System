@@ -5,10 +5,8 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
-
 import { Header } from "./components/layout/Header";
 import { Sidebar } from "./components/layout/Sidebar";
 import LoginPage from "./components/auth/LoginPage";
