@@ -1,18 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-import {
-  Eye,
-  EyeOff,
-  User,
-  Lock,
-  Mail,
-  ChevronDown,
-} from "lucide-react";
+import { Eye, EyeOff, User, Lock, Mail, ChevronDown } from "lucide-react";
 import HMS_LOGO from "../layout/hms-logo.png";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth, db } from "../../firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
+import { auth, db } from "../../firebase";
+import { useAuth } from "../../contexts/AuthContext";
 
 // Interface for the form data without the name field
 interface LoginForm {
@@ -67,6 +61,7 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -123,7 +118,7 @@ const LoginPage: React.FC = () => {
     setLoginError("");
 
     try {
-      await signInWithEmailAndPassword(
+      const userCredential = await signInWithEmailAndPassword(
         auth,
         formData.email,
         formData.password
@@ -131,7 +126,10 @@ const LoginPage: React.FC = () => {
 
       let userName = "User";
       if (formData.role === "doctor") {
-        const q = query(collection(db, "doctors"), where("email", "==", formData.email));
+        const q = query(
+          collection(db, "doctors"),
+          where("email", "==", formData.email)
+        );
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
           const doctorData = querySnapshot.docs[0].data();
@@ -139,8 +137,17 @@ const LoginPage: React.FC = () => {
         }
       }
 
+      // Store user info in a cookie
       Cookies.set("userRole", formData.role, { expires: 7 });
       Cookies.set("userName", userName, { expires: 7 });
+
+      // Update AuthContext state directly
+      setUser({
+        id: userCredential.user.uid,
+        email: formData.email,
+        role: formData.role,
+        name: userName,
+      });
 
       const selectedRole = userRoles.find(
         (role) => role.value === formData.role
@@ -152,7 +159,11 @@ const LoginPage: React.FC = () => {
       }
     } catch (error: any) {
       let errorMessage = "Login failed. Please try again.";
-      if (error.code === "auth/invalid-email" || error.code === "auth/wrong-password" || error.code === "auth/user-not-found") {
+      if (
+        error.code === "auth/invalid-email" ||
+        error.code === "auth/wrong-password" ||
+        error.code === "auth/user-not-found"
+      ) {
         errorMessage = "Invalid email or password.";
       } else if (error.code === "auth/network-request-failed") {
         errorMessage = "Network error. Please check your connection.";

@@ -1,4 +1,3 @@
-// src/components/queue/PatientQueue.tsx
 import Cookies from "js-cookie";
 import React, { useEffect, useState } from "react";
 import {

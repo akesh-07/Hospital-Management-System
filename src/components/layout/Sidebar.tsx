@@ -4,6 +4,7 @@ import { Home, UserPlus, Users, Stethoscope, Pill } from "lucide-react";
 import { UserRole } from "../../contexts/AuthContext";
 import { useAuth } from "../../contexts/AuthContext";
 import HMS_LOGO from "./HMS-bgr.png";
+
 interface SidebarProps {
   activeSection: string;
 }
@@ -17,7 +18,7 @@ const allNavigationItems = [
     path: "/registration",
   },
   { id: "queue", label: "Pre-OPD", icon: Users, path: "/pre-opd" },
-
+  { id: "doctor", label: "Doctor", icon: Stethoscope, path: "/doctor" }, // Added a doctor-specific route
   { id: "pharmacy", label: "Pharmacy", icon: Pill, path: "/pharmacy" },
 ];
 
@@ -30,13 +31,14 @@ const rolePermissions: Record<UserRole, string[]> = {
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeSection }) => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const getVisibleItems = () => {
-    if (!user?.role || !rolePermissions[user.role]) {
-      return allNavigationItems.filter((item) => item.id === "dashboard");
+    // Return an empty array if user or role is not yet determined
+    if (isLoading || !user?.role) {
+      return [];
     }
 
     const allowedItemIds = rolePermissions[user.role];
