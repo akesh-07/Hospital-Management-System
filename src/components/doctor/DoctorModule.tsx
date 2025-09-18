@@ -335,11 +335,10 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
       setVitals(null);
       return;
     }
-
+console.log("id="+selectedPatient.id);
     const vitalsQuery = query(
       collection(db, "vitals"),
-      where("patientId", "==", selectedPatient.id),
-      orderBy("recordedAt", "desc")
+      where("patientId", "==", selectedPatient.id)
     );
 
     const unsubscribe = onSnapshot(vitalsQuery, (snapshot) => {
