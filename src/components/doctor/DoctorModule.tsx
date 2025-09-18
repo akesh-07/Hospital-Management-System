@@ -335,7 +335,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
       setVitals(null);
       return;
     }
-console.log("id="+selectedPatient.id);
+    console.log("id=" + selectedPatient.id);
     const vitalsQuery = query(
       collection(db, "vitals"),
       where("patientId", "==", selectedPatient.id)
@@ -355,11 +355,11 @@ console.log("id="+selectedPatient.id);
 
   // Mock history data - in real app, this would be fetched from the database
   const mockHistory = [
-    { date: "2024-08-15", diagnosis: "Routine Checkup", doctor: "Dr. Smith" },
+    { date: "2024-08-15", diagnosis: "Routine Checkup", doctor: "Dr. Dhinesh" },
     {
       date: "2024-07-10",
       diagnosis: "Hypertension Follow-up",
-      doctor: "Dr. Wilson",
+      doctor: "Dr. Dhinesh",
     },
   ];
 
@@ -399,11 +399,8 @@ console.log("id="+selectedPatient.id);
   };
 
   // Helper function to format blood pressure
-  const formatBloodPressure = (bp: {
-    systolic: number;
-    diastolic: number;
-  }): string => {
-    return `${bp.systolic}/${bp.diastolic}`;
+  const formatBloodPressure = (bp: string): string => {
+    return bp;
   };
 
   // Get vitals data for display
@@ -496,8 +493,8 @@ console.log("id="+selectedPatient.id);
                 label="Assessment"
                 icon={Stethoscope}
               />
-              <TabButton id="prescriptions" label="Prescriptions" icon={Pill} />
               <TabButton id="ai-assist" label="AI Assist" icon={Bot} />
+              <TabButton id="prescriptions" label="Prescriptions" icon={Pill} />
             </div>
           </div>
 
@@ -662,7 +659,9 @@ console.log("id="+selectedPatient.id);
                   <div className="mt-3 pt-2 border-t border-gray-200">
                     <p className="text-xs text-gray-600">
                       Last recorded:{" "}
-                      {new Date(vitals.recordedAt).toLocaleString()}
+                      {vitals.recordedAt && (vitals.recordedAt as any).toDate
+                        ? (vitals.recordedAt as any).toDate().toLocaleString()
+                        : new Date(vitals.recordedAt).toLocaleString()}
                     </p>
                     {vitals.recordedBy && (
                       <p className="text-xs text-gray-600">
@@ -1010,10 +1009,30 @@ console.log("id="+selectedPatient.id);
               <Save className="w-4 h-4 mr-1.5 transition-transform duration-300 group-hover:scale-110" />
               Save Draft
             </button>
-            <button className="flex items-center space-x-1.5 px-5 py-2 bg-[#012e58] text-white font-semibold rounded-md shadow-md hover:bg-[#1a4b7a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm">
-              <span>Complete Consultation</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
+            {activeTab === "assessment" && (
+              <button
+                onClick={() => setActiveTab("ai-assist")}
+                className="group flex items-center px-4 py-2 border border-[#012e58] rounded-md  bg-[#012e58] hover:bg-[#012e58e3] text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm font-medium"
+              >
+                <Bot className="w-4 h-4 mr-1.5 transition-transform duration-300 group-hover:scale-110" />
+                AI Assist
+              </button>
+            )}
+            {activeTab === "ai-assist" && (
+              <button
+                onClick={() => setActiveTab("prescriptions")}
+                className="group flex items-center px-4 py-2 bg-[#012e58] text-white font-semibold rounded-md shadow-md hover:bg-[#1a4b7a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm"
+              >
+                <span>Prescription</span>
+                <ChevronRight className="w-4 h-4 ml-1.5" />
+              </button>
+            )}
+            {activeTab === "prescriptions" && (
+              <button className="group flex items-center px-4 py-2 bg-[#012e58] text-white font-semibold rounded-md shadow-md hover:bg-[#1a4b7a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm">
+                <span>Complete Consultation</span>
+                <ChevronRight className="w-4 h-4 ml-1.5" />
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -1026,3 +1045,5 @@ console.log("id="+selectedPatient.id);
     </div>
   );
 };
+
+export default DoctorModule;
