@@ -298,7 +298,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: "Bearer ",
+            Authorization: "Bearer",
           },
           body: JSON.stringify({
             model: "llama-3.1-8b-instant",
@@ -1033,6 +1033,17 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
                 <ChevronRight className="w-4 h-4 ml-1.5" />
               </button>
             )}
+            <button
+              onClick={() => setActiveTab("ai-assist")}
+              className="group flex items-center px-4 py-2 border border-[#012e58] rounded-md text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm font-medium"
+            >
+              <Bot className="w-4 h-4 mr-1.5 transition-transform duration-300 group-hover:scale-110" />
+              AI Assist
+            </button>
+            {/* <button className="flex items-center space-x-1.5 px-5 py-2 bg-[#012e58] text-white font-semibold rounded-md shadow-md hover:bg-[#1a4b7a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm">
+              <span>Complete Consultation</span>
+              <ChevronRight className="w-4 h-4" />
+            </button> */}
           </div>
         </div>
       </div>
