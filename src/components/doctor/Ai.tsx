@@ -646,4 +646,5 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
     </div>
   );
 };
+
 export default MedicalDashboard;
