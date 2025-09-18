@@ -356,11 +356,11 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
 
   // Mock history data - in real app, this would be fetched from the database
   const mockHistory = [
-    { date: "2024-08-15", diagnosis: "Routine Checkup", doctor: "Dr. Smith" },
+    { date: "2024-08-15", diagnosis: "Routine Checkup", doctor: "Dr. Dhinesh" },
     {
       date: "2024-07-10",
       diagnosis: "Hypertension Follow-up",
-      doctor: "Dr. Wilson",
+      doctor: "Dr. Dhinesh",
     },
   ];
 
@@ -400,11 +400,8 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
   };
 
   // Helper function to format blood pressure
-  const formatBloodPressure = (bp: {
-    systolic: number;
-    diastolic: number;
-  }): string => {
-    return `${bp.systolic}/${bp.diastolic}`;
+  const formatBloodPressure = (bp: string): string => {
+    return bp;
   };
 
   // Get vitals data for display
@@ -663,7 +660,9 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
                   <div className="mt-3 pt-2 border-t border-gray-200">
                     <p className="text-xs text-gray-600">
                       Last recorded:{" "}
-                      {new Date(vitals.recordedAt).toLocaleString()}
+                      {vitals.recordedAt && (vitals.recordedAt as any).toDate
+                        ? (vitals.recordedAt as any).toDate().toLocaleString()
+                        : new Date(vitals.recordedAt).toLocaleString()}
                     </p>
                     {vitals.recordedBy && (
                       <p className="text-xs text-gray-600">
@@ -1010,6 +1009,13 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
             <button className="group flex items-center px-4 py-2 border border-[#012e58] rounded-md text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm font-medium">
               <Save className="w-4 h-4 mr-1.5 transition-transform duration-300 group-hover:scale-110" />
               Save Draft
+            </button>
+            <button
+              onClick={() => setActiveTab("ai-assist")}
+              className="group flex items-center px-4 py-2 border border-[#012e58] rounded-md text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm font-medium"
+            >
+              <Bot className="w-4 h-4 mr-1.5 transition-transform duration-300 group-hover:scale-110" />
+              AI Assist
             </button>
             <button className="flex items-center space-x-1.5 px-5 py-2 bg-[#012e58] text-white font-semibold rounded-md shadow-md hover:bg-[#1a4b7a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm">
               <span>Complete Consultation</span>
