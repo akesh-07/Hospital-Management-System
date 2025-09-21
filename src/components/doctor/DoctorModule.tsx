@@ -298,7 +298,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: "Bearer",
+            Authorization: "Bearer ",
           },
           body: JSON.stringify({
             model: "llama-3.1-8b-instant",
