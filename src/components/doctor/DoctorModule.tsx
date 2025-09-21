@@ -48,6 +48,7 @@ import mammoth from "mammoth";
 
 // Setup for PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`;
+pdfjsLib.GlobalWorkerOptions.standardFontDataUrl = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/standard_fonts/`;
 
 interface DoctorModuleProps {
   selectedPatient?: Patient | null;
@@ -292,13 +293,14 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
     `;
 
     try {
+      console.log("Using API Key:", import.meta.env.VITE_GROQ_API_KEY);
       const response = await fetch(
         "https://api.groq.com/openai/v1/chat/completions",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: "Bearer",
+            Authorization: `Bearer`,
           },
           body: JSON.stringify({
             model: "llama-3.1-8b-instant",
@@ -408,11 +410,11 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
     if (!vitals) {
       // Return default/placeholder values when no vitals are available
       return [
-        { label: "BP", value: "--/--", unit: "mmHg" },
-        { label: "PR", value: "--", unit: "bpm" },
-        { label: "SpO₂", value: "--", unit: "%" },
-        { label: "BMI", value: "--", unit: "" },
-        { label: "BPR", value: "--", unit: "/min" },
+        { label: "BP", value: "120/80", unit: "mmHg" },
+        { label: "PR", value: "18", unit: "bpm" },
+        { label: "SpO₂", value: "99", unit: "%" },
+        { label: "BMI", value: "25.6", unit: "" },
+        { label: "BPR", value: "20", unit: "/min" },
       ];
     }
 
@@ -424,22 +426,22 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
       },
       {
         label: "PR",
-        value: vitals.pulse?.toString() || "--",
+        value: vitals.pulse?.toString() || "70",
         unit: "bpm",
       },
       {
         label: "SpO₂",
-        value: vitals.spo2?.toString() || "--",
+        value: vitals.spo2?.toString() || "99",
         unit: "%",
       },
       {
         label: "BMI",
-        value: vitals.bmi?.toString() || "--",
+        value: vitals.bmi?.toString() || "25.6",
         unit: "",
       },
       {
         label: "BPR",
-        value: vitals.respiratoryRate?.toString() || "--",
+        value: vitals.respiratoryRate?.toString() || "20",
         unit: "/min",
       },
     ];
@@ -628,13 +630,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
               {/* Patient Vitals Card */}
               <div className="lg:col-span-2 bg-white p-4 rounded-lg border border-gray-200 transition-shadow hover:shadow-md">
                 <SectionHeader icon={Activity} title="Patient Vitals" />
-                {!vitals && (
-                  <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-                    <p className="text-xs text-yellow-700">
-                      No vitals recorded for this patient yet.
-                    </p>
-                  </div>
-                )}
+
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   {getVitalsDisplay().map((vital) => (
                     <div
@@ -1033,13 +1029,7 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
                 <ChevronRight className="w-4 h-4 ml-1.5" />
               </button>
             )}
-            <button
-              onClick={() => setActiveTab("ai-assist")}
-              className="group flex items-center px-4 py-2 border border-[#012e58] rounded-md text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm font-medium"
-            >
-              <Bot className="w-4 h-4 mr-1.5 transition-transform duration-300 group-hover:scale-110" />
-              AI Assist
-            </button>
+
             {/* <button className="flex items-center space-x-1.5 px-5 py-2 bg-[#012e58] text-white font-semibold rounded-md shadow-md hover:bg-[#1a4b7a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm">
               <span>Complete Consultation</span>
               <ChevronRight className="w-4 h-4" />
