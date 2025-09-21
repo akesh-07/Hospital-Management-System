@@ -45,6 +45,8 @@ const PatientQueue: React.FC = () => {
       ? "Doctor"
       : storedRole === "staff-nurse"
       ? "Nurse"
+      : storedRole === "receptionist"
+      ? "Receptionist"
       : "";
 
       
@@ -100,9 +102,10 @@ const PatientQueue: React.FC = () => {
   // ✅ Patient Card Component with Accordion
   const PatientCard: React.FC<{
     patient: Patient;
+    displayId: string; // Accepts the generated displayId
     isOpen: boolean;
     onToggle: () => void;
-  }> = ({ patient, isOpen, onToggle }) => (
+  }> = ({ patient, displayId, isOpen, onToggle }) => (
     <div
       className={`bg-white rounded-xl border p-4 hover:shadow-md transition-all cursor-pointer ${
         isOpen ? "ring-2 ring-[#012e58]" : "border-gray-200"
@@ -123,9 +126,9 @@ const PatientQueue: React.FC = () => {
           </div>
           <div>
             <h3 className="font-semibold text-[#0B2D4D]">{patient.fullName}</h3>
+            {/* UPDATED: Display formatted patient ID */}
             <p className="text-xs text-[#1a4b7a]">
-              {patient.gender}, {patient.age} years • UHID:{" "}
-              {patient.uhid || "N/A"}
+              {patient.gender}, {patient.age} years • Patient ID: {displayId}
             </p>
           </div>
         </div>
@@ -217,7 +220,8 @@ const PatientQueue: React.FC = () => {
             isOpen ? "mt-3 pt-3 opacity-100" : "max-h-0 opacity-0"
           }`}
         >
-          {currentUserRole === "Nurse" && (
+          {(currentUserRole === "Nurse" ||
+            currentUserRole === "Receptionist") && (
             <button
               onClick={(e) => handleVitalsClick(patient, e)}
               className="flex-1 px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200"
@@ -286,18 +290,72 @@ const PatientQueue: React.FC = () => {
         <div className="space-y-4">
           {patients
             .filter((patient) => patient.patientType === "OPD")
-            .map((patient) => (
-              <PatientCard
-                key={patient.id}
-                patient={patient}
-                isOpen={openPatientId === patient.id}
-                onToggle={() =>
-                  setOpenPatientId(
-                    openPatientId === patient.id ? null : patient.id
-                  )
+            .map((patient) => {
+              let displayId = "PT00000000"; // Fallback ID
+
+              // Cast to 'any' to access the .toDate() method if it exists
+              const createdAtTimestamp = patient.createdAt as any;
+
+              // Check if createdAt is a Firestore Timestamp object with a .toDate() method
+              if (
+                createdAtTimestamp &&
+                typeof createdAtTimestamp.toDate === "function"
+              ) {
+                const creationDate = createdAtTimestamp.toDate(); // Convert to a JS Date object
+
+                const year = creationDate.getFullYear().toString().slice(-2); // YY
+                const month = (creationDate.getMonth() + 1)
+                  .toString()
+                  .padStart(2, "0"); // MM
+                const day = creationDate.getDate().toString().padStart(2, "0"); // DD
+                const hours = creationDate
+                  .getHours()
+                  .toString()
+                  .padStart(2, "0"); // HH
+                const minutes = creationDate
+                  .getMinutes()
+                  .toString()
+                  .padStart(2, "0"); // MIN
+                displayId = `PT${year}${month}${day}${hours}${minutes}`;
+              }
+              // Fallback for cases where it might be a string
+              else if (patient.createdAt) {
+                const creationDate = new Date(patient.createdAt);
+                if (!isNaN(creationDate.getTime())) {
+                  const year = creationDate.getFullYear().toString().slice(-2); // YY
+                  const month = (creationDate.getMonth() + 1)
+                    .toString()
+                    .padStart(2, "0"); // MM
+                  const day = creationDate
+                    .getDate()
+                    .toString()
+                    .padStart(2, "0"); // DD
+                  const hours = creationDate
+                    .getHours()
+                    .toString()
+                    .padStart(2, "0"); // HH
+                  const minutes = creationDate
+                    .getMinutes()
+                    .toString()
+                    .padStart(2, "0"); // MIN
+                  displayId = `PT${year}${month}${day}${hours}${minutes}`;
                 }
-              />
-            ))}
+              }
+
+              return (
+                <PatientCard
+                  key={patient.id}
+                  patient={patient}
+                  displayId={displayId} // Pass the newly generated ID
+                  isOpen={openPatientId === patient.id}
+                  onToggle={() =>
+                    setOpenPatientId(
+                      openPatientId === patient.id ? null : patient.id
+                    )
+                  }
+                />
+              );
+            })}
         </div>
       </div>
     </div>

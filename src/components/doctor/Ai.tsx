@@ -91,6 +91,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
       consultation.systemicExamination?.join(", ") || "Not specified"
     }
     `;
+    console.log("Using API Key:", import.meta.env.VITE_GROQ_API_KEY);
 
     try {
       const response = await fetch(
@@ -99,7 +100,9 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+
             Authorization: "Bearer",
+
           },
           body: JSON.stringify({
             model: "llama-3.1-8b-instant",
@@ -225,6 +228,33 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
 
   return (
     <div className="space-y-3 p-2 bg-gray-100 font-sans text-xs">
+      <div className="bg-white p-2 rounded shadow border border-gray-200">
+               
+        <button
+          onClick={handleGenerateSuggestions}
+          disabled={isLoading}
+          className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-[#012e58] to-[#1a4b7a] text-white rounded-lg hover:from-[#1a4b7a] hover:to-[#012e58] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+                   
+          {isLoading ? (
+            <>
+                            <Loader className="w-5 h-5 animate-spin" />         
+                 
+              <span className="text-sm font-semibold">
+                                Generating AI Suggestions...              
+              </span>
+                         
+            </>
+          ) : (
+            <>
+                            <Brain className="w-5 h-5" />             
+              <span className="text-sm font-semibold">
+                                Generate AI Suggestions from Assessment        
+              </span>
+            </>
+          )}
+        </button>
+      </div>
             {/* Diagnosis */}     
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                
@@ -575,7 +605,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                                                 {row.aiAdvice}                 
                            
                       </span>
-                                           
+                                     
                       <button
                         onClick={() =>
                           copyMedicationField(row.id, "advice", row.aiAdvice)
@@ -616,33 +646,6 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
         </div>
       </div>
             {/* Button moved to the bottom */}     
-      <div className="bg-white p-2 rounded shadow border border-gray-200">
-               
-        <button
-          onClick={handleGenerateSuggestions}
-          disabled={isLoading}
-          className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-[#012e58] to-[#1a4b7a] text-white rounded-lg hover:from-[#1a4b7a] hover:to-[#012e58] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-                   
-          {isLoading ? (
-            <>
-                            <Loader className="w-5 h-5 animate-spin" />         
-                 
-              <span className="text-sm font-semibold">
-                                Generating AI Suggestions...              
-              </span>
-                         
-            </>
-          ) : (
-            <>
-                            <Brain className="w-5 h-5" />             
-              <span className="text-sm font-semibold">
-                                Generate AI Suggestions from Assessment        
-              </span>
-            </>
-          )}
-        </button>
-      </div>
     </div>
   );
 };
