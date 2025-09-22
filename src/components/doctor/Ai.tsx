@@ -100,7 +100,9 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer`,
+
+            Authorization: "Bearer",
+
           },
           body: JSON.stringify({
             model: "llama-3.1-8b-instant",

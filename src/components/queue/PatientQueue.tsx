@@ -9,34 +9,11 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
 import { db } from "../../firebase";
 import { VitalsAssessment } from "../vitals/VitalsAssessment";
 import { DoctorModule } from "../doctor/DoctorModule"; // Import DoctorModule
-
-// ✅ Patient interface
-export interface Patient {
-  id: string;
-  uhid: string;
-  fullName: string;
-  age: number;
-  dateOfBirth: string;
-  gender: "Male" | "Female" | "Other";
-  contactNumber: string;
-  email: string;
-  address: string;
-  abhaId?: string;
-  patientType: "OPD" | "IPD" | "Emergency";
-  visitType: "Appointment" | "Walk-in";
-  paymentMethod: "Cash" | "Card" | "Insurance" | "Online";
-  consultationPackage: string;
-  preferredLanguage: string;
-  doctorAssigned: string;
-  chronicConditions: string[];
-  waitTime?: number;
-  status: "Waiting" | "In Progress" | "Completed";
-  createdAt: string;
-}
+import { Patient } from "../../types";
 
 const getStatusColor = (status: Patient["status"]) => {
   switch (status) {
@@ -60,6 +37,8 @@ const PatientQueue: React.FC = () => {
   const [showDoctor, setShowDoctor] = useState(false);
   const [doctorPatient, setDoctorPatient] = useState<Patient | null>(null);
   // 👤 Get user role from cookie
+
+  const name =Cookies.get("userName");
   const storedRole = Cookies.get("userRole");
   const currentUserRole =
     storedRole === "doctor"
@@ -70,9 +49,17 @@ const PatientQueue: React.FC = () => {
       ? "Receptionist"
       : "";
 
+      
   // 🔥 Fetch patients from Firestore
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "patients"), (snapshot) => {
+    const patientsQuery = query(
+      collection(db, "patients"),
+      where("patientType", "==", "OPD"),
+      where("doctorAssigned","==",name)
+      
+    );
+
+    const unsubscribe = onSnapshot(patientsQuery, (snapshot) => {
       const data = snapshot.docs.map(
         (doc) =>
           ({
@@ -120,8 +107,8 @@ const PatientQueue: React.FC = () => {
     onToggle: () => void;
   }> = ({ patient, displayId, isOpen, onToggle }) => (
     <div
-      className={`bg-white rounded-full border p-4 hover:shadow-md transition-all cursor-pointer ${
-        isOpen ? "ring-2 ring-[#012e58] rounded-xl" : "border-gray-200"
+      className={`bg-white rounded-xl border p-4 hover:shadow-md transition-all cursor-pointer ${
+        isOpen ? "ring-2 ring-[#012e58]" : "border-gray-200"
       }`}
       onClick={onToggle}
     >
@@ -376,3 +363,4 @@ const PatientQueue: React.FC = () => {
 };
 
 export default PatientQueue;
+
