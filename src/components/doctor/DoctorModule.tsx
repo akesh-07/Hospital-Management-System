@@ -50,6 +50,98 @@ import mammoth from "mammoth";
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`;
 pdfjsLib.GlobalWorkerOptions.standardFontDataUrl = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/standard_fonts/`;
 
+// New AutocompleteInput component
+const AutocompleteInput: React.FC<{
+  symptomId: number;
+  value: string;
+  onChange: (symptomId: number, value: string) => void;
+  symptomOptions: string[];
+  addSymptomOption: (symptom: string) => void;
+}> = ({ symptomId, value, onChange, symptomOptions, addSymptomOption }) => {
+  const [inputValue, setInputValue] = useState(value);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node)
+      ) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [wrapperRef]);
+
+  const filteredSymptoms = symptomOptions.filter((s) =>
+    s.toLowerCase().includes(inputValue.toLowerCase())
+  );
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+    onChange(symptomId, e.target.value);
+    setShowDropdown(true);
+  };
+
+  const handleSelectSymptom = (symptom: string) => {
+    setInputValue(symptom);
+    onChange(symptomId, symptom);
+    setShowDropdown(false);
+  };
+
+  const handleAddSymptom = () => {
+    if (inputValue && !symptomOptions.includes(inputValue)) {
+      addSymptomOption(inputValue);
+      handleSelectSymptom(inputValue);
+    }
+  };
+
+  const showAddButton =
+    inputValue &&
+    !symptomOptions.some((s) => s.toLowerCase() === inputValue.toLowerCase());
+
+  return (
+    <div className="relative" ref={wrapperRef}>
+      <div className="relative">
+        <input
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          onFocus={() => setShowDropdown(true)}
+          className="p-2 border border-gray-300 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-sm"
+          placeholder="Enter symptom"
+        />
+        {showAddButton && (
+          <button
+            type="button"
+            onClick={handleAddSymptom}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 bg-gray-200 rounded-full hover:bg-gray-300"
+          >
+            <Plus className="w-4 h-4 text-gray-600" />
+          </button>
+        )}
+      </div>
+      {showDropdown && filteredSymptoms.length > 0 && (
+        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+          {filteredSymptoms.map((symptom, index) => (
+            <div
+              key={index}
+              onClick={() => handleSelectSymptom(symptom)}
+              className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+            >
+              {symptom}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 interface DoctorModuleProps {
   selectedPatient?: Patient | null;
   onBack?: () => void;
@@ -187,6 +279,22 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
     diagnosis: "",
     notes: "",
   });
+
+  const [symptomOptions, setSymptomOptions] = useState<string[]>([
+    "Fever",
+    "Cold",
+    "Cough",
+    "Diarrhea",
+    "Vomiting",
+    "Headache",
+    "Back Pain",
+  ]);
+
+  const addSymptomOption = (symptom: string) => {
+    if (!symptomOptions.includes(symptom)) {
+      setSymptomOptions((prev) => [...prev, symptom]);
+    }
+  };
 
   const [uploadedFilesData, setUploadedFilesData] = useState<
     Record<string, string>
@@ -772,18 +880,14 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
                     {consultation.symptoms.map((symptom) => (
                       <tr key={symptom.id} className="border-t border-gray-200">
                         <td className="p-2">
-                          <input
-                            type="text"
+                          <AutocompleteInput
+                            symptomId={symptom.id}
                             value={symptom.symptom}
-                            onChange={(e) =>
-                              handleSymptomChange(
-                                symptom.id,
-                                "symptom",
-                                e.target.value
-                              )
+                            onChange={(id, value) =>
+                              handleSymptomChange(id, "symptom", value)
                             }
-                            className={inputStyle}
-                            placeholder="Enter symptom"
+                            symptomOptions={symptomOptions}
+                            addSymptomOption={addSymptomOption}
                           />
                         </td>
                         <td className="p-2">
