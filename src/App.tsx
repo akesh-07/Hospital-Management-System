@@ -45,6 +45,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/doctor" element={<DoctorForm />} />
+           <Route path="/sign" element={<SignupPage />} />
           <Route path="/ai" element={<Ai />} />
           {/* Common Dashboard for all roles */}
           <Route
