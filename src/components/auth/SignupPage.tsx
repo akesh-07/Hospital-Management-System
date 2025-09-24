@@ -1,347 +1,413 @@
-// src/components/auth/SignupPage.tsx
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Eye,
-  EyeOff,
   User,
-  Lock,
-  Mail,
   ChevronDown,
-  Activity,
   Users,
   Signature,
+  FileText,
+  Briefcase,
+  Phone,
+  Scan,
+  Camera,
+  Upload,
 } from "lucide-react";
-import { useAuth, UserRole } from "../../contexts/AuthContext";
-import { Link } from "react-router-dom";
+import { db } from "../../firebase";
+import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { v4 as uuidv4 } from 'uuid';
 
-interface SignupForm {
-  name: string;
-  email: string;
-  password: string;
-  role: UserRole | "" | string;
+interface StaffData {
+  id: string;
+  sid: string;
+  sName: string;
+  age: string;
+  gender: string;
+  qualification: string;
+  experience: string;
+  mobileNumber: string;
+  adharNumber: string;
+  role: string;
+  photo?: File | null;
+  degreeCertificate?: File | null;
 }
 
 const userRoles = [
-  {
-    value: "doctor" as UserRole,
-    label: "Register as Doctor",
-    icon: "👨‍⚕️",
-  },
-  {
-    value: "pharmacist" as UserRole,
-    label: "Register as Pharmacist",
-    icon: "💊",
-  },
-  {
-    value: "technician" as UserRole,
-    label: "Register as Technician",
-    icon: "🔬",
-  },
-  {
-    value: "receptionist" as UserRole,
-    label: "Register as Receptionist",
-    icon: "📋",
-  },
-  {
-    value: "staff-nurse" as UserRole,
-    label: "Register as Staff Nurse",
-    icon: "👩‍⚕️",
-  },
+  { value: "doctor", label: "Doctor" },
+  { value: "pharmacist", label: "Pharmacist" },
+  { value: "technician", label: "Technician" },
+  { value: "receptionist", label: "Receptionist" },
+  { value: "staff-nurse", label: "Staff Nurse" },
 ];
 
 const SignupPage: React.FC = () => {
-  const [formData, setFormData] = useState<SignupForm>({
-    name: "",
-    email: "",
-    password: "",
-    role: "",
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [errors, setErrors] = useState<Partial<SignupForm>>({});
-  const [signupError, setSignupError] = useState("");
-
-  const { signup, isLoading } = useAuth();
   const navigate = useNavigate();
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const [staffData, setStaffData] = useState<StaffData>({
+    id: uuidv4(),
+    sid: "",
+    sName: "",
+    age: "",
+    gender: "",
+    qualification: "",
+    experience: "",
+    mobileNumber: "",
+    adharNumber: "",
+    role: "",
+    photo: null,
+    degreeCertificate: null,
+  });
 
-    if (errors[name as keyof SignupForm]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-    if (signupError) {
-      setSignupError("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const handleStaffInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, files } = e.target;
+    if (files) {
+      setStaffData((prev) => ({ ...prev, [name]: files[0] }));
+    } else {
+      setStaffData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleRoleSelect = (role: UserRole) => {
-    setFormData((prev) => ({ ...prev, role }));
+  const handleRoleSelect = (roleValue: string) => {
+    setStaffData((prev) => ({ ...prev, role: roleValue }));
     setIsDropdownOpen(false);
-    if (errors.role) {
-      setErrors((prev) => ({ ...prev, role: "" }));
-    }
-    if (signupError) {
-      setSignupError("");
-    }
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: Partial<SignupForm> = {};
-
-    if (!formData.name) {
-      newErrors.name = "Name is required";
-    }
-
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-
-    if (!formData.role) {
-      newErrors.role = "Please select your role";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleStaffSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) return;
+    setIsSaving(true);
+    setSaveError("");
+    setSaveSuccess(false);
 
     try {
-      const success = await signup(
-        formData.name,
-        formData.email,
-        formData.password,
-        formData.role as UserRole
-      );
-
-      if (success) {
-        navigate("/dashboard");
-      } else {
-        setSignupError(
-          "Registration failed. The email may already be in use or the password is weak."
-        );
-      }
+      // Create a document without the files first, as Firestore doesn't store files directly
+      const docRef = await addDoc(collection(db, "staff"), {
+        id: staffData.id,
+        sid: staffData.sid,
+        sName: staffData.sName,
+        age: staffData.age,
+        gender: staffData.gender,
+        qualification: staffData.qualification,
+        experience: staffData.experience,
+        mobileNumber: staffData.mobileNumber,
+        adharNumber: staffData.adharNumber,
+        role: staffData.role,
+        createdAt: Timestamp.now(),
+      });
+      setSaveSuccess(true);
+      // Reset form
+      setStaffData({
+        id: uuidv4(),
+        sid: "",
+        sName: "",
+        age: "",
+        gender: "",
+        qualification: "",
+        experience: "",
+        mobileNumber: "",
+        adharNumber: "",
+        role: "",
+        photo: null,
+        degreeCertificate: null,
+      });
     } catch (error) {
-      setSignupError("Registration failed. Please try again.");
+      console.error("Error adding staff:", error);
+      setSaveError("Failed to add staff. Please try again.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const selectedRole = userRoles.find((role) => role.value === formData.role);
+  const selectedRoleLabel = userRoles.find(role => role.value === staffData.role)?.label || "Select Role";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e0f7fa] via-white to-[#e0f2f1] flex items-center justify-center p-4">
-      <div className="relative w-full max-w-md">
+      <div className="relative w-full max-w-lg">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-[#012e58] rounded-full mb-4 shadow-lg">
-            <Activity className="w-8 h-8 text-white" />
+            <Users className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-[#0B2D4D] mb-2">
-            Clinexa Hospital
+            Staff Data Collection
           </h1>
-          <p className="text-[#1a4b7a]">Management System Portal</p>
+          <p className="text-[#1a4b7a]">
+            Please enter the details to add a new staff member
+          </p>
         </div>
         <div className="bg-white rounded-2xl shadow-2xl p-8 backdrop-blur-sm border border-gray-100">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-semibold text-[#0B2D4D] mb-2">
-              Join Our Team
-            </h2>
-            <p className="text-[#1a4b7a]">Create your new account</p>
-          </div>
-          {signupError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{signupError}</p>
+          {saveSuccess && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-600">Staff member added successfully!</p>
             </div>
           )}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-[#0B2D4D]"
-              >
-                Full Name
-              </label>
-              <div className="relative">
-                <Signature className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
-                    errors.name
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-300"
-                  }`}
-                  placeholder="Enter your full name"
-                />
-              </div>
-              {errors.name && (
-                <p className="text-sm text-red-600 animate-fade-in">
-                  {errors.name}
-                </p>
-              )}
+          {saveError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{saveError}</p>
             </div>
-            <div className="space-y-2">
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-[#0B2D4D]"
-              >
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
-                    errors.email
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-300"
-                  }`}
-                  placeholder="Enter your email"
-                />
-              </div>
-              {errors.email && (
-                <p className="text-sm text-red-600 animate-fade-in">
-                  {errors.email}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-[#0B2D4D]"
-              >
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className={`w-full pl-11 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
-                    errors.password
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-300"
-                  }`}
-                  placeholder="Create a password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+          )}
+          <form onSubmit={handleStaffSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2 col-span-2">
+                <label
+                  htmlFor="sName"
+                  className="block text-sm font-medium text-[#0B2D4D]"
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-sm text-red-600 animate-fade-in">
-                  {errors.password}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-[#0B2D4D]">
-                Select Your Role
-              </label>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className={`w-full flex items-center justify-between pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
-                    errors.role ? "border-red-500 bg-red-50" : "border-gray-300"
-                  } ${formData.role ? "text-[#0B2D4D]" : "text-gray-500"}`}
-                >
-                  <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <span className="flex items-center gap-2">
-                    {selectedRole ? (
-                      <>
-                        <span>{selectedRole.icon}</span>
-                        <span>{selectedRole.label}</span>
-                      </>
-                    ) : (
-                      "Select your role"
-                    )}
-                  </span>
-                  <ChevronDown
-                    className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
-                      isDropdownOpen ? "rotate-180" : ""
-                    }`}
+                  Staff Name
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    id="sName"
+                    name="sName"
+                    value={staffData.sName}
+                    onChange={handleStaffInputChange}
+                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200"
+                    placeholder="Enter Staff Name"
+                    required
                   />
-                </button>
-                {isDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 animate-fade-in">
-                    {userRoles.map((role) => (
-                      <button
-                        key={role.value}
-                        type="button"
-                        onClick={() => handleRoleSelect(role.value)}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#e0f7fa] transition-colors duration-150 first:rounded-t-lg last:rounded-b-lg"
-                      >
-                        <span className="text-lg">{role.icon}</span>
-                        <span className="text-[#0B2D4D]">{role.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                </div>
               </div>
-              {errors.role && (
-                <p className="text-sm text-red-600 animate-fade-in">
-                  {errors.role}
-                </p>
-              )}
+              <div className="space-y-2">
+                <label
+                  htmlFor="age"
+                  className="block text-sm font-medium text-[#0B2D4D]"
+                >
+                  Age
+                </label>
+                <input
+                  type="number"
+                  id="age"
+                  name="age"
+                  value={staffData.age}
+                  onChange={handleStaffInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200"
+                  placeholder="Age"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  htmlFor="gender"
+                  className="block text-sm font-medium text-[#0B2D4D]"
+                >
+                  Gender
+                </label>
+                <select
+                  id="gender"
+                  name="gender"
+                  value={staffData.gender}
+                  onChange={handleStaffInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 text-gray-500"
+                  required
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              
+              <div className="space-y-2 col-span-2">
+                <label className="block text-sm font-medium text-[#0B2D4D]">
+                  Role
+                </label>
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 text-gray-500"
+                  >
+                    <span className="flex items-center gap-2">
+                      {selectedRoleLabel}
+                    </span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
+                        isDropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  {isDropdownOpen && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 animate-fade-in">
+                      {userRoles.map((role) => (
+                        <button
+                          key={role.value}
+                          type="button"
+                          onClick={() => handleRoleSelect(role.value)}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#e0f7fa] transition-colors duration-150 first:rounded-t-lg last:rounded-b-lg"
+                        >
+                          <span className="text-[#0B2D4D]">{role.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <label
+                  htmlFor="qualification"
+                  className="block text-sm font-medium text-[#0B2D4D]"
+                >
+                  Qualification
+                </label>
+                <div className="relative">
+                  <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    id="qualification"
+                    name="qualification"
+                    value={staffData.qualification}
+                    onChange={handleStaffInputChange}
+                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200"
+                    placeholder="Enter Qualification"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <label
+                  htmlFor="experience"
+                  className="block text-sm font-medium text-[#0B2D4D]"
+                >
+                  Experience
+                </label>
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    id="experience"
+                    name="experience"
+                    value={staffData.experience}
+                    onChange={handleStaffInputChange}
+                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200"
+                    placeholder="Years of Experience"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <label
+                  htmlFor="mobileNumber"
+                  className="block text-sm font-medium text-[#0B2D4D]"
+                >
+                  Mobile Number
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="tel"
+                    id="mobileNumber"
+                    name="mobileNumber"
+                    value={staffData.mobileNumber}
+                    onChange={handleStaffInputChange}
+                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200"
+                    placeholder="Enter Mobile Number"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <label
+                  htmlFor="adharNumber"
+                  className="block text-sm font-medium text-[#0B2D4D]"
+                >
+                  Aadhar Number
+                </label>
+                <div className="relative">
+                  <Scan className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    id="adharNumber"
+                    name="adharNumber"
+                    value={staffData.adharNumber}
+                    onChange={handleStaffInputChange}
+                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200"
+                    placeholder="Enter Aadhar Number"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <label
+                  htmlFor="photo"
+                  className="block text-sm font-medium text-[#0B2D4D]"
+                >
+                  Photo Upload
+                </label>
+                <div className="relative border border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:bg-gray-50 transition-colors">
+                  <input
+                    type="file"
+                    id="photo"
+                    name="photo"
+                    onChange={handleStaffInputChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    accept="image/*"
+                  />
+                  <div className="flex flex-col items-center justify-center">
+                    <Camera className="w-8 h-8 text-gray-400 mb-2" />
+                    <p className="text-sm font-medium text-gray-600">
+                      Drag & drop your photo or{" "}
+                      <span className="text-[#012e58]">browse</span>
+                    </p>
+                    {staffData.photo && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        {staffData.photo.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <label
+                  htmlFor="degreeCertificate"
+                  className="block text-sm font-medium text-[#0B2D4D]"
+                >
+                  Degree Certificate Upload
+                </label>
+                <div className="relative border border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:bg-gray-50 transition-colors">
+                  <input
+                    type="file"
+                    id="degreeCertificate"
+                    name="degreeCertificate"
+                    onChange={handleStaffInputChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                  />
+                  <div className="flex flex-col items-center justify-center">
+                    <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                    <p className="text-sm font-medium text-gray-600">
+                      Drag & drop your certificate or{" "}
+                      <span className="text-[#012e58]">browse</span>
+                    </p>
+                    {staffData.degreeCertificate && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        {staffData.degreeCertificate.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
+
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isSaving}
               className="w-full bg-gradient-to-r from-[#012e58] to-[#1a4b7a] hover:from-[#1a4b7a] hover:to-[#012e58] text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-[#1a4b7a] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
             >
-              {isLoading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Registering...</span>
-                </div>
-              ) : (
-                "Sign Up"
-              )}
+              {isSaving ? "Adding Staff..." : "Add Staff"}
             </button>
           </form>
-          <div className="mt-6 text-center">
-            <p className="text-sm text-[#1a4b7a]">
-              Already have an account?{" "}
-              <Link
-                to="/login"
-                className="text-[#012e58] hover:text-[#1a4b7a] transition-colors"
-              >
-                Sign In
-              </Link>
-            </p>
-          </div>
         </div>
       </div>
     </div>
