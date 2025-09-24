@@ -49,15 +49,25 @@ const PatientQueue: React.FC = () => {
       ? "Receptionist"
       : "";
 
-      
+      let patientsQuery=null;
   // 🔥 Fetch patients from Firestore
   useEffect(() => {
-    const patientsQuery = query(
+    if(storedRole==="doctor")
+    {
+   patientsQuery = query(
       collection(db, "patients"),
       where("patientType", "==", "OPD"),
       where("doctorAssigned","==",name)
       
     );
+    }else{
+     patientsQuery = query(
+      collection(db, "patients"),
+      where("patientType", "==", "OPD")
+     
+      
+    );
+  }
 
     const unsubscribe = onSnapshot(patientsQuery, (snapshot) => {
       const data = snapshot.docs.map(
