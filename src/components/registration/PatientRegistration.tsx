@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { db } from "../../firebase";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { v4 as uuidv4 } from 'uuid';
 
 // Helper component for section headers to maintain consistency
 const SectionHeader: React.FC<{ icon: React.ElementType; title: string }> = ({
@@ -58,12 +60,25 @@ export const PatientRegistration: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // You would typically upload files to a storage service like Firebase Storage here.
-      // For this example, we'll just log the files to the console.
-      console.log("Files to upload:", formData.files);
+      // Generate a unique ID for the patient
+      const patientId = uuidv4();
+      const storage = getStorage();
+      const fileUrls: string[] = [];
+
+      // Upload each file to Firebase Storage
+      if (formData.files) {
+        for (const file of Array.from(formData.files)) {
+          const storageRef = ref(storage, `patients/${patientId}/${file.name}`);
+          const snapshot = await uploadBytes(storageRef, file);
+          const downloadURL = await getDownloadURL(snapshot.ref);
+          fileUrls.push(downloadURL);
+        }
+      }
 
       await addDoc(collection(db, "patients"), {
         ...formData,
+        id: patientId,
+        fileUrls: fileUrls,
         createdAt: Timestamp.now(),
       });
 
