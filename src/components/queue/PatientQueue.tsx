@@ -9,7 +9,13 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+  orderBy,
+} from "firebase/firestore";
 import { db } from "../../firebase";
 import { VitalsAssessment } from "../vitals/VitalsAssessment";
 import { DoctorModule } from "../doctor/DoctorModule"; // Import DoctorModule
@@ -38,7 +44,7 @@ const PatientQueue: React.FC = () => {
   const [doctorPatient, setDoctorPatient] = useState<Patient | null>(null);
   // 👤 Get user role from cookie
 
-  const name =Cookies.get("userName");
+  const name = Cookies.get("userName");
   const storedRole = Cookies.get("userRole");
   const currentUserRole =
     storedRole === "doctor"
@@ -49,14 +55,12 @@ const PatientQueue: React.FC = () => {
       ? "Receptionist"
       : "";
 
-      
   // 🔥 Fetch patients from Firestore
   useEffect(() => {
     const patientsQuery = query(
       collection(db, "patients"),
-      where("patientType", "==", "OPD"),
-      where("doctorAssigned","==",name)
-      
+      where("patientType", "==", "OPD") //,
+      // where("doctorAssigned","==",name)
     );
 
     const unsubscribe = onSnapshot(patientsQuery, (snapshot) => {
@@ -363,4 +367,3 @@ const PatientQueue: React.FC = () => {
 };
 
 export default PatientQueue;
-

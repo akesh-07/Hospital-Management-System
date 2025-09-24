@@ -1,4 +1,4 @@
-import Ai from "./ai";
+import Ai from "./Ai";
 import React, { useState, useEffect, useRef } from "react";
 import {
   Stethoscope,
@@ -46,11 +46,8 @@ import PrescriptionModule from "../prescription/PrescriptionModule";
 import * as pdfjsLib from "pdfjs-dist";
 import mammoth from "mammoth";
 
-// Setup for PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`;
-pdfjsLib.GlobalWorkerOptions.standardFontDataUrl = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/standard_fonts/`;
 
-// New AutocompleteInput component
 const AutocompleteInput: React.FC<{
   symptomId: number;
   value: string;
@@ -410,7 +407,6 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
             "Content-Type": "application/json",
 
             Authorization: "Bearer ",
-
           },
           body: JSON.stringify({
             model: "llama-3.1-8b-instant",
