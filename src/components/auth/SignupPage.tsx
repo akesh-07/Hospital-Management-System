@@ -11,10 +11,15 @@ import {
   Scan,
   Camera,
   Upload,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { db } from "../../firebase";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
 import { v4 as uuidv4 } from 'uuid';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 
 interface StaffData {
   id: string;
@@ -27,6 +32,8 @@ interface StaffData {
   mobileNumber: string;
   adharNumber: string;
   role: string;
+  email: string;
+  password: string;
   photo?: File | null;
   degreeCertificate?: File | null;
 }
@@ -41,6 +48,8 @@ const userRoles = [
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const auth = getAuth();
 
   const [staffData, setStaffData] = useState<StaffData>({
     id: uuidv4(),
@@ -53,6 +62,8 @@ const SignupPage: React.FC = () => {
     mobileNumber: "",
     adharNumber: "",
     role: "",
+    email: "",
+    password: "",
     photo: null,
     degreeCertificate: null,
   });
@@ -84,8 +95,11 @@ const SignupPage: React.FC = () => {
     setSaveSuccess(false);
 
     try {
-      // Create a document without the files first, as Firestore doesn't store files directly
-      const docRef = await addDoc(collection(db, "staff"), {
+      // 1. Create user with email and password using Firebase Auth
+      await createUserWithEmailAndPassword(auth, staffData.email, staffData.password);
+      
+      // 2. If Auth is successful, save staff data to Firestore
+      await addDoc(collection(db, "staff"), {
         id: staffData.id,
         sid: staffData.sid,
         sName: staffData.sName,
@@ -96,6 +110,7 @@ const SignupPage: React.FC = () => {
         mobileNumber: staffData.mobileNumber,
         adharNumber: staffData.adharNumber,
         role: staffData.role,
+        email: staffData.email,
         createdAt: Timestamp.now(),
       });
       setSaveSuccess(true);
@@ -111,12 +126,20 @@ const SignupPage: React.FC = () => {
         mobileNumber: "",
         adharNumber: "",
         role: "",
+        email: "",
+        password: "",
         photo: null,
         degreeCertificate: null,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding staff:", error);
-      setSaveError("Failed to add staff. Please try again.");
+      let errorMessage = "Failed to add staff. Please try again.";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "The email address is already in use.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "Password is too weak. Please use a stronger password.";
+      }
+      setSaveError(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -246,6 +269,61 @@ const SignupPage: React.FC = () => {
                       ))}
                     </div>
                   )}
+                </div>
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-[#0B2D4D]"
+                >
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={staffData.email}
+                    onChange={handleStaffInputChange}
+                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200"
+                    placeholder="Enter Staff Email"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-[#0B2D4D]"
+                >
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    id="password"
+                    name="password"
+                    value={staffData.password}
+                    onChange={handleStaffInputChange}
+                    className="w-full pl-11 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200"
+                    placeholder="Create a password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
                 </div>
               </div>
 
