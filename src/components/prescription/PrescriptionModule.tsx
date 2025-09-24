@@ -5,21 +5,13 @@ import { FileText } from "lucide-react";
 import { Plus } from "lucide-react";
 import { Trash2 } from "lucide-react";
 import { Bot } from "lucide-react";
+import { usePrescription } from "../../contexts/PrescriptionContext";
 
 const PrescriptionModule: React.FC<{
   selectedPatient: Patient;
   consultation: any;
 }> = ({ selectedPatient, consultation }) => {
-  const [medications, setMedications] = useState<Medication[]>([
-    {
-      id: "1",
-      name: "",
-      dosage: "",
-      frequency: "",
-      duration: "",
-      instructions: "",
-    },
-  ]);
+  const { medications, setMedications } = usePrescription();
 
   const [advice, setAdvice] = useState({
     general: "",

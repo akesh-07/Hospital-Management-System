@@ -1,4 +1,3 @@
-import Ai from "./Ai";
 import React, { useState, useEffect, useRef } from "react";
 import {
   Stethoscope,
@@ -45,6 +44,8 @@ import { Patient } from "../../types";
 import PrescriptionModule from "../prescription/PrescriptionModule";
 import * as pdfjsLib from "pdfjs-dist";
 import mammoth from "mammoth";
+import { PrescriptionProvider } from "../../contexts/PrescriptionContext";
+import Ai from "./Ai";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`;
 
@@ -258,7 +259,7 @@ const AiSummaryModal: React.FC<{
 
 // --- Main DoctorModule Component ---
 // Show PatientQueue
-export const DoctorModule: React.FC<DoctorModuleProps> = ({
+const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
   selectedPatient,
   onBack,
 }) => {
@@ -1146,6 +1147,13 @@ export const DoctorModule: React.FC<DoctorModuleProps> = ({
         isLoading={isAiSummaryLoading}
       />
     </div>
+  );
+};
+export const DoctorModule: React.FC<DoctorModuleProps> = (props) => {
+  return (
+    <PrescriptionProvider>
+      <DoctorModuleContent {...props} />
+    </PrescriptionProvider>
   );
 };
 
