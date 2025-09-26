@@ -12,7 +12,7 @@ import {
 import { db } from "../../firebase";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 // Helper component for section headers to maintain consistency
 const SectionHeader: React.FC<{ icon: React.ElementType; title: string }> = ({
@@ -80,6 +80,7 @@ export const PatientRegistration: React.FC = () => {
         id: patientId,
         fileUrls: fileUrls,
         createdAt: Timestamp.now(),
+        status: "Waiting",
       });
 
       setShowSuccess(true);
