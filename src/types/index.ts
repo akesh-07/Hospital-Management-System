@@ -18,7 +18,8 @@ export interface Patient {
   chronicConditions: string[];
   waitTime?: number;
   status: "Waiting" | "In Progress" | "Completed";
-  createdAt: string;
+  createdAt: any;
+  token: string;
 }
 
 export interface Vitals {

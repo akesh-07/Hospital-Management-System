@@ -47,6 +47,10 @@ import mammoth from "mammoth";
 import { PrescriptionProvider } from "../../contexts/PrescriptionContext";
 import Ai from "./Ai";
 
+// --- ADD THIS LINE ---
+pdfjsLib.GlobalWorkerOptions.standardFontDataUrl = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/standard_fonts/`;
+// --------------------
+
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`;
 
 const AutocompleteInput: React.FC<{
@@ -143,6 +147,7 @@ const AutocompleteInput: React.FC<{
 interface DoctorModuleProps {
   selectedPatient?: Patient | null;
   onBack?: () => void;
+  onCompleteConsultation: (patientId: string) => void;
 }
 
 // Helper component for section headers to maintain consistency
@@ -262,6 +267,7 @@ const AiSummaryModal: React.FC<{
 const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
   selectedPatient,
   onBack,
+  onCompleteConsultation,
 }) => {
   const [activeTab, setActiveTab] = useState<
     "history" | "assessment" | "prescriptions" | "ai-assist"
@@ -1127,16 +1133,14 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
               </button>
             )}
             {activeTab === "prescriptions" && (
-              <button className="group flex items-center px-4 py-2 bg-[#012e58] text-white font-semibold rounded-md shadow-md hover:bg-[#1a4b7a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm">
+              <button
+                onClick={() => onCompleteConsultation(selectedPatient.id)}
+                className="group flex items-center px-4 py-2 bg-[#012e58] text-white font-semibold rounded-md shadow-md hover:bg-[#1a4b7a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm"
+              >
                 <span>Complete Consultation</span>
                 <ChevronRight className="w-4 h-4 ml-1.5" />
               </button>
             )}
-
-            {/* <button className="flex items-center space-x-1.5 px-5 py-2 bg-[#012e58] text-white font-semibold rounded-md shadow-md hover:bg-[#1a4b7a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm">
-              <span>Complete Consultation</span>
-              <ChevronRight className="w-4 h-4" />
-            </button> */}
           </div>
         </div>
       </div>
