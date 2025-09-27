@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Copy, Plus, Bot, User, Brain, Loader } from "lucide-react";
+import { Copy, Plus, Bot, User, Brain, Loader, FlaskConical } from "lucide-react";
 import { Patient, Medication } from "../../types";
 import { usePrescription } from "../../contexts/PrescriptionContext";
 
@@ -108,6 +108,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
           headers: {
             "Content-Type": "application/json",
 
+            // 🚨 SECURITY NOTE: NEVER hardcode API keys in frontend code. Use environment variables.
             Authorization: "Bearer ",
           },
           body: JSON.stringify({
@@ -233,8 +234,32 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
       ...prev,
       doctorTests: { ...prev.aiTests },
     }));
-  }; // Handlers
+  };
+  
+  // 🆕 NEW HANDLER: Send Lab Order
+  const handleSendLabOrder = () => {
+    const testsToOrder = Object.keys(labInvestigation.doctorTests).filter(
+        (key) => labInvestigation.doctorTests[key as keyof typeof labInvestigation.doctorTests]
+    );
 
+    if (testsToOrder.length === 0) {
+        alert("No tests selected to send to the lab.");
+        return;
+    }
+
+    // 🚨 IMPLEMENTATION NOTE: In a real app, this function would call an API 
+    // endpoint to create a formal lab request document (like the one in lab.tsx).
+    
+    console.log("Sending Lab Order:", {
+        patientId: selectedPatient.patId, 
+        tests: testsToOrder,
+        notes: labInvestigation.doctorEntry 
+    });
+    alert(`Lab order initiated for ${selectedPatient.fullName}. Tests: ${testsToOrder.join(', ')}.`);
+  };
+
+
+  // Handlers
   const handleDiagnosisChange = (value: string) => {
     setDiagnosis((prev) => ({ ...prev, doctorEntry: value }));
   };
@@ -358,12 +383,23 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                   </span>
                 </label>
               ))}
-              <button
-                onClick={copyAiTests}
-                className="mt-1 px-2 py-1 text-xs border border-[#012e58] rounded text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-1 focus:ring-[#012e58] transition-all duration-300"
-              >
-                Copy AI Tests
-              </button>
+              <div className="flex gap-2 pt-1"> 
+                <button
+                  onClick={copyAiTests}
+                  className="flex items-center gap-1 px-2 py-1 text-xs border border-[#012e58] rounded text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-1 focus:ring-[#012e58] transition-all duration-300"
+                >
+                  <Copy size={10} />
+                  Copy AI Tests
+                </button>
+                {/* 🆕 NEW BUTTON: Send to Lab */}
+                <button
+                  onClick={handleSendLabOrder}
+                  className="flex items-center gap-1 px-2 py-1 text-xs border border-green-600 rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-1 focus:ring-green-600 transition-all duration-300"
+                >
+                  <FlaskConical size={10} />
+                  Send to Lab
+                </button>
+              </div>
             </div>
           </div>
         </div>
