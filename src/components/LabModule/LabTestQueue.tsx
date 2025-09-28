@@ -351,6 +351,29 @@ const LabTestQueue: React.FC = () => {
   // --- Conditional Detail View Component ---
   const PatientTestDetails: React.FC<{ details: typeof detailsToView, onBack: () => void }> = ({ details, onBack }) => {
       if (!details) return null;
+      
+      // State to manage input fields for each test
+      const [results, setResults] = useState<{ [key: string]: string }>({});
+      
+      // Handler for basic result input
+      const handleResultChange = (testName: string, value: string) => {
+          setResults(prev => ({
+              ...prev,
+              [testName]: value,
+          }));
+      };
+
+      // Handler for file upload/save action
+      const handleSaveResults = () => {
+          console.log("Final Results to Save:", {
+              requestId: details.requestId,
+              patientName: details.patientName,
+              results: results
+          });
+          // 🚨 In a real app, this would trigger Firebase/API call to save results and update request status to 'Completed'.
+          alert(`Results saved locally for ${details.patientName}. Ready to send to server!`);
+          // Optionally go back to queue after successful save: onBack();
+      };
 
       return (
           <div className="p-6 bg-white rounded-xl border border-gray-200 min-h-screen">
@@ -365,44 +388,67 @@ const LabTestQueue: React.FC = () => {
               <p className="text-[#1a4b7a] mb-8">Request ID: {details.requestId}</p>
 
               <div className="space-y-6">
-                  {/* Patient Name */}
-                  <div className="p-4 border rounded-lg bg-indigo-50/50">
-                      <p className="text-xs text-gray-600">Patient</p>
-                      <h2 className="text-xl font-semibold text-indigo-900">{details.patientName}</h2>
-                  </div>
-                  
-                  {/* Assign Doctor */}
-                  <div className="p-4 border rounded-lg bg-yellow-50/50">
-                      <p className="text-xs text-gray-600">Ordering Doctor</p>
-                      <h2 className="text-xl font-semibold text-yellow-900">Dr. {details.assignDoctor}</h2>
-                  </div>
-                  
-                  {/* Contact Number */}
-                  <div className="p-4 border rounded-lg bg-gray-50/50">
-                      <p className="text-xs text-gray-600">Contact Number</p>
-                      <h2 className="text-xl font-semibold text-gray-900">{details.contactNumber}</h2>
-                  </div>
-
-                  {/* Tests Required */}
-                  <div className="p-4 border rounded-lg bg-green-50/50">
-                      <p className="text-xs text-gray-600 mb-2">Tests Required ({details.tests.length})</p>
-                      <div className="flex flex-wrap gap-2">
-                          {details.tests.map((test, index) => (
-                              <span 
-                                  key={index} 
-                                  className="px-3 py-1 text-sm font-medium bg-green-200 text-green-900 rounded-lg"
-                              >
-                                  {test}
-                              </span>
-                          ))}
+                  {/* Patient Context Block */}
+                  <div className="grid grid-cols-3 gap-4">
+                      <div className="p-3 border rounded-lg bg-indigo-50/50">
+                          <p className="text-xs text-gray-600">Patient</p>
+                          <h2 className="text-xl font-semibold text-indigo-900">{details.patientName}</h2>
+                      </div>
+                      <div className="p-3 border rounded-lg bg-yellow-50/50">
+                          <p className="text-xs text-gray-600">Ordering Doctor</p>
+                          <h2 className="text-xl font-semibold text-yellow-900">Dr. {details.assignDoctor}</h2>
+                      </div>
+                      <div className="p-3 border rounded-lg bg-gray-50/50">
+                          <p className="text-xs text-gray-600">Contact Number</p>
+                          <h2 className="text-xl font-semibold text-gray-900">{details.contactNumber}</h2>
                       </div>
                   </div>
-                  
-                  {/* Placeholder for Upload Form */}
-                  <div className="p-6 border-2 border-dashed border-gray-300 rounded-lg text-center bg-gray-50">
-                      <p className="text-gray-500">
-                          [Result Upload Form/Table Goes Here]
-                      </p>
+
+                  {/* 🟢 ITERATE AND CREATE SEPARATE UPLOAD SECTIONS PER TEST */}
+                  <div className="space-y-4">
+                      <h2 className="text-xl font-semibold text-[#0B2D4D] border-b pb-2">Test Result Entry</h2>
+                      
+                      {details.tests.map((test, index) => (
+                          <div 
+                              key={index} 
+                              className="p-4 border rounded-lg bg-white shadow-sm"
+                          >
+                              <div className="flex items-center justify-between mb-3">
+                                  <span className="px-3 py-1 text-sm font-medium bg-green-100 text-green-800 rounded-full border border-green-300">
+                                      {test}
+                                  </span>
+                                  <span className="text-xs text-gray-500">Test {index + 1} of {details.tests.length}</span>
+                              </div>
+                              
+                              <div className="space-y-2">
+                                  {/* Placeholder for Result Input */}
+                                  <label className="block text-xs font-medium text-gray-700">Numeric Result / Finding:</label>
+                                  <input
+                                      type="text"
+                                      placeholder={`Enter result for ${test}`}
+                                      value={results[test] || ''}
+                                      onChange={(e) => handleResultChange(test, e.target.value)}
+                                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                  />
+
+                                  {/* Optional: File Upload Placeholder */}
+                                  <label className="block text-xs font-medium text-gray-700 pt-2">Upload Report (PDF/Image):</label>
+                                  <div className="p-3 border-2 border-dashed border-gray-200 rounded-lg text-center text-gray-500 text-sm">
+                                      [File Upload Component]
+                                  </div>
+                              </div>
+                          </div>
+                      ))}
+                  </div>
+
+                  {/* Final Save Button */}
+                  <div className="pt-4 border-t">
+                      <button
+                          onClick={handleSaveResults}
+                          className="w-full px-4 py-2 text-lg font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                      >
+                          Save All Results & Complete Order
+                      </button>
                   </div>
               </div>
           </div>
