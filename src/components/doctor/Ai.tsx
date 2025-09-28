@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { Copy, Plus, Bot, User, Brain, Loader } from "lucide-react";
+import { Copy, Plus, Bot, User, Brain, Loader, FlaskConical } from "lucide-react";
 import { Patient, Medication } from "../../types";
 import { usePrescription } from "../../contexts/PrescriptionContext";
+import { db } from "../../firebase"; 
+import { collection, addDoc } from 'firebase/firestore'; 
 
-// Type definitions
+// Type definitions (unchanged)
 interface DiagnosisData {
   aiSuggested: string;
   doctorEntry: string;
@@ -45,6 +47,9 @@ const MedicalDashboard: React.FC<{
 }> = ({ consultation, selectedPatient }) => {
   const { addMedications } = usePrescription();
 
+  // --- Mock Current User ID (Replace with actual context/auth data) ---
+  const currentUser = { staffId: 'DOC_987' }; 
+
   // State management
   const [diagnosis, setDiagnosis] = useState<DiagnosisData>({
     aiSuggested: "",
@@ -61,43 +66,44 @@ const MedicalDashboard: React.FC<{
 
   const [medicationRows, setMedicationRows] = useState<MedicationRow[]>([]);
 
-  const [isLoading, setIsLoading] = useState(false); // Lab Results data
+  const [isLoading, setIsLoading] = useState(false); // Used for AI generation
+  const [isSendingLab, setIsSendingLab] = useState(false); // State for lab submission
 
   const labResults = ["ECG", "X-RAY", "TCA-troraric", "In-xity coavortiatric"];
 
   const handleGenerateSuggestions = async () => {
     setIsLoading(true);
 
-    const systemPrompt = `You are an expert medical AI assistant. Based on the provided patient consultation details, generate a concise and structured JSON object with suggestions for the attending doctor. The JSON object must have the following keys:
-1.  "diagnosis": A string with a likely diagnosis and its corresponding ICD-10 code (e.g., "Type 2 Diabetes Mellitus (E11.9)").
-2.  "labInvestigationSuggestion": A brief string recommending relevant lab tests (e.g., "Complete metabolic panel recommended for diabetic monitoring").
-3.  "labTests": A JSON object with boolean flags for the following specific tests: "cbc", "lft", "rft". Set to true if recommended.
-4.  "medications": An array of JSON objects for prescriptions. Each object should have five string keys: "name", "dosage", "frequency", "duration", and "instructions" (e.g., "Metformin", "500mg", "Twice daily", "30 days", "After Meal"). Provide 1 to 3 medication suggestions.
+    const systemPrompt = `You are an expert medical AI assistant. Based on the provided patient consultation details, generate a concise and structured JSON object with suggestions for the attending doctor. The JSON object must strictly follow this structure with the following keys:
+1. "diagnosis": A string with a likely diagnosis and its corresponding ICD-10 code (example: "Type 2 Diabetes Mellitus (E11.9)").
+2. "labInvestigationSuggestion": A short descriptive string recommending relevant lab tests (example: "Complete metabolic panel recommended for diabetic monitoring").
+3. "labTests": A JSON object with boolean flags for the following specific tests: "cbc", "lft", "rft". Example: { "cbc": true, "lft": false, "rft": true }
+4. "medications": An array of JSON objects for prescriptions. Each object must include: "name", "dosage", "frequency", "duration", and "instructions". Example: [ { "name": "Metformin", "dosage": "500mg", "frequency": "Twice daily", "duration": "30 days", "instructions": "After meals" } ]
 
 Do not include any explanatory text or markdown formatting outside of the JSON object.`;
 
     const userPrompt = `
-      Patient Information:
-      - Name: ${selectedPatient.fullName}
-      - Age: ${selectedPatient.age}
-      - Gender: ${selectedPatient.gender}
-      - Chronic Conditions: ${
-        selectedPatient.chronicConditions?.join(", ") || "None"
-      }
+      Patient Information:
+      - Name: ${selectedPatient.fullName}
+      - Age: ${selectedPatient.age}
+      - Gender: ${selectedPatient.gender}
+      - Chronic Conditions: ${
+        selectedPatient.chronicConditions?.join(", ") || "None"
+      }
 
-      Consultation Details from Assessment:
-      - Symptoms: ${consultation.symptoms?.join(", ") || "Not specified"}
-      - Duration: ${consultation.duration || "Not specified"}
-      - Aggravating Factors: ${
-        consultation.aggravatingFactors?.join(", ") || "Not specified"
-      }
-      - General Examination: ${
-        consultation.generalExamination?.join(", ") || "Not specified"
-      }
-      - Systemic Examination: ${
-        consultation.systemicExamination?.join(", ") || "Not specified"
-      }
-    `;
+      Consultation Details from Assessment:
+      - Symptoms: ${consultation.symptoms?.join(", ") || "Not specified"}
+      - Duration: ${consultation.duration || "Not specified"}
+      - Aggravating Factors: ${
+        consultation.aggravatingFactors?.join(", ") || "Not specified"
+      }
+      - General Examination: ${
+        consultation.generalExamination?.join(", ") || "Not specified"
+      }
+      - Systemic Examination: ${
+        consultation.systemicExamination?.join(", ") || "Not specified"
+      }
+    `;
     console.log("Using API Key:", import.meta.env.VITE_GROQ_API_KEY);
 
     try {
@@ -108,6 +114,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
           headers: {
             "Content-Type": "application/json",
 
+            // 🚨 SECURITY NOTE: NEVER hardcode API keys in frontend code. Use environment variables.
             Authorization: "Bearer ",
           },
           body: JSON.stringify({
@@ -131,14 +138,14 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
 
       if (content) {
         try {
-          const aiResponse = JSON.parse(content); // Populate Diagnosis
+          const aiResponse = JSON.parse(content); 
 
           if (aiResponse.diagnosis) {
             setDiagnosis((prev) => ({
               ...prev,
               aiSuggested: aiResponse.diagnosis,
             }));
-          } // Populate Lab Investigations
+          } 
 
           if (aiResponse.labInvestigationSuggestion || aiResponse.labTests) {
             setLabInvestigation((prev) => ({
@@ -151,7 +158,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                 rft: aiResponse.labTests?.rft ?? false,
               },
             }));
-          } // Populate Medications
+          } 
 
           if (Array.isArray(aiResponse.medications)) {
             const newMedicationRows = aiResponse.medications.map(
@@ -162,7 +169,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                 aiDosage: med.dosage || "",
                 aiFrequency: med.frequency || "",
                 aiDuration: med.duration || "",
-                aiInstructions: med.instructions || "",
+                aiInstructions: med.instructions || "", 
                 doctorMedication: "",
                 doctorDosage: "",
                 doctorFrequency: "",
@@ -183,7 +190,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
     } finally {
       setIsLoading(false);
     }
-  }; // Copy functions
+  }; 
 
   const handleCopyPrescription = () => {
     const medicationsToCopy: Omit<Medication, "id">[] = medicationRows.map(
@@ -233,8 +240,71 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
       ...prev,
       doctorTests: { ...prev.aiTests },
     }));
-  }; // Handlers
+  };
+  
+  // 🟢 CORRECTED HANDLER: Parses Doctor's Manual Input and adds items to the 'tests' array
+  const handleSendLabOrder = async () => {
+    
+    // 1. Determine the patient ID using patId or generic id.
+    const patientIdentifier = (selectedPatient.patId || selectedPatient.id);
 
+    if (!patientIdentifier) {
+        alert("Cannot send lab order: Patient ID is missing. Please ensure a patient is properly selected.");
+        return; 
+    }
+
+    // 2. Identify specific selected test codes (CBC, LFT, etc.)
+    const specificTests = (Object.keys(labInvestigation.doctorTests) as Array<keyof typeof labInvestigation.doctorTests>)
+      .filter((key) => labInvestigation.doctorTests[key])
+      .map(test => test.toUpperCase()); 
+
+    
+    // 3. 🆕 PARSE DOCTOR'S MANUAL INPUT
+    let manualTests: string[] = [];
+    if (labInvestigation.doctorEntry) {
+        // Split by comma (,) OR the word " and " (case-insensitive)
+        manualTests = labInvestigation.doctorEntry
+            .split(/,\s*|\s+and\s+/i) 
+            .map(item => item.trim()) 
+            .filter(item => item.length > 0); 
+    }
+
+    // 4. Construct the final tests array: specific test codes + parsed manual text
+    const finalTestsArray = [...specificTests, ...manualTests];
+
+    if (finalTestsArray.length === 0) {
+        alert("No specific tests selected and no manual notes provided to send to the lab.");
+        return;
+    }
+    
+    setIsSendingLab(true);
+
+    try {
+        // 5. Prepare the data payload
+        const labRequestPayload = {
+            patId: patientIdentifier, 
+            tests: finalTestsArray, // This array is now fully parsed into individual elements
+            assignDoctorId: currentUser.staffId, // Doctor placing the order
+            requestedAt: new Date(),
+        };
+
+        // 6. Send data to the Firestore 'labRequests' collection
+        const labRequestsCollection = collection(db, 'labRequests');
+        await addDoc(labRequestsCollection, labRequestPayload);
+
+        console.log("Lab order sent successfully:", labRequestPayload);
+        alert(`Lab order initiated for ${selectedPatient.fullName}. Tests: ${finalTestsArray.join(' | ')}.`);
+
+    } catch (error) {
+        console.error("Error sending lab order to Firebase:", error);
+        alert("Failed to send lab order. Check console and Firebase rules.");
+    } finally {
+        setIsSendingLab(false);
+    }
+  };
+
+
+  // Handlers
   const handleDiagnosisChange = (value: string) => {
     setDiagnosis((prev) => ({ ...prev, doctorEntry: value }));
   };
@@ -243,6 +313,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
     setLabInvestigation((prev) => ({ ...prev, doctorEntry: value }));
   };
 
+  // 🔄 Handler to toggle test state when the tag is clicked
   const handleTestChange = (test: "cbc" | "lft" | "rft") => {
     setLabInvestigation((prev) => ({
       ...prev,
@@ -341,29 +412,63 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
               onChange={(e) => handleLabInvestigationChange(e.target.value)}
               className="w-full p-1.5 border border-gray-300 rounded bg-gray-50 focus:ring-1 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-xs"
             />
+            {/* 🟢 Lab Test Tags Display (based on doctor selection) */}
+            <div className="flex flex-wrap gap-1">
+                {(["cbc", "lft", "rft"] as const).map((test) => 
+                    labInvestigation.doctorTests[test] && (
+                        <span 
+                            key={`tag-${test}`}
+                            className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full border border-blue-300"
+                        >
+                            {test.toUpperCase()}
+                        </span>
+                    )
+                )}
+            </div>
+            {/* End Tags Display */}
+
             <div className="flex flex-col gap-1">
+              <div className="flex gap-2">
+              {/* 🟢 TEST SELECTION AS TAGS (Toggles state on click) */}
               {(["cbc", "lft", "rft"] as const).map((test) => (
-                <label
+                <span
                   key={test}
-                  className="flex items-center gap-1 cursor-pointer"
+                  onClick={() => handleTestChange(test)}
+                  className={`
+                    cursor-pointer px-3 py-1 text-xs font-semibold rounded-full border transition-all duration-200 
+                    ${labInvestigation.doctorTests[test]
+                      ? 'bg-[#012e58] text-white border-[#012e58]'
+                      : 'bg-white text-[#0B2D4D] border-gray-300 hover:bg-gray-100'
+                    }
+                  `}
                 >
-                  <input
-                    type="checkbox"
-                    checked={labInvestigation.doctorTests[test]}
-                    onChange={() => handleTestChange(test)}
-                    className="w-3 h-3 text-[#012e58] border-gray-300 rounded focus:ring-[#012e58]"
-                  />
-                  <span className="text-xs font-medium text-[#0B2D4D]">
-                    {test.toUpperCase()}
-                  </span>
-                </label>
+                  {test.toUpperCase()}
+                </span>
               ))}
-              <button
-                onClick={copyAiTests}
-                className="mt-1 px-2 py-1 text-xs border border-[#012e58] rounded text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-1 focus:ring-[#012e58] transition-all duration-300"
-              >
-                Copy AI Tests
-              </button>
+              </div>
+              <div className="flex gap-2 pt-1"> 
+                <button
+                  onClick={copyAiTests}
+                  className="flex items-center gap-1 px-2 py-1 text-xs border border-[#012e58] rounded text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-1 focus:ring-[#012e58] transition-all duration-300"
+                  disabled={isSendingLab}
+                >
+                  <Copy size={10} />
+                  Copy AI Tests
+                </button>
+                {/* Send to Lab Button */}
+                <button
+                  onClick={handleSendLabOrder}
+                  className="flex items-center gap-1 px-2 py-1 text-xs border border-green-600 rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-1 focus:ring-green-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isSendingLab}
+                >
+                  {isSendingLab ? (
+                    <Loader className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <FlaskConical size={10} />
+                  )}
+                  {isSendingLab ? 'Sending...' : 'Send to Lab'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -374,19 +479,39 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
             </h3>
           </div>
           <div className="p-2 space-y-1">
-            <div className="flex justify-between items-center p-2 bg-gradient-to-r from-[#012e58]/5 to-[#012e58]/10 rounded border border-gray-200 hover:shadow-sm transition-all">
-              <span className="font-medium text-[#0B2D4D] text-xs">
-                {labInvestigation.aiSuggestion}
-              </span>
-              <button
+            
+            {/* 🟢 AI Suggested Text as a Single Tag */}
+            <div className="flex flex-wrap gap-2">
+                <span className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full font-medium">
+                    {labInvestigation.aiSuggestion}
+                </span>
+            </div>
+            
+            <button
                 onClick={() =>
                   copyToField(labInvestigation.aiSuggestion, "labInvestigation")
                 }
                 className="px-1 py-0.5 border border-[#012e58] rounded text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-1 focus:ring-[#012e58] transition-all duration-300"
               >
                 <Copy size={10} />
-              </button>
+            </button>
+            
+            {/* 🟢 AI Suggested Individual Test Tags */}
+            <div className="flex flex-wrap gap-1 pt-2">
+                <span className="text-gray-500 text-xs font-semibold mr-1">Suggested Tests:</span>
+                {(["cbc", "lft", "rft"] as const).map((test) => 
+                    labInvestigation.aiTests[test] && (
+                        <span 
+                            key={`ai-tag-${test}`}
+                            className="px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded-full border border-purple-300"
+                        >
+                            {test.toUpperCase()}
+                        </span>
+                    )
+                )}
             </div>
+            {/* End AI Tags Display */}
+
           </div>
         </div>
       </div>
@@ -544,10 +669,11 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
               ))}
             </tbody>
           </table>
-        </div>
-      </div>
-    </div>
-  );
+
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default MedicalDashboard;
