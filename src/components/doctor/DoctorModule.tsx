@@ -405,7 +405,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     `;
 
     try {
-      console.log("Using API Key:", import.meta.env.VITE_GROQ_API_KEY);
+      console.log("Using API Key: [API_KEY_HIDDEN]");
       const response = await fetch(
         "https://api.groq.com/openai/v1/chat/completions",
         {
@@ -524,10 +524,10 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
       // Return default/placeholder values when no vitals are available
       return [
         { label: "BP", value: "120/80", unit: "mmHg" },
-        { label: "PR", value: "18", unit: "bpm" },
+        { label: "PR", value: "70", unit: "bpm" },
         { label: "SpO₂", value: "99", unit: "%" },
         { label: "BMI", value: "25.6", unit: "" },
-        { label: "BPR", value: "20", unit: "/min" },
+        { label: "RR", value: "20", unit: "/min" },
       ];
     }
 
@@ -553,7 +553,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
         unit: "",
       },
       {
-        label: "BPR",
+        label: "RR",
         value: vitals.respiratoryRate?.toString() || "20",
         unit: "/min",
       },
@@ -1117,7 +1117,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
             {activeTab === "assessment" && (
               <button
                 onClick={() => setActiveTab("ai-assist")}
-                className="group flex items-center px-4 py-2 border border-[#012e58] rounded-md  bg-[#012e58] hover:bg-[#012e58e3] text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm font-medium"
+                className="group flex items-center px-4 py-2 border border-[#012e58] rounded-md  bg-[#012e58] hover:bg-[#012e58e3] text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm font-medium"
               >
                 <Bot className="w-4 h-4 mr-1.5 transition-transform duration-300 group-hover:scale-110" />
                 AI Assist
@@ -1132,16 +1132,16 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                 <ChevronRight className="w-4 h-4 ml-1.5" />
               </button>
             )}
-            {activeTab === "prescriptions" && (
-              <button
-                onClick={() => onCompleteConsultation(selectedPatient.id)}
-                className="group flex items-center px-4 py-2 bg-[#012e58] text-white font-semibold rounded-md shadow-md hover:bg-[#1a4b7a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm"
-              >
-                <span>Complete Consultation</span>
-                <ChevronRight className="w-4 h-4 ml-1.5" />
-              </button>
-            )}
           </div>
+
+          {/* COMPLETE CONSULTATION BUTTON - NOW ALWAYS VISIBLE IN DOCTOR MODULE */}
+          <button
+            onClick={() => onCompleteConsultation(selectedPatient.id)}
+            className="group flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 transition-all duration-300 text-sm"
+          >
+            <span>Complete Consultation</span>
+            <CheckCircle className="w-4 h-4 ml-1.5" />
+          </button>
         </div>
       </div>
       <AiSummaryModal

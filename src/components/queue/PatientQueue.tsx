@@ -10,6 +10,7 @@ import {
   ChevronUp,
   Search,
   Filter,
+  CheckCircle, // Added CheckCircle for visual confirmation
 } from "lucide-react";
 import {
   collection,
@@ -123,6 +124,7 @@ const PatientQueue: React.FC = () => {
 
   const handleCompleteConsultation = async (patientId: string) => {
     const patientRef = doc(db, "patients", patientId);
+    // This action updates the patient's status to "Completed" in the database
     await updateDoc(patientRef, {
       status: "Completed",
     });
