@@ -134,8 +134,10 @@ const LabTestQueue: React.FC = () => {
 
 
   // 3. Combine Requests and Patient Data
+  
   useEffect(() => {
     const combinedData: LabQueueItem[] = rawRequests.map(req => {
+      console.log(req.patId);
       // Use req.patId to look up the patient details from the map
       const patient = allPatients[req.patId] || { fullName: 'Unknown Patient', contactNumber: 'N/A' };
       return {

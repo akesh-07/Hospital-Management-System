@@ -10,9 +10,16 @@ import {
   Upload,
 } from "lucide-react";
 import { db } from "../../firebase";
-import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { 
+  collection, 
+  addDoc, 
+  Timestamp,
+  // 🟢 FIX: Import doc and updateDoc
+  doc, 
+  updateDoc 
+} from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { v4 as uuidv4 } from "uuid";
+// Removed unused v4 import
 
 // Helper component for section headers to maintain consistency
 const SectionHeader: React.FC<{ icon: React.ElementType; title: string }> = ({
@@ -51,6 +58,7 @@ export const PatientRegistration: React.FC = () => {
   });
 
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Handle file input change
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,15 +67,25 @@ export const PatientRegistration: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    
     try {
-      // Generate a unique ID for the patient
-      const patientId = uuidv4();
+      // 1. Add the document first to get the auto-generated Firestore ID
+      const newPatientRef = await addDoc(collection(db, "patients"), {
+        ...formData,
+        fileUrls: [], // Placeholder for initial document write
+        createdAt: Timestamp.now(),
+        status: "Waiting",
+      });
+
+      const patientId = newPatientRef.id; // 🟢 Get the Firestore auto-generated ID
       const storage = getStorage();
       const fileUrls: string[] = [];
-
-      // Upload each file to Firebase Storage
-      if (formData.files) {
+      
+      // 2. Upload each file to Firebase Storage using the new patientId
+      if (formData.files && formData.files.length > 0) {
         for (const file of Array.from(formData.files)) {
+          // Use the Firestore ID in the Storage path
           const storageRef = ref(storage, `patients/${patientId}/${file.name}`);
           const snapshot = await uploadBytes(storageRef, file);
           const downloadURL = await getDownloadURL(snapshot.ref);
@@ -75,17 +93,17 @@ export const PatientRegistration: React.FC = () => {
         }
       }
 
-      await addDoc(collection(db, "patients"), {
-        ...formData,
-        id: patientId,
-        fileUrls: fileUrls,
-        createdAt: Timestamp.now(),
-        status: "Waiting",
+      // 3. Update the Firestore document with the final ID (inside the document) and file URLs
+      // 🟢 This line now works because updateDoc is imported
+      await updateDoc(newPatientRef, {
+        id: patientId, // Set the document ID inside the data payload (as desired)
+        fileUrls: fileUrls, // Add the final file URLs
       });
 
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
 
+      // Reset form state
       setFormData({
         fullName: "",
         age: "",
@@ -106,6 +124,8 @@ export const PatientRegistration: React.FC = () => {
       });
     } catch (error) {
       console.error("Error adding patient:", error);
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
@@ -186,6 +206,7 @@ export const PatientRegistration: React.FC = () => {
                         setFormData({ ...formData, fullName: e.target.value })
                       }
                       required
+                      disabled={isSubmitting}
                     />
                     <input
                       type="number"
@@ -196,6 +217,7 @@ export const PatientRegistration: React.FC = () => {
                         setFormData({ ...formData, age: e.target.value })
                       }
                       required
+                      disabled={isSubmitting}
                     />
                     <div className="relative">
                       <input
@@ -209,6 +231,7 @@ export const PatientRegistration: React.FC = () => {
                           })
                         }
                         required
+                        disabled={isSubmitting}
                       />
                       {!formData.dateOfBirth && (
                         <span className="absolute left-3 top-3 text-gray-500 pointer-events-none text-sm"></span>
@@ -221,6 +244,7 @@ export const PatientRegistration: React.FC = () => {
                         setFormData({ ...formData, gender: e.target.value })
                       }
                       required
+                      disabled={isSubmitting}
                     >
                       <option value="">Select Gender</option>
                       <option value="Male">Male</option>
@@ -245,6 +269,7 @@ export const PatientRegistration: React.FC = () => {
                         })
                       }
                       required
+                      disabled={isSubmitting}
                     />
                     <input
                       type="email"
@@ -254,6 +279,7 @@ export const PatientRegistration: React.FC = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
                       }
+                      disabled={isSubmitting}
                     />
                     <input
                       type="text"
@@ -263,6 +289,7 @@ export const PatientRegistration: React.FC = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, address: e.target.value })
                       }
+                      disabled={isSubmitting}
                     />
                   </div>
                 </div>
@@ -284,6 +311,7 @@ export const PatientRegistration: React.FC = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, abhaId: e.target.value })
                       }
+                      disabled={isSubmitting}
                     />
                     <select
                       className={inputStyle}
@@ -294,6 +322,7 @@ export const PatientRegistration: React.FC = () => {
                           patientType: e.target.value,
                         })
                       }
+                      disabled={isSubmitting}
                     >
                       <option value="OPD">OPD (Outpatient)</option>
                       <option value="IPD">IPD (Inpatient)</option>
@@ -305,6 +334,7 @@ export const PatientRegistration: React.FC = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, visitType: e.target.value })
                       }
+                      disabled={isSubmitting}
                     >
                       <option value="Appointment">Appointment</option>
                       <option value="Walk-in">Walk-in</option>
@@ -320,6 +350,7 @@ export const PatientRegistration: React.FC = () => {
                           consultationPackage: e.target.value,
                         })
                       }
+                      disabled={isSubmitting}
                     />
                   </div>
                   {/* Chronic Conditions */}
@@ -340,6 +371,7 @@ export const PatientRegistration: React.FC = () => {
                               condition
                             )}
                             onChange={() => toggleCondition(condition)}
+                            disabled={isSubmitting}
                           />
                           <span>{condition}</span>
                         </label>
@@ -361,6 +393,7 @@ export const PatientRegistration: React.FC = () => {
                             paymentMethod: e.target.value,
                           })
                         }
+                        disabled={isSubmitting}
                       >
                         <option value="Cash">Cash</option>
                         <option value="Card">Card</option>
@@ -376,6 +409,7 @@ export const PatientRegistration: React.FC = () => {
                             preferredLanguage: e.target.value,
                           })
                         }
+                        disabled={isSubmitting}
                       >
                         <option value="English">English</option>
                         <option value="Hindi">Hindi</option>
@@ -392,6 +426,7 @@ export const PatientRegistration: React.FC = () => {
                             doctorAssigned: e.target.value,
                           })
                         }
+                        disabled={isSubmitting}
                       />
                       {/* File Upload Button */}
                       <label className="sm:col-span-2 block cursor-pointer">
@@ -412,6 +447,7 @@ export const PatientRegistration: React.FC = () => {
                           onChange={handleFileChange}
                           multiple
                           accept=".pdf, .docx"
+                          disabled={isSubmitting}
                         />
                       </label>
                     </div>
@@ -428,17 +464,19 @@ export const PatientRegistration: React.FC = () => {
             type="button"
             className="group flex items-center px-5 py-2.5 border border-accent-blue rounded-lg text-accent-blue bg-white hover:bg-accent-blue hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-blue transition-all duration-300 font-medium"
             onClick={clearForm}
+            disabled={isSubmitting}
           >
             <X className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:rotate-90" />
             Clear Form
           </button>
           <button
             type="submit"
-            className="flex items-center px-6 py-2.5 bg-primary-dark text-white font-semibold rounded-lg shadow-md hover:bg-primary-dark/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-all duration-300"
+            className="flex items-center px-6 py-2.5 bg-primary-dark text-white font-semibold rounded-lg shadow-md hover:bg-primary-dark/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-all duration-300 disabled:opacity-70 disabled:cursor-wait"
             onClick={handleSubmit}
+            disabled={isSubmitting}
           >
             <Save className="w-4 h-4 mr-2" />
-            Register Patient
+            {isSubmitting ? 'Registering...' : 'Register Patient'}
           </button>
         </div>
       </div>
