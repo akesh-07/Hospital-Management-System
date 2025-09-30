@@ -19,7 +19,7 @@ import StaffDashboard from "./components/Staff/StaffDashboard";
 import { PharmacyModule } from "./components/pharmacy/PharmacyModule";
 import SignupPage from "./components/auth/SignupPage";
 import DoctorForm from "./components/auth/DoctorForm";
-import Ai from "./components/doctor/ai";
+import Ai from "./components/doctor/Ai";
 import LabForm from "./components/LabModule/Lab";
 import InPatientsForm from "./components/IP/In-Patients";
 import LabTestQueue from "./components/LabModule/LabTestQueue";
@@ -43,16 +43,16 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Public route for the Login page */}
+          {/* Public routes */}
           <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/doctor" element={<DoctorForm />} />
-           <Route path="/sign" element={<SignupPage />} />
+          <Route path="/sign" element={<SignupPage />} />
           <Route path="/ai" element={<Ai />} />
           <Route path="/lab" element={<LabForm />} />
-           <Route path="/IP" element={<InPatientsForm />} />
-            <Route path="/labtest" element={<LabTestQueue />} />
+          <Route path="/IP" element={<InPatientsForm />} />
+          {/* NOTE: Removed redundant public route /labtest, as the Lab Queue must be protected. */}
           {/* Common Dashboard for all roles */}
           <Route
             path="/dashboard"
@@ -64,8 +64,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-
-          {/* Receptionist Routes */}
+          {/* Receptionist/Nurse/Doctor Routes */}
           <Route
             path="/registration"
             element={
@@ -76,6 +75,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/pre-opd"
             element={
@@ -88,7 +88,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           {/* Doctor Routes */}
           <Route
             path="/doctor-module"
@@ -100,7 +99,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           {/* Pharmacist Routes */}
           <Route
             path="/pharmacy"
@@ -112,7 +110,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           {/* Nurse Routes */}
           <Route
             path="/staff"
@@ -120,6 +117,17 @@ function App() {
               <ProtectedRoute allowedRoles={["staff-nurse"]}>
                 <AuthenticatedLayout currentSection="staff">
                   <StaffDashboard />
+                </AuthenticatedLayout>
+              </ProtectedRoute>
+            }
+          />
+          {/* 🟢 FIX: Technician Lab Queue Route */}
+          <Route
+            path="/lab-requests" // This path matches the Sidebar link
+            element={
+              <ProtectedRoute allowedRoles={["technician"]}>
+                <AuthenticatedLayout currentSection="lab-requests">
+                  <LabTestQueue />
                 </AuthenticatedLayout>
               </ProtectedRoute>
             }

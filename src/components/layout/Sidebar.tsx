@@ -7,6 +7,7 @@ import {
   Stethoscope,
   Pill,
   LineChart,
+  FlaskConical, // Import new icon for Lab Requests
 } from "lucide-react";
 import { UserRole } from "../../contexts/AuthContext";
 import { useAuth } from "../../contexts/AuthContext";
@@ -23,17 +24,23 @@ const allNavigationItems = [
     icon: UserPlus,
     path: "/registration",
   },
-  { id: "queue", label: "Pre-OPD", icon: Users, path: "/pre-opd" },
+  { id: "queue", label: "Pre-OPD", icon: Users, path: "/pre-opd" }, // 🟢 ITEM FOR LAB TECHNICIAN
+  {
+    id: "lab-requests",
+    label: "Lab Requests",
+    icon: FlaskConical,
+    path: "/lab-requests",
+  },
   { id: "pharmacy", label: "Pharmacy", icon: Pill, path: "/pharmacy" },
   { id: "dashboard", label: "Analytics", icon: LineChart, path: "/dashboard" },
 ];
 
 const rolePermissions: Record<UserRole, string[]> = {
-  doctor: ["dashboard", "queue"], // Removed "doctor" as it's not in allNavigationItems
+  doctor: ["dashboard", "queue"],
   pharmacist: ["dashboard", "pharmacy"],
   "staff-nurse": ["dashboard", "queue"],
-  receptionist: ["dashboard", "registration", "queue"],
-  technician: ["dashboard"],
+  receptionist: ["dashboard", "registration", "queue"], // 🟢 Technician is correctly allowed access to lab-requests
+  technician: ["dashboard", "lab-requests"],
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeSection }) => {
@@ -67,7 +74,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSection }) => {
           </div>
         </div>
       </div>
-
       {/* Navigation */}
       <nav className="p-4 flex-1">
         <ul className="space-y-2">
@@ -95,6 +101,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSection }) => {
                   >
                     <Icon className="w-5 h-5" />
                   </div>
+
                   <span className="font-medium text-sm">{item.label}</span>
                 </button>
               </li>
@@ -102,7 +109,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSection }) => {
           })}
         </ul>
       </nav>
-
       {/* System Status - matching original bottom section */}
     </aside>
   );
