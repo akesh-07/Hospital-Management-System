@@ -1,5 +1,5 @@
 // src/components/vitals/PreOPDIntakeSections.tsx
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import {
   FileText,
   HeartPulse,
@@ -17,6 +17,7 @@ import {
   Bot,
 } from "lucide-react";
 import {
+  // Assuming standard type definitions exist in a types file
   PreOPDIntakeData,
   Complaint,
   ChronicCondition,
@@ -111,6 +112,10 @@ export const PresentingComplaints: React.FC<ComplaintProps> = ({
         return c;
       })
     );
+  };
+
+  const removeComplaint = (id: string) => {
+    onChange(data.filter((r) => r.id !== id));
   };
 
   return (
@@ -215,7 +220,7 @@ export const PresentingComplaints: React.FC<ComplaintProps> = ({
               {/* Delete */}
               <div className="flex justify-end">
                 <button
-                  onClick={() => onChange(data.filter((r) => r.id !== c.id))}
+                  onClick={() => removeComplaint(c.id)}
                   className="p-2 text-red-500 hover:text-red-700 rounded-md"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -253,7 +258,7 @@ interface ChronicConditionsProps {
   onChange: (data: ChronicCondition[]) => void;
 }
 
-export const ChronicConditionsSection: React.FC = () => {
+export const ChronicConditionsSection: React.FC<ChronicConditionsProps> = () => {
   // Logic for this is complex due to nested medication tables and will be minimal here.
 
   return (
@@ -571,20 +576,143 @@ export const PastHistorySection: React.FC<PastHistoryProps> = ({
 // 5. Previous Records Uploads & AI Clinical Summary Stubs
 // -----------------------------------------------------------
 
-export const RecordsUploadSection: React.FC = () => (
-  <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-md">
-    <SectionHeader icon={Upload} title="Previous Records Uploads (OCR + NLP)" />
-    <div className="p-3 border-2 border-dashed border-gray-300 rounded-lg text-center bg-gray-50">
-      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-      <p className="text-sm text-[#1a4b7a] mb-2">
-        Drag and drop or click to upload PDF/DOCX/JPG
-      </p>
-      <p className="text-xs text-gray-500">
-        OCR/Extraction logic and confidence badge UI is pending.
-      </p>
+interface RecordsUploadProps {
+  // onFileUpload receives the File object after selection
+  onFileUpload?: (file: File) => void; 
+}
+
+export const RecordsUploadSection: React.FC<RecordsUploadProps> = ({ onFileUpload }) => {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Ref to trigger the hidden file input
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Function to handle the actual network transfer (MUST BE IMPLEMENTED)
+  const uploadFileToServer = (file: File) => {
+    // --- REAL UPLOAD LOGIC STARTS HERE ---
+    console.log("File selected. Preparing to upload:", file.name);
+
+    // 1. Create FormData
+    const formData = new FormData();
+    formData.append('labReport', file); 
+
+    // 2. Network Request (using fetch or axios)
+    /*
+    fetch('/api/upload-records', { 
+        method: 'POST',
+        body: formData,
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Upload failed');
+        return response.json();
+    })
+    .then(data => {
+        console.log('Upload successful! Server response:', data);
+        onFileUpload?.(file); // Notify parent component after successful upload
+    })
+    .catch(error => {
+        console.error("Upload error:", error);
+        // Handle error state (e.g., show message, clear file)
+    });
+    */
+    // --- REAL UPLOAD LOGIC ENDS HERE ---
+    
+    // In this demo, we notify the parent immediately after selection for simplicity
+    // The actual network call should happen asynchronously as shown above
+    onFileUpload?.(file); 
+  };
+
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    setSelectedFile(file);
+    if (file) {
+      uploadFileToServer(file);
+    }
+    // Note: The file input's value must be cleared on remove/completion to re-upload the same file.
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const file = event.dataTransfer.files?.[0] || null;
+    setSelectedFile(file);
+    if (file) {
+      uploadFileToServer(file);
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const removeFile = (e?: React.MouseEvent) => {
+    e?.stopPropagation(); 
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+        // Clear the input value so the onChange event fires again if the user selects the same file
+        fileInputRef.current.value = ""; 
+    }
+  };
+
+  return (
+    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-md">
+      <SectionHeader icon={Upload} title="Previous Records Uploads (OCR + NLP)" />
+      
+      {/* Hidden file input: Triggered by clicking the custom drop zone */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept=".pdf,.docx,.jpg,.jpeg,.png"
+      />
+
+      <div 
+        className="p-4 border-2 border-dashed border-gray-300 rounded-lg text-center bg-gray-50 hover:bg-gray-100 transition duration-150 cursor-pointer"
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onClick={() => fileInputRef.current?.click()} // Main trigger
+      >
+        {selectedFile ? (
+          <div className="flex items-center justify-between p-2 bg-white border border-green-300 rounded-md">
+            <div className="flex items-center space-x-2 truncate">
+              <FileText className="w-5 h-5 text-green-600 flex-shrink-0" />
+              <p className="text-sm font-medium text-green-700 truncate">
+                {selectedFile.name}
+              </p>
+              <span className="text-xs text-gray-500 flex-shrink-0">
+                ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+              </span>
+            </div>
+            <button
+              onClick={removeFile}
+              className="p-1 text-red-500 hover:text-red-700 rounded-full flex-shrink-0"
+              title="Remove File"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <>
+            <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+            <p className="text-sm text-[#1a4b7a] mb-2 font-medium">
+              Drag and drop a file here, or click to browse
+            </p>
+            <p className="text-xs text-gray-500">
+              Accepted formats: PDF, DOCX, JPG, PNG
+            </p>
+            <p className="text-xs text-yellow-600 mt-2 font-semibold">
+              To fully enable "uploading," you must uncomment and configure the `fetch` API call inside `uploadFileToServer`.
+            </p>
+          </>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
+
 
 export const AiClinicalSummarySection: React.FC = () => (
   <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-md">

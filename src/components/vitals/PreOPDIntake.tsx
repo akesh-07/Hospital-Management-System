@@ -1,5 +1,5 @@
 // src/components/vitals/PreOPDIntake.tsx
-import React, { useState, useReducer, useCallback, useMemo } from "react";
+import React, { useState, useReducer, useCallback, useMemo, useRef } from "react";
 import {
   FileText,
   HeartPulse,
@@ -25,6 +25,8 @@ import {
   EyeOff,
   ClipboardCopy,
 } from "lucide-react";
+
+// NOTE: Assuming VitalsAssessment and Firebase types/imports are configured correctly.
 import { VitalsAssessment } from "./VitalsAssessment";
 import { db } from "../../firebase";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
@@ -123,299 +125,12 @@ function intakeReducer(
   }
 }
 
-// --- MAIN COMPONENT ---
-interface PreOPDIntakeProps {
-  selectedPatient?: Patient | null;
-  onBack?: () => void;
-}
+// ------------------------------------------------------------------
+// --- SECTION COMPONENTS (Integrated for a single file solution) ---
+// ------------------------------------------------------------------
 
-export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
-  selectedPatient,
-  onBack,
-}) => {
-  const [intakeData, dispatch] = useReducer(
-    intakeReducer,
-    INITIAL_INTAKE_STATE
-  );
-  const [status, setStatus] = useState({
-    isSaving: false,
-    showSuccess: false,
-    errorMessage: "",
-  });
-
-  // AI Summary state
-  const [aiSummary, setAiSummary] = useState("");
-  const [isAiLoading, setIsAiLoading] = useState(false);
-  const [aiExpanded, setAiExpanded] = useState(false);
-
-  // --- HANDLERS ---
-  const handleComplaintsChange = useCallback((complaints: Complaint[]) => {
-    dispatch({ type: "UPDATE_COMPLAINTS", payload: complaints });
-  }, []);
-
-  const handleChronicConditionsChange = useCallback(
-    (conditions: ChronicCondition[]) => {
-      dispatch({ type: "UPDATE_CHRONIC_CONDITIONS", payload: conditions });
-    },
-    []
-  );
-
-  const handleAllergiesChange = useCallback((allergies: Allergy) => {
-    dispatch({ type: "UPDATE_ALLERGIES", payload: allergies });
-  }, []);
-
-  const handlePastHistoryChange = useCallback((pastHistory: PastHistory) => {
-    dispatch({ type: "UPDATE_PAST_HISTORY", payload: pastHistory });
-  }, []);
-
-  const handleClearForm = useCallback(() => {
-    dispatch({ type: "RESET_ALL", payload: null });
-    setAiSummary("");
-  }, []);
-
-  const generateAiSummary = useCallback(async () => {
-    if (!selectedPatient) {
-      setAiSummary("Please select a patient first.");
-      return;
-    }
-
-    setIsAiLoading(true);
-    setAiSummary("");
-
-    // Mock AI summary generation based on intake data
-    const mockSummary = `Patient ${selectedPatient.fullName} (${
-      selectedPatient.age
-    }Y, ${selectedPatient.gender}) presents with ${
-      intakeData.complaints.length
-    } chief complaint(s). ${
-      intakeData.complaints.some((c) => c.redFlagTriggered)
-        ? "🚨 RED FLAG: Critical symptoms detected requiring immediate attention. "
-        : ""
-    }Known chronic conditions include: ${
-      intakeData.chronicConditions.map((c) => c.name).join(", ") || "None"
-    }. ${
-      intakeData.allergies.hasAllergies
-        ? `Patient has reported allergies to ${intakeData.allergies.substance} with ${intakeData.allergies.severity} severity. `
-        : "No known allergies reported. "
-    }Current medication compliance is ${
-      intakeData.pastHistory.overallCompliance
-    }. Recommend comprehensive evaluation and appropriate specialist referral if indicated.`;
-
-    // Simulate API delay
-    setTimeout(() => {
-      setAiSummary(mockSummary);
-      setIsAiLoading(false);
-      setAiExpanded(true);
-    }, 2000);
-  }, [selectedPatient, intakeData]);
-
-  const handleSubmit = async () => {
-    if (!selectedPatient) {
-      setStatus({ ...status, errorMessage: "No patient selected!" });
-      return;
-    }
-
-    setStatus({ isSaving: true, showSuccess: false, errorMessage: "" });
-
-    try {
-      const intakeRecord = {
-        patientId: selectedPatient.id,
-        patientUhid: selectedPatient.uhid,
-        patientName: selectedPatient.fullName,
-        complaints: intakeData.complaints,
-        chronicConditions: intakeData.chronicConditions,
-        allergies: intakeData.allergies,
-        pastHistory: intakeData.pastHistory,
-        aiSummary,
-        recordedAt: Timestamp.now(),
-        recordedBy: "Medical Staff",
-        status: "completed",
-      };
-
-      await addDoc(collection(db, "preOPDIntake"), intakeRecord);
-
-      setStatus({ isSaving: false, showSuccess: true, errorMessage: "" });
-      setTimeout(
-        () => setStatus((prev) => ({ ...prev, showSuccess: false })),
-        4000
-      );
-    } catch (error: any) {
-      console.error("Error saving Pre-OPD intake:", error);
-      setStatus({
-        isSaving: false,
-        showSuccess: false,
-        errorMessage: "Failed to save intake data. Please try again.",
-      });
-    }
-  };
-
-  // --- RENDER ---
-  return (
-    <div className="min-h-screen bg-[#F8F9FA] pb-20">
-      <div className="max-w-6xl mx-auto p-6">
-        {/* Header */}
-        <header className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="p-2 hover:bg-white rounded-lg border border-gray-200 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 text-[#1a4b7a]" />
-              </button>
-            )}
-            <FileText className="w-8 h-8 text-[#012e58]" />
-            <div>
-              <h1 className="text-3xl font-bold text-[#0B2D4D]">
-                Pre-OPD Intake Assessment
-              </h1>
-              <p className="text-[#1a4b7a]">
-                Comprehensive patient intake and medical history
-              </p>
-            </div>
-          </div>
-
-          {/* Patient Info */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4 text-right">
-            <p className="text-sm text-[#1a4b7a]">Current Patient</p>
-            <p className="font-semibold text-[#0B2D4D]">
-              {selectedPatient?.fullName || "No Patient Selected"}
-            </p>
-            <p className="text-sm text-[#1a4b7a]">
-              {selectedPatient ? (
-                <>
-                  {selectedPatient.uhid} • {selectedPatient.age}Y •{" "}
-                  {selectedPatient.gender}
-                </>
-              ) : (
-                "Please select a patient"
-              )}
-            </p>
-          </div>
-        </header>
-
-        {/* Status Messages */}
-        {status.showSuccess && (
-          <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4 flex items-center space-x-2">
-            <CheckCircle className="w-5 h-5 text-green-600" />
-            <span className="text-green-800">
-              Pre-OPD intake saved successfully!
-            </span>
-          </div>
-        )}
-        {status.errorMessage && (
-          <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2">
-            <AlertTriangle className="w-5 h-5 text-red-600" />
-            <span className="text-red-800">{status.errorMessage}</span>
-          </div>
-        )}
-
-        {/* Main Content Sections */}
-        <div className="space-y-6">
-          {/* 1. Vitals Assessment */}
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="p-4 border-b border-gray-200 bg-gray-50">
-              <div className="flex items-center space-x-2">
-                <Activity className="w-5 h-5 text-[#012e58]" />
-                <h2 className="text-lg font-semibold text-[#0B2D4D]">
-                  1. Vital Signs Assessment
-                </h2>
-              </div>
-            </div>
-            <div className="p-0">
-              <VitalsAssessment
-                selectedPatient={selectedPatient}
-                isSubcomponent={true}
-              />
-            </div>
-          </div>
-
-          {/* 2. Presenting Complaints */}
-          <PresentingComplaintsSection
-            data={intakeData.complaints}
-            onChange={handleComplaintsChange}
-          />
-
-          {/* 3. Chronic Conditions */}
-          <ChronicConditionsSection
-            data={intakeData.chronicConditions}
-            onChange={handleChronicConditionsChange}
-          />
-
-          {/* 4. Allergies */}
-          <AllergiesSection
-            data={intakeData.allergies}
-            onChange={handleAllergiesChange}
-            allMeds={[
-              ...intakeData.chronicConditions.flatMap((c) => c.medications),
-              ...intakeData.pastHistory.currentMedications,
-            ]}
-          />
-
-          {/* 5. Past & Medication History */}
-          <PastHistorySection
-            data={intakeData.pastHistory}
-            onChange={handlePastHistoryChange}
-            chronicMeds={intakeData.chronicConditions.flatMap(
-              (c) => c.medications
-            )}
-          />
-
-          {/* 6. Previous Records Uploads */}
-          <RecordsUploadSection />
-
-          {/* 7. AI Clinical Summary */}
-          <AiClinicalSummarySection
-            summary={aiSummary}
-            isLoading={isAiLoading}
-            isExpanded={aiExpanded}
-            onToggleExpand={() => setAiExpanded(!aiExpanded)}
-            onGenerate={generateAiSummary}
-          />
-        </div>
-      </div>
-
-      {/* Fixed Bottom Submit Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">
-                {intakeData.complaints.length} complaints,{" "}
-                {intakeData.chronicConditions.length} conditions recorded
-              </span>
-              {intakeData.complaints.some((c) => c.redFlagTriggered) && (
-                <span className="flex items-center text-red-600 bg-red-100 px-2 py-1 rounded-full text-xs font-semibold">
-                  <AlertTriangle className="w-3 h-3 mr-1" />
-                  Red Flag Alert
-                </span>
-              )}
-            </div>
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={handleClearForm}
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300 transition-colors"
-              >
-                <RotateCcw className="w-4 h-4" />
-                <span>Clear Form</span>
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={status.isSaving || !selectedPatient}
-                className="flex items-center space-x-2 px-6 py-2 rounded-lg font-semibold transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed bg-[#012e58] text-white hover:bg-[#1a4b7a]"
-              >
-                <Save className="w-4 h-4" />
-                <span>{status.isSaving ? "Saving..." : "Submit Intake"}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- SECTION COMPONENTS ---
+const InputStyle =
+  "p-2 border border-gray-300 rounded-md w-full bg-white focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-sm";
 
 // Presenting Complaints Section
 interface PresentingComplaintsSectionProps {
@@ -497,7 +212,7 @@ const PresentingComplaintsSection: React.FC<
           </div>
         ) : (
           <div className="space-y-4">
-            {data.map((complaint, index) => (
+            {data.map((complaint) => (
               <div
                 key={complaint.id}
                 className="p-4 border border-gray-200 rounded-lg bg-gray-50"
@@ -519,7 +234,7 @@ const PresentingComplaintsSection: React.FC<
                           e.target.value
                         )
                       }
-                      className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] text-sm"
+                      className={InputStyle}
                       placeholder="e.g., Chest Pain"
                     />
                     <datalist id={`complaint-list-${complaint.id}`}>
@@ -543,7 +258,7 @@ const PresentingComplaintsSection: React.FC<
                           e.target.value
                         )
                       }
-                      className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] text-sm"
+                      className={InputStyle}
                     >
                       <option value="">Select</option>
                       {MOCK_MASTERS.severity.map((s) => (
@@ -569,7 +284,7 @@ const PresentingComplaintsSection: React.FC<
                             value: e.target.value,
                           })
                         }
-                        className="flex-1 p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] text-sm"
+                        className={`${InputStyle} flex-1`}
                         placeholder="3"
                       />
                       <select
@@ -580,7 +295,7 @@ const PresentingComplaintsSection: React.FC<
                             unit: e.target.value,
                           })
                         }
-                        className="w-16 p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] text-sm"
+                        className={`${InputStyle} w-16`}
                       >
                         <option value="h">hrs</option>
                         <option value="d">days</option>
@@ -714,19 +429,14 @@ const ChronicConditionsSection: React.FC<ChronicConditionsSectionProps> = ({
     }
   };
 
-  // Check for uncontrolled conditions based on vitals or medications
+  // Check for uncontrolled conditions based on medications
   const getUncontrolledWarning = (condition: ChronicCondition) => {
     if (
-      condition.name.toLowerCase().includes("diabetes") &&
+      (condition.name.toLowerCase().includes("diabetes") ||
+        condition.name.toLowerCase().includes("hypertension")) &&
       condition.medications.length === 0
     ) {
-      return "⚠️ No diabetes medications recorded - condition may be uncontrolled";
-    }
-    if (
-      condition.name.toLowerCase().includes("hypertension") &&
-      condition.medications.length === 0
-    ) {
-      return "⚠️ No BP medications recorded - condition may be uncontrolled";
+      return "⚠️ No medications recorded - suggests possible poor control or unmanaged condition.";
     }
     return null;
   };
@@ -880,7 +590,7 @@ const ChronicConditionsSection: React.FC<ChronicConditionsSectionProps> = ({
                                 duration: e.target.value,
                               })
                             }
-                            className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                            className={InputStyle}
                           >
                             <option value="Unknown">Unknown</option>
                             <option value="< 1 year">Less than 1 year</option>
@@ -903,7 +613,7 @@ const ChronicConditionsSection: React.FC<ChronicConditionsSectionProps> = ({
                                 onMedication: e.target.value as any,
                               })
                             }
-                            className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                            className={InputStyle}
                           >
                             <option value="Unknown">Unknown</option>
                             <option value="Yes">Yes</option>
@@ -947,12 +657,12 @@ const ChronicConditionsSection: React.FC<ChronicConditionsSectionProps> = ({
                             <table className="w-full">
                               <thead className="bg-gray-100">
                                 <tr className="text-xs text-gray-600">
-                                  <th className="text-left p-2">Medication</th>
-                                  <th className="text-left p-2">Dose</th>
-                                  <th className="text-left p-2">Frequency</th>
-                                  <th className="text-left p-2">Route</th>
-                                  <th className="text-left p-2">Compliance</th>
-                                  <th className="text-left p-2">Actions</th>
+                                  <th className="text-left p-2 w-1/4">Medication</th>
+                                  <th className="text-left p-2 w-1/5">Dose</th>
+                                  <th className="text-left p-2 w-1/6">Frequency</th>
+                                  <th className="text-left p-2 w-1/6">Route</th>
+                                  <th className="text-left p-2 w-1/6">Compliance</th>
+                                  <th className="text-left p-2 w-1/12">Actions</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -979,9 +689,11 @@ const ChronicConditionsSection: React.FC<ChronicConditionsSectionProps> = ({
                                         placeholder="Medication name"
                                       />
                                       <datalist id="medication-list">
-                                        {MOCK_MASTERS.medications.map((med) => (
-                                          <option key={med} value={med} />
-                                        ))}
+                                        {MOCK_MASTERS.medications.map(
+                                          (med) => (
+                                            <option key={med} value={med} />
+                                          )
+                                        )}
                                       </datalist>
                                     </td>
                                     <td className="p-2">
@@ -1130,6 +842,7 @@ const AllergiesSection: React.FC<AllergiesSectionProps> = ({
       return [];
     }
     const allergySubstance = data.substance.toLowerCase();
+    // Simple mock conflict check: checks if the substance is part of any medication name
     return allMeds.filter((med) =>
       med.name.toLowerCase().includes(allergySubstance)
     );
@@ -1193,9 +906,9 @@ const AllergiesSection: React.FC<AllergiesSectionProps> = ({
                     Drug Conflict Detected!
                   </p>
                   <p className="text-sm">
-                    Patient is allergic to "{data.substance}" but is currently
-                    prescribed:{" "}
-                    {drugConflicts.map((med) => med.name).join(", ")}
+                    Patient is allergic to **"{data.substance}"** but is
+                    currently prescribed:{" "}
+                    **{drugConflicts.map((med) => med.name).join(", ")}**
                   </p>
                 </div>
               </div>
@@ -1236,7 +949,7 @@ const AllergiesSection: React.FC<AllergiesSectionProps> = ({
                   onChange={(e) =>
                     onChange({ ...data, substance: e.target.value })
                   }
-                  className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] text-sm"
+                  className={InputStyle}
                   placeholder="e.g., Penicillin, Peanuts, Latex"
                 />
               </div>
@@ -1254,7 +967,7 @@ const AllergiesSection: React.FC<AllergiesSectionProps> = ({
                   onChange={(e) =>
                     onChange({ ...data, reaction: e.target.value })
                   }
-                  className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] text-sm"
+                  className={InputStyle}
                   placeholder="e.g., Hives, Swelling, Difficulty breathing"
                   maxLength={160}
                 />
@@ -1313,6 +1026,27 @@ const PastHistorySection: React.FC<PastHistorySectionProps> = ({
     onChange({ ...data, currentMedications: [...chronicMeds] });
   };
 
+  const handleAddIllness = (value: string) => {
+    const newIllness = value.trim();
+    if (data.illnesses.length < 5 && newIllness && !data.illnesses.includes(newIllness)) {
+      onChange({
+        ...data,
+        illnesses: [...data.illnesses, newIllness],
+      });
+      return true; // Indicates success
+    }
+    return false;
+  };
+
+  const handleRemoveIllness = (illness: string) => {
+    onChange({
+      ...data,
+      illnesses: data.illnesses.filter(i => i !== illness)
+    });
+  };
+
+  // NOTE: For brevity, Surgery and Hospitalization input logic remains simple text entry for this large merge.
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
       <div className="p-4 border-b border-gray-200 bg-gray-50">
@@ -1331,41 +1065,37 @@ const PastHistorySection: React.FC<PastHistorySectionProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Past Illnesses (Max 5)
             </label>
-            <div className="flex flex-wrap gap-1 mb-2">
+            <div className="flex flex-wrap gap-1 mb-2 min-h-[2.5rem]">
               {data.illnesses.map((illness, index) => (
                 <span
                   key={index}
-                  className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full border border-blue-200"
+                  className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full border border-blue-200"
                 >
                   {illness}
+                  <button onClick={() => handleRemoveIllness(illness)} className="ml-1 text-blue-600 hover:text-red-500">
+                    <Trash2 className="w-3 h-3"/>
+                  </button>
                 </span>
               ))}
             </div>
             <input
               type="text"
-              className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] text-sm"
+              className={InputStyle}
               placeholder="Add illness (press Enter)"
               onKeyPress={(e) => {
-                if (e.key === "Enter" && e.currentTarget.value.trim()) {
-                  const newIllness = e.currentTarget.value.trim();
-                  if (
-                    data.illnesses.length < 5 &&
-                    !data.illnesses.includes(newIllness)
-                  ) {
-                    onChange({
-                      ...data,
-                      illnesses: [...data.illnesses, newIllness],
-                    });
+                if (e.key === "Enter") {
+                  if(handleAddIllness(e.currentTarget.value)) {
                     e.currentTarget.value = "";
                   }
                 }
               }}
+              disabled={data.illnesses.length >= 5}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Past Surgeries (Max 5)
+              Past Surgeries
             </label>
             <div className="flex flex-wrap gap-1 mb-2">
               {data.surgeries.map((surgery, index) => (
@@ -1379,14 +1109,14 @@ const PastHistorySection: React.FC<PastHistorySectionProps> = ({
             </div>
             <input
               type="text"
-              className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] text-sm"
-              placeholder="Surgery name + year (e.g., Appendectomy 2020)"
+              className={InputStyle}
+              placeholder="Surgery name + year (e.g., Appy 2020)"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Past Hospitalizations (Max 5)
+              Past Hospitalizations
             </label>
             <div className="flex flex-wrap gap-1 mb-2">
               {data.hospitalizations.map((hosp, index) => (
@@ -1400,7 +1130,7 @@ const PastHistorySection: React.FC<PastHistorySectionProps> = ({
             </div>
             <input
               type="text"
-              className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] text-sm"
+              className={InputStyle}
               placeholder="Reason + year (e.g., Pneumonia 2019)"
             />
           </div>
@@ -1428,15 +1158,15 @@ const PastHistorySection: React.FC<PastHistorySectionProps> = ({
 
           <div className="p-4 border-l-4 border-yellow-500 bg-yellow-50 text-sm text-gray-700 rounded-r-md">
             <p className="font-semibold text-yellow-800 mb-1">
-              Medication Table Implementation Pending
+              Medication Table Implementation Note:
             </p>
             <p>
-              Complex medication management UI with dosage, frequency,
-              compliance tracking will be implemented in the next phase.
+              The medications currently listed below are for calculation (e.g., allergy check) only. 
+              The interactive table UI is complex and is pending full implementation here.
             </p>
             {data.currentMedications.length > 0 && (
               <p className="mt-2 text-xs text-gray-600">
-                Currently tracking {data.currentMedications.length} medications.
+                Currently displaying: {data.currentMedications.map(m => m.name).join(', ')}
               </p>
             )}
           </div>
@@ -1452,7 +1182,7 @@ const PastHistorySection: React.FC<PastHistorySectionProps> = ({
             onChange={(e) =>
               onChange({ ...data, overallCompliance: e.target.value })
             }
-            className="w-full md:w-1/3 p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] text-sm"
+            className={`${InputStyle} w-full md:w-1/3`}
           >
             {MOCK_MASTERS.compliance.map((option) => (
               <option key={option} value={option}>
@@ -1466,9 +1196,11 @@ const PastHistorySection: React.FC<PastHistorySectionProps> = ({
   );
 };
 
-// Records Upload Section with Enhanced Features
+// Records Upload Section with MOCK Upload/OCR Logic
 const RecordsUploadSection: React.FC = () => {
   const [activeTab, setActiveTab] = useState("lab-reports");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [uploadedFiles, setUploadedFiles] = useState<{
     [key: string]: Array<{
       id: string;
@@ -1495,13 +1227,28 @@ const RecordsUploadSection: React.FC = () => {
     { id: "other", label: "Other", icon: "📄" },
   ];
 
-  const handleFileUpload = (categoryId: string) => {
-    // Mock file upload simulation
+  const triggerFileUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+        // Here, we simulate the actual upload and processing
+        mockUploadProcess(activeTab, file);
+    }
+    // Clear the input value so the onChange event fires again if the user selects the same file
+    if (fileInputRef.current) {
+        fileInputRef.current.value = ""; 
+    }
+  };
+
+  const mockUploadProcess = (categoryId: string, file: File) => {
     const mockFile = {
       id: Date.now().toString(),
-      name: `Sample_${categoryId}_${Date.now()}.pdf`,
-      type: "application/pdf",
-      size: Math.floor(Math.random() * 1000000) + 100000,
+      name: file.name,
+      type: file.type,
+      size: file.size,
       status: "uploading" as const,
       confidence: 0,
     };
@@ -1510,15 +1257,18 @@ const RecordsUploadSection: React.FC = () => {
       ...prev,
       [categoryId]: [...(prev[categoryId] || []), mockFile],
     }));
+    
+    // NOTE: To make this "really upload," replace this mock with a fetch/axios call 
+    // to your backend, and update the status based on the server's response.
 
     // Simulate upload and processing
     setTimeout(() => {
       setUploadedFiles((prev) => ({
         ...prev,
-        [categoryId]: prev[categoryId].map((file) =>
-          file.id === mockFile.id
-            ? { ...file, status: "processing" as const }
-            : file
+        [categoryId]: prev[categoryId].map((f) =>
+          f.id === mockFile.id
+            ? { ...f, status: "processing" as const }
+            : f
         ),
       }));
     }, 1000);
@@ -1546,15 +1296,15 @@ const RecordsUploadSection: React.FC = () => {
 
       setUploadedFiles((prev) => ({
         ...prev,
-        [categoryId]: prev[categoryId].map((file) =>
-          file.id === mockFile.id
+        [categoryId]: prev[categoryId].map((f) =>
+          f.id === mockFile.id
             ? {
-                ...file,
+                ...f,
                 status: "completed" as const,
                 confidence,
                 extractedData,
               }
-            : file
+            : f
         ),
       }));
     }, 3000);
@@ -1568,42 +1318,38 @@ const RecordsUploadSection: React.FC = () => {
   };
 
   const getStatusBadge = (status: string, confidence?: number) => {
+    let color: "green" | "yellow" | "red" | "blue" | "gray" = "gray";
+    let text = "";
+
     switch (status) {
       case "uploading":
-        return (
-          <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">
-            Uploading...
-          </span>
-        );
+        color = "blue";
+        text = "Uploading...";
+        break;
       case "processing":
-        return (
-          <span className="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-700 rounded-full">
-            Processing OCR...
-          </span>
-        );
+        color = "yellow";
+        text = "Processing OCR...";
+        break;
       case "completed":
-        const confidenceColor =
-          confidence && confidence >= 90
-            ? "green"
-            : confidence && confidence >= 70
-            ? "yellow"
-            : "red";
-        return (
-          <span
-            className={`px-2 py-0.5 text-xs bg-${confidenceColor}-100 text-${confidenceColor}-700 rounded-full`}
-          >
-            ✓ {confidence}% confident
-          </span>
-        );
+        if (confidence && confidence >= 90) color = "green";
+        else if (confidence && confidence >= 70) color = "yellow";
+        else color = "red";
+        text = `✓ ${confidence}% confident`;
+        break;
       case "error":
-        return (
-          <span className="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-full">
-            Error
-          </span>
-        );
+        color = "red";
+        text = "Error";
+        break;
       default:
         return null;
     }
+    return (
+      <span
+        className={`px-2 py-0.5 text-xs bg-${color}-100 text-${color}-700 rounded-full`}
+      >
+        {text}
+      </span>
+    );
   };
 
   return (
@@ -1618,6 +1364,17 @@ const RecordsUploadSection: React.FC = () => {
       </div>
 
       <div className="p-4">
+        {/* Hidden file input */}
+        <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+            accept=".pdf,.docx,.jpg,.jpeg,.png"
+            // To allow multiple files, uncomment the 'multiple' attribute:
+            // multiple 
+        />
+
         {/* Category Tabs */}
         <div className="flex flex-wrap gap-2 mb-4 border-b border-gray-200">
           {categories.map((category) => {
@@ -1646,20 +1403,22 @@ const RecordsUploadSection: React.FC = () => {
 
         {/* Upload Area */}
         <div className="mb-4">
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 transition-colors">
+          <div 
+            className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+            onClick={triggerFileUpload}
+          >
             <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-            <p className="text-sm text-gray-600 mb-2">
+            <p className="text-sm text-gray-600 mb-2 font-medium">
               Upload {categories.find((c) => c.id === activeTab)?.label} files
             </p>
             <p className="text-xs text-gray-500 mb-3">
-              Drag and drop or click to browse • PDF, DOCX, JPG, PNG
+              Drag and drop or **click to browse** • PDF, DOCX, JPG, PNG
             </p>
-            <button
-              onClick={() => handleFileUpload(activeTab)}
-              className="px-4 py-2 bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors text-sm"
+            <div
+              className="px-4 py-2 bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors text-sm inline-block"
             >
               Browse Files
-            </button>
+            </div>
           </div>
         </div>
 
@@ -1857,6 +1616,318 @@ const AiClinicalSummarySection: React.FC<AiClinicalSummarySectionProps> = ({
             </p>
           </div>
         )}
+      </div>
+    </div>
+  );
+};
+
+
+// ------------------------------------------------------------------
+// --- MAIN COMPONENT ---
+// ------------------------------------------------------------------
+interface PreOPDIntakeProps {
+  selectedPatient?: Patient | null;
+  onBack?: () => void;
+}
+
+export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
+  selectedPatient,
+  onBack,
+}) => {
+  const [intakeData, dispatch] = useReducer(
+    intakeReducer,
+    INITIAL_INTAKE_STATE
+  );
+  const [status, setStatus] = useState({
+    isSaving: false,
+    showSuccess: false,
+    errorMessage: "",
+  });
+
+  // AI Summary state
+  const [aiSummary, setAiSummary] = useState("");
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiExpanded, setAiExpanded] = useState(false);
+
+  // --- HANDLERS ---
+  const handleComplaintsChange = useCallback((complaints: Complaint[]) => {
+    dispatch({ type: "UPDATE_COMPLAINTS", payload: complaints });
+  }, []);
+
+  const handleChronicConditionsChange = useCallback(
+    (conditions: ChronicCondition[]) => {
+      dispatch({ type: "UPDATE_CHRONIC_CONDITIONS", payload: conditions });
+    },
+    []
+  );
+
+  const handleAllergiesChange = useCallback((allergies: Allergy) => {
+    dispatch({ type: "UPDATE_ALLERGIES", payload: allergies });
+  }, []);
+
+  const handlePastHistoryChange = useCallback((pastHistory: PastHistory) => {
+    dispatch({ type: "UPDATE_PAST_HISTORY", payload: pastHistory });
+  }, []);
+
+  const handleClearForm = useCallback(() => {
+    dispatch({ type: "RESET_ALL", payload: null });
+    setAiSummary("");
+  }, []);
+
+  const generateAiSummary = useCallback(async () => {
+    if (!selectedPatient) {
+      setAiSummary("Please select a patient first.");
+      return;
+    }
+
+    setIsAiLoading(true);
+    setAiSummary("");
+
+    // Gather all medications for a more comprehensive summary
+    const allMeds = [
+        ...intakeData.chronicConditions.flatMap((c) => c.medications),
+        ...intakeData.pastHistory.currentMedications,
+    ];
+
+    // Mock AI summary generation based on intake data
+    const mockSummary = `Patient ${selectedPatient.fullName} (${
+      selectedPatient.age
+    }Y, ${selectedPatient.gender}) presents with ${
+      intakeData.complaints.length
+    } chief complaint(s) including: ${
+        intakeData.complaints.map(c => c.complaint).join(', ') || 'None'
+    }. ${
+      intakeData.complaints.some((c) => c.redFlagTriggered)
+        ? "🚨 **RED FLAG: Critical symptoms detected** requiring immediate attention. "
+        : ""
+    }
+    Known chronic conditions: ${
+      intakeData.chronicConditions.map((c) => c.name).join(", ") || "None"
+    }. The patient is currently on ${allMeds.length} regular medication(s). Current medication compliance is **${
+      intakeData.pastHistory.overallCompliance
+    }**. ${
+      intakeData.allergies.hasAllergies
+        ? `Patient has reported **${intakeData.allergies.severity}** allergies to **${intakeData.allergies.substance}** (Reaction: ${intakeData.allergies.reaction}). `
+        : "No known allergies reported. "
+    }
+    Past history includes: ${
+        intakeData.pastHistory.illnesses.join(', ') || 'None'
+    }. Comprehensive assessment recommended.`;
+
+    // Simulate API delay
+    setTimeout(() => {
+      setAiSummary(mockSummary);
+      setIsAiLoading(false);
+      setAiExpanded(true);
+    }, 2000);
+  }, [selectedPatient, intakeData]);
+
+  const handleSubmit = async () => {
+    if (!selectedPatient) {
+      setStatus({ ...status, errorMessage: "No patient selected!" });
+      return;
+    }
+
+    setStatus({ isSaving: true, showSuccess: false, errorMessage: "" });
+
+    try {
+      const intakeRecord = {
+        patientId: selectedPatient.id,
+        patientUhid: selectedPatient.uhid,
+        patientName: selectedPatient.fullName,
+        complaints: intakeData.complaints,
+        chronicConditions: intakeData.chronicConditions,
+        allergies: intakeData.allergies,
+        pastHistory: intakeData.pastHistory,
+        aiSummary,
+        recordedAt: Timestamp.now(),
+        recordedBy: "Medical Staff",
+        status: "completed",
+      };
+
+      // NOTE: This line requires a valid Firebase setup ('db' import)
+      await addDoc(collection(db, "preOPDIntake"), intakeRecord);
+
+      setStatus({ isSaving: false, showSuccess: true, errorMessage: "" });
+      setTimeout(
+        () => setStatus((prev) => ({ ...prev, showSuccess: false })),
+        4000
+      );
+    } catch (error: any) {
+      console.error("Error saving Pre-OPD intake:", error);
+      setStatus({
+        isSaving: false,
+        showSuccess: false,
+        errorMessage: "Failed to save intake data. Please check console for details.",
+      });
+    }
+  };
+
+  // Combine all medications for the allergy check across all relevant components
+  const allMedsForCheck = useMemo(() => ([
+    ...intakeData.chronicConditions.flatMap((c) => c.medications),
+    ...intakeData.pastHistory.currentMedications,
+  ]), [intakeData.chronicConditions, intakeData.pastHistory.currentMedications]);
+
+  // --- RENDER ---
+  return (
+    <div className="min-h-screen bg-[#F8F9FA] pb-20">
+      <div className="max-w-6xl mx-auto p-6">
+        {/* Header */}
+        <header className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="p-2 hover:bg-white rounded-lg border border-gray-200 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 text-[#1a4b7a]" />
+              </button>
+            )}
+            <FileText className="w-8 h-8 text-[#012e58]" />
+            <div>
+              <h1 className="text-3xl font-bold text-[#0B2D4D]">
+                Pre-OPD Intake Assessment
+              </h1>
+              <p className="text-[#1a4b7a]">
+                Comprehensive patient intake and medical history
+              </p>
+            </div>
+          </div>
+
+          {/* Patient Info */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4 text-right">
+            <p className="text-sm text-[#1a4b7a]">Current Patient</p>
+            <p className="font-semibold text-[#0B2D4D]">
+              {selectedPatient?.fullName || "No Patient Selected"}
+            </p>
+            <p className="text-sm text-[#1a4b7a]">
+              {selectedPatient ? (
+                <>
+                  {selectedPatient.uhid} • {selectedPatient.age}Y •{" "}
+                  {selectedPatient.gender}
+                </>
+              ) : (
+                "Please select a patient"
+              )}
+            </p>
+          </div>
+        </header>
+
+        {/* Status Messages */}
+        {status.showSuccess && (
+          <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4 flex items-center space-x-2">
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            <span className="text-green-800">
+              Pre-OPD intake saved successfully!
+            </span>
+          </div>
+        )}
+        {status.errorMessage && (
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2">
+            <AlertTriangle className="w-5 h-5 text-red-600" />
+            <span className="text-red-800">{status.errorMessage}</span>
+          </div>
+        )}
+
+        {/* Main Content Sections */}
+        <div className="space-y-6">
+          {/* 1. Vitals Assessment (External Component) */}
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div className="p-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center space-x-2">
+                <Activity className="w-5 h-5 text-[#012e58]" />
+                <h2 className="text-lg font-semibold text-[#0B2D4D]">
+                  1. Vital Signs Assessment
+                </h2>
+              </div>
+            </div>
+            <div className="p-0">
+              {/* NOTE: VitalsAssessment component assumes to be fully implemented separately */}
+              <VitalsAssessment
+                selectedPatient={selectedPatient}
+                isSubcomponent={true}
+              />
+            </div>
+          </div>
+
+          {/* 2. Presenting Complaints */}
+          <PresentingComplaintsSection
+            data={intakeData.complaints}
+            onChange={handleComplaintsChange}
+          />
+
+          {/* 3. Chronic Conditions */}
+          <ChronicConditionsSection
+            data={intakeData.chronicConditions}
+            onChange={handleChronicConditionsChange}
+          />
+
+          {/* 4. Allergies */}
+          <AllergiesSection
+            data={intakeData.allergies}
+            onChange={handleAllergiesChange}
+            allMeds={allMedsForCheck} // Pass combined meds for conflict check
+          />
+
+          {/* 5. Past & Medication History */}
+          <PastHistorySection
+            data={intakeData.pastHistory}
+            onChange={handlePastHistoryChange}
+            chronicMeds={intakeData.chronicConditions.flatMap(
+              (c) => c.medications
+            )}
+          />
+
+          {/* 6. Previous Records Uploads */}
+          <RecordsUploadSection />
+
+          {/* 7. AI Clinical Summary */}
+          <AiClinicalSummarySection
+            summary={aiSummary}
+            isLoading={isAiLoading}
+            isExpanded={aiExpanded}
+            onToggleExpand={() => setAiExpanded(!aiExpanded)}
+            onGenerate={generateAiSummary}
+          />
+        </div>
+      </div>
+
+      {/* Fixed Bottom Submit Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-10">
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">
+                **{intakeData.complaints.length}** complaints,{" "}
+                **{intakeData.chronicConditions.length}** conditions recorded
+              </span>
+              {intakeData.complaints.some((c) => c.redFlagTriggered) && (
+                <span className="flex items-center text-red-600 bg-red-100 px-2 py-1 rounded-full text-xs font-semibold">
+                  <AlertTriangle className="w-3 h-3 mr-1" />
+                  Red Flag Alert
+                </span>
+              )}
+            </div>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={handleClearForm}
+                className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300 transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>Clear Form</span>
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={status.isSaving || !selectedPatient}
+                className="flex items-center space-x-2 px-6 py-2 rounded-lg font-semibold transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed bg-[#012e58] text-white hover:bg-[#1a4b7a]"
+              >
+                <Save className="w-4 h-4" />
+                <span>{status.isSaving ? "Saving..." : "Submit Intake"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
