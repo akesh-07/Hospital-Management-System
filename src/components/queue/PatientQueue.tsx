@@ -22,7 +22,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "../../firebase";
-import { VitalsAssessment } from "../vitals/VitalsAssessment";
+import { PreOPDIntake } from "../vitals/PreOPDIntake";
 import { DoctorModule } from "../doctor/DoctorModule";
 import { Patient } from "../../types";
 
@@ -274,7 +274,7 @@ const PatientQueue: React.FC = () => {
 
   if (showVitals) {
     return (
-      <VitalsAssessment
+      <PreOPDIntake
         selectedPatient={vitalsPatient}
         onBack={handleBackFromVitals}
       />
