@@ -24,7 +24,7 @@ import {
 import { db } from "../../firebase";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
 
-// --- TYPE DEFINITIONS (New/Updated for this file) ---
+// --- TYPE DEFINITIONS ---
 
 // Assuming the external Patient type looks something like this:
 export interface Patient {
@@ -32,7 +32,7 @@ export interface Patient {
   uhid: string;
   fullName: string;
   age: number;
-  gender: 'Male' | 'Female' | 'Other';
+  gender: "Male" | "Female" | "Other";
   chronicConditions?: string[];
 }
 
@@ -115,38 +115,66 @@ function vitalsReducer(
   }
 }
 
-// Helper to check for a valid number string
+// Helper to check for a valid positive number string (General Rule: no negatives)
 const isValidNumber = (value: string) => {
-    const num = parseFloat(value);
-    return !isNaN(num) && num > 0;
-}
-
-// Helper to categorize vital sign for color/warning
-const getVitalCategory = (
-    value: number | string,
-    critRedLow: number | null,
-    warnAmberLow: number | null,
-    warnAmberHigh: number | null,
-    critRedHigh: number | null
-) => {
-    const num = parseFloat(String(value));
-    if (isNaN(num)) return { color: "text-gray-500", label: "" };
-
-    if ((critRedLow !== null && num < critRedLow) || (critRedHigh !== null && num >= critRedHigh)) {
-        return { color: "text-red-600", label: "Critical" };
-    }
-    if ((warnAmberLow !== null && num < warnAmberLow) || (warnAmberHigh !== null && num >= warnAmberHigh)) {
-        return { color: "text-yellow-600", label: "Warning" };
-    }
-    return { color: "text-green-600", label: "Normal" };
+  const num = parseFloat(value);
+  return !isNaN(num) && num > 0;
 };
 
+// Helper to categorize vital sign for color/warning based on checklist rules
+const getVitalCategory = (
+  value: number | string,
+  critRedLow: number | null,
+  warnAmberLow: number | null,
+  warnAmberHigh: number | null,
+  critRedHigh: number | null
+) => {
+  const num = parseFloat(String(value));
+  if (isNaN(num)) return { color: "text-gray-500", label: "" };
+
+  // Critical (Red) Check
+  if (
+    (critRedLow !== null && num < critRedLow) ||
+    (critRedHigh !== null && num >= critRedHigh)
+  ) {
+    return { color: "text-red-600", label: "Critical" };
+  }
+
+  // Warning (Amber) Check - simplified for ranges like 90-93
+  if (
+    warnAmberLow !== null &&
+    num >= warnAmberLow &&
+    warnAmberHigh !== null &&
+    num < warnAmberHigh
+  ) {
+    return { color: "text-yellow-600", label: "Warning" };
+  }
+
+  // Fall through to Normal (Green)
+  return { color: "text-green-600", label: "Normal" };
+};
 
 // --- MAIN COMPONENT ---
 interface VitalsAssessmentProps {
   selectedPatient?: Patient | null;
   onBack?: () => void;
 }
+
+// NEW HELPER for Oxygen Icon/Alert (UX Note)
+const O2Alert: React.FC<{ spo2: string }> = ({ spo2 }) => {
+  const num = parseFloat(spo2);
+  // Show O₂ icon if SpO₂ < 92
+  if (isNaN(num) || num >= 92) return null;
+
+  return (
+    <div
+      className="absolute right-0 top-0 mt-1 mr-1 p-1 bg-red-500 rounded-full"
+      title="O₂ required: SpO₂ < 92%"
+    >
+      <AlertCircle className="w-4 h-4 text-white" />
+    </div>
+  );
+};
 
 export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
   selectedPatient,
@@ -181,31 +209,46 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
         newBmi = calculatedBmi;
       }
     } else if (vitals.bmi !== "") {
-        newBmi = "";
+      newBmi = "";
     }
 
     // Calculate MAP: MAP = Diastolic + 1/3 (Systolic - Diastolic)
     if (isValidNumber(vitals.bpSystolic) && isValidNumber(vitals.bpDiastolic)) {
-        if (systolic > diastolic) {
-            const calculatedMap = (diastolic + 1/3 * (systolic - diastolic)).toFixed(0);
-            if (calculatedMap !== vitals.map) {
-                newMap = calculatedMap;
-            }
-        } else if (vitals.map !== "") {
-            newMap = "";
+      if (systolic > diastolic) {
+        const calculatedMap = (
+          diastolic +
+          (1 / 3) * (systolic - diastolic)
+        ).toFixed(0);
+        if (calculatedMap !== vitals.map) {
+          newMap = calculatedMap;
         }
-    } else if (vitals.map !== "") {
+      } else if (vitals.map !== "") {
         newMap = "";
+      }
+    } else if (vitals.map !== "") {
+      newMap = "";
     }
-
 
     if (newBmi !== vitals.bmi) {
-        dispatch({ type: ACTIONS.UPDATE_VITAL, payload: { field: "bmi", value: newBmi } });
+      dispatch({
+        type: ACTIONS.UPDATE_VITAL,
+        payload: { field: "bmi", value: newBmi },
+      });
     }
     if (newMap !== vitals.map) {
-        dispatch({ type: ACTIONS.UPDATE_VITAL, payload: { field: "map", value: newMap } });
+      dispatch({
+        type: ACTIONS.UPDATE_VITAL,
+        payload: { field: "map", value: newMap },
+      });
     }
-  }, [vitals.height, vitals.weight, vitals.bpSystolic, vitals.bpDiastolic, vitals.bmi, vitals.map]);
+  }, [
+    vitals.height,
+    vitals.weight,
+    vitals.bpSystolic,
+    vitals.bpDiastolic,
+    vitals.bmi,
+    vitals.map,
+  ]);
 
   const getBMICategory = useCallback((bmi: number) => {
     if (bmi < 18.5) return { category: "Underweight", color: "text-blue-600" };
@@ -229,7 +272,18 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
       let sanitizedValue = value;
 
       // Rule: Allow only numbers and a single decimal point (for most vitals)
-      if (["weight", "height", "temperature", "spo2", "pulse", "bpSystolic", "bpDiastolic", "respiratoryRate"].includes(field)) {
+      if (
+        [
+          "weight",
+          "height",
+          "temperature",
+          "spo2",
+          "pulse",
+          "bpSystolic",
+          "bpDiastolic",
+          "respiratoryRate",
+        ].includes(field)
+      ) {
         sanitizedValue = value.replace(/[^0-9.]/g, "");
         const parts = sanitizedValue.split(".");
         if (parts.length > 2) {
@@ -253,35 +307,87 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
   const validateVitals = useCallback(() => {
     const errors: Record<string, string> = {};
 
-    // Required Vitals
-    if (!isValidNumber(vitals.weight) || parseFloat(vitals.weight) < 1) errors.weight = "Required (1-350 kg)";
-    if (!isValidNumber(vitals.height) || parseFloat(vitals.height) < 30) errors.height = "Required (30-250 cm)";
-    if (!isValidNumber(vitals.pulse) || parseFloat(vitals.pulse) < 20) errors.pulse = "Required (>20 bpm)";
-    if (!isValidNumber(vitals.bpSystolic) || parseFloat(vitals.bpSystolic) <= 0) errors.bpSystolic = "Required";
-    if (!isValidNumber(vitals.bpDiastolic) || parseFloat(vitals.bpDiastolic) <= 0) errors.bpDiastolic = "Required";
+    // --- Mandatory Vitals (from checklist) ---
+    // Height & Weight are NOT mandatory
+    // Temperature, Pulse, RR, SpO₂, BP Sys/Dia are mandatory
+    if (
+      !isValidNumber(vitals.temperature) ||
+      parseFloat(vitals.temperature) < 1
+    )
+      errors.temperature = "Required";
+    if (!isValidNumber(vitals.pulse) || parseFloat(vitals.pulse) < 1)
+      errors.pulse = "Required";
+    if (
+      !isValidNumber(vitals.respiratoryRate) ||
+      parseFloat(vitals.respiratoryRate) < 1
+    )
+      errors.respiratoryRate = "Required";
+    if (!isValidNumber(vitals.spo2) || parseFloat(vitals.spo2) < 1)
+      errors.spo2 = "Required";
+    if (!isValidNumber(vitals.bpSystolic) || parseFloat(vitals.bpSystolic) <= 0)
+      errors.bpSystolic = "Required";
+    if (
+      !isValidNumber(vitals.bpDiastolic) ||
+      parseFloat(vitals.bpDiastolic) <= 0
+    )
+      errors.bpDiastolic = "Required";
 
-    // Range Validation for new fields
+    // --- Range Validation (from checklist) ---
+    // General rule: No negatives enforced by isValidNumber > 0 and input sanitization
+
+    const pulse = parseFloat(vitals.pulse);
+    if (vitals.pulse && (pulse < 30 || pulse > 220))
+      errors.pulse = "30-220 bpm only";
+    const temp = parseFloat(vitals.temperature);
+    if (vitals.temperature && (temp < 90 || temp > 108))
+      errors.temperature = "90-108 °F only";
+    const rr = parseFloat(vitals.respiratoryRate);
+    if (vitals.respiratoryRate && (rr < 6 || rr > 60))
+      errors.respiratoryRate = "6-60 /min only";
+    const spo2 = parseFloat(vitals.spo2);
+    if (vitals.spo2 && (spo2 < 50 || spo2 > 100)) errors.spo2 = "50-100 % only";
+    const bpsys = parseFloat(vitals.bpSystolic);
+    if (vitals.bpSystolic && (bpsys < 70 || bpsys > 260))
+      errors.bpSystolic = "70-260 mmHg only";
+    const bpdia = parseFloat(vitals.bpDiastolic);
+    if (vitals.bpDiastolic && (bpdia < 40 || bpdia > 150))
+      errors.bpDiastolic = "40-150 mmHg only";
+
+    // Height & Weight range checks (not mandatory, so only check if a value is present)
+    const weight = parseFloat(vitals.weight);
+    if (vitals.weight && (weight < 1 || weight > 350))
+      errors.weight = "1-350 kg only";
+    const height = parseFloat(vitals.height);
+    if (vitals.height && (height < 30 || height > 250))
+      errors.height = "30-250 cm only";
+
+    // Range Validation for Pain Score and GCS (from checklist)
     const painScore = parseFloat(vitals.painScore);
-    if (vitals.painScore && (painScore < 0 || painScore > 10 || !Number.isInteger(painScore))) {
-        errors.painScore = "0-10 integer only";
+    if (
+      vitals.painScore &&
+      (painScore < 0 || painScore > 10 || !Number.isInteger(painScore))
+    ) {
+      errors.painScore = "0-10 integer only";
     }
 
     const gcsE = parseInt(vitals.gcsE);
     const gcsV = parseInt(vitals.gcsV);
     const gcsM = parseInt(vitals.gcsM);
     // GCS E: 1-4, V: 1-5, M: 1-6
-    if (vitals.gcsE && (gcsE < 1 || gcsE > 4 || !Number.isInteger(gcsE))) errors.gcsE = "1-4";
-    if (vitals.gcsV && (gcsV < 1 || gcsV > 5 || !Number.isInteger(gcsV))) errors.gcsV = "1-5";
-    if (vitals.gcsM && (gcsM < 1 || gcsM > 6 || !Number.isInteger(gcsM))) errors.gcsM = "1-6";
+    if (vitals.gcsE && (gcsE < 1 || gcsE > 4 || !Number.isInteger(gcsE)))
+      errors.gcsE = "1-4";
+    if (vitals.gcsV && (gcsV < 1 || gcsV > 5 || !Number.isInteger(gcsV)))
+      errors.gcsV = "1-5";
+    if (vitals.gcsM && (gcsM < 1 || gcsM > 6 || !Number.isInteger(gcsM)))
+      errors.gcsM = "1-6";
 
-    // GCS total should be 3-15 if all parts are entered
+    // GCS total check (3-15 total)
     if (vitals.gcsE && vitals.gcsV && vitals.gcsM) {
-        const total = gcsE + gcsV + gcsM;
-        if (total < 3 || total > 15) {
-            errors.gcsE = errors.gcsV = errors.gcsM = "Invalid total GCS score";
-        }
+      const total = gcsE + gcsV + gcsM;
+      if (total < 3 || total > 15) {
+        errors.gcsE = errors.gcsV = errors.gcsM = "Invalid total GCS score";
+      }
     }
-
 
     setStatus({ validationErrors: errors });
     return Object.keys(errors).length === 0;
@@ -293,6 +399,19 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
       return;
     }
 
+    // IMPORTANT: Temporarily remove non-mandatory fields from validation check only if they are empty
+    // We only validate mandatory fields if empty. Ranges are checked regardless of mandatory status.
+    const mandatoryVitalsCheck = [
+      vitals.temperature,
+      vitals.pulse,
+      vitals.respiratoryRate,
+      vitals.spo2,
+      vitals.bpSystolic,
+      vitals.bpDiastolic,
+    ];
+    const isAnyMandatoryMissing = mandatoryVitalsCheck.some((v) => !v);
+
+    // We run full validation anyway as it handles range checks for all.
     if (!validateVitals()) {
       setStatus({ errorMessage: "Please fix the errors before saving." });
       return;
@@ -337,7 +456,6 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
 
       setStatus({ showSuccess: true });
       setTimeout(() => setStatus({ showSuccess: false }), 4000);
-
     } catch (error: any) {
       console.error("Detailed error saving vitals:", error);
       let friendlyMessage = "Failed to save vitals. ";
@@ -357,18 +475,18 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
   };
 
   const handleAiAssist = async () => {
-    // ... (AI Assist logic remains largely the same, but the prompt should use new fields)
+    // ... AI Assist logic remains the same (uses Groq API for summary)
     if (!selectedPatient) {
-        setAiSummary("Please select a patient first.");
-        setIsModalOpen(true);
-        return;
-      }
-
+      setAiSummary("Please select a patient first.");
       setIsModalOpen(true);
-      setIsAiLoading(true);
-      setAiSummary("");
+      return;
+    }
 
-      const prompt = `
+    setIsModalOpen(true);
+    setIsAiLoading(true);
+    setAiSummary("");
+
+    const prompt = `
         Analyze the following patient vitals and provide a brief summary.
         Patient Information:
         - Name: ${selectedPatient.fullName}
@@ -383,60 +501,64 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
         - Height: ${vitals.height || "N/A"} cm
         - BMI: ${vitals.bmi || "N/A"}
         - Pulse: ${vitals.pulse || "N/A"} bpm
-        - Blood Pressure (SYS/DIA): ${vitals.bpSystolic || "N/A"}/${vitals.bpDiastolic || "N/A"} mmHg
+        - Blood Pressure (SYS/DIA): ${vitals.bpSystolic || "N/A"}/${
+      vitals.bpDiastolic || "N/A"
+    } mmHg
         - MAP: ${vitals.map || "N/A"} mmHg
         - Temperature: ${vitals.temperature || "N/A"} °F
         - SpO2: ${vitals.spo2 || "N/A"} %
         - Respiratory Rate: ${vitals.respiratoryRate || "N/A"} breaths/min
         - Pain Score: ${vitals.painScore || "N/A"} / 10
-        - GCS (E/V/M): ${vitals.gcsE || "N/A"}/${vitals.gcsV || "N/A"}/${vitals.gcsM || "N/A"}
+        - GCS (E/V/M): ${vitals.gcsE || "N/A"}/${vitals.gcsV || "N/A"}/${
+      vitals.gcsM || "N/A"
+    }
       `;
 
-      try {
-        const response = await fetch(
-          "https://api.groq.com/openai/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer ", // Add your API key here
-            },
-            body: JSON.stringify({
-              model: "llama-3.1-8b-instant",
-              messages: [
-                {
-                  role: "system",
-                  content:
-                    "You are a medical assistant. Analyze the provided patient vitals and generate a concise summary. Highlight any potential areas of concern, referencing normal ranges: Temp(97.8-99.1°F), Pulse(60-100bpm), Resp(12-20/min), SpO2(95-100%), BP(Sys<120, Dia<80).",
-                },
-                {
-                  role: "user",
-                  content: prompt,
-                },
-              ],
-            }),
-          }
-        );
+    try {
+      const response = await fetch(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer ", // Add your API key here
+          },
+          body: JSON.stringify({
+            model: "llama-3.1-8b-instant",
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are a medical assistant. Analyze the provided patient vitals and generate a concise summary. Highlight any potential areas of concern, referencing normal ranges: Temp(97.8-99.1°F), Pulse(60-100bpm), Resp(12-20/min), SpO2(95-100%), BP(Sys<120, Dia<80).",
+              },
+              {
+                role: "user",
+                content: prompt,
+              },
+            ],
+          }),
+        }
+      );
 
-        const data = await response.json();
-        const content =
-          data?.choices?.[0]?.message?.content?.trim() ||
-          "Unable to generate summary. Please try again.";
-        setAiSummary(content);
-      } catch (err) {
-        console.error("Error calling Groq:", err);
-        setAiSummary(
-          "Error connecting to AI service. Please check your connection and try again."
-        );
-      } finally {
-        setIsAiLoading(false);
-      }
+      const data = await response.json();
+      const content =
+        data?.choices?.[0]?.message?.content?.trim() ||
+        "Unable to generate summary. Please try again.";
+      setAiSummary(content);
+    } catch (err) {
+      console.error("Error calling Groq:", err);
+      setAiSummary(
+        "Error connecting to AI service. Please check your connection and try again."
+      );
+    } finally {
+      setIsAiLoading(false);
+    }
   };
 
   // --- RENDER ---
   return (
     <div className="p-6 bg-[#F8F9FA] min-h-screen font-sans">
-      <div className="max-w-7xl mx-auto"> {/* Increased max-width for new fields */}
+      <div className="max-w-7xl mx-auto">
         {/* Header (Unchanged) */}
         <header className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
@@ -480,19 +602,19 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
 
         {/* Status Messages (Unchanged) */}
         {status.showSuccess && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-center space-x-2">
+          <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4 flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             <span className="text-green-800">Vitals saved successfully!</span>
           </div>
         )}
         {status.errorMessage && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-center space-x-2">
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2">
             <AlertCircle className="w-4 h-4 text-red-600" />
             <span className="text-red-800">{status.errorMessage}</span>
           </div>
         )}
 
-        {/* Vitals Grid - Increased to 5 columns for new BP fields */}
+        {/* Vitals Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-6">
           {/* Row 1: Weight, Height, BMI */}
           <VitalCard
@@ -504,7 +626,13 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
             normal="1-350"
             onChange={handleVitalChange}
             error={status.validationErrors.weight}
-            category={getVitalCategory(parseFloat(vitals.weight), null, null, null, null)} // No standard warnings, added for consistency
+            category={getVitalCategory(
+              parseFloat(vitals.weight),
+              1,
+              1,
+              351,
+              351
+            )} // Range check (1-350)
           />
           <VitalCard
             title="Height"
@@ -515,11 +643,17 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
             normal="30-250"
             onChange={handleVitalChange}
             error={status.validationErrors.height}
-            category={getVitalCategory(parseFloat(vitals.height), null, null, null, null)} // No standard warnings
+            category={getVitalCategory(
+              parseFloat(vitals.height),
+              30,
+              30,
+              251,
+              251
+            )} // Range check (30-250)
           />
           <BMIResultCard bmi={vitals.bmi} category={bmiCategory} />
 
-          {/* Row 2: Pulse, BP Systolic, BP Diastolic, MAP, Temperature */}
+          {/* Row 2: Pulse, Temperature, BP Systolic, BP Diastolic, MAP */}
           <VitalCard
             title="Pulse"
             value={vitals.pulse}
@@ -529,7 +663,14 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
             normal="60-100"
             onChange={handleVitalChange}
             error={status.validationErrors.pulse}
-            category={getVitalCategory(parseFloat(vitals.pulse), 40, 60, 100, 120)}
+            // Crit < 40 (Red), Warn 100-119 (Amber), Crit >= 120 (Red)
+            category={getVitalCategory(
+              parseFloat(vitals.pulse),
+              40,
+              100,
+              120,
+              120
+            )}
           />
           <VitalCard
             title="Temperature"
@@ -537,22 +678,37 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
             unit="°F"
             icon={Thermometer}
             field="temperature"
-            normal="97.8-99.1"
+            normal="97.8-100.4"
             onChange={handleVitalChange}
-            category={getVitalCategory(parseFloat(vitals.temperature), 95, 97.8, 100.5, 102)}
+            error={status.validationErrors.temperature}
+            // Crit < 95 (Red), Warn 100.5-101.9 (Amber), Crit >= 102 (Red)
+            category={getVitalCategory(
+              parseFloat(vitals.temperature),
+              95,
+              100.5,
+              102,
+              102
+            )}
           />
 
-          {/* Row 3: BP Fields */}
+          {/* Row 3: BP Fields and SpO2, Resp Rate, Pain Score */}
           <VitalCard
             title="BP Systolic"
             value={vitals.bpSystolic}
             unit="mmHg"
             icon={Heart}
             field="bpSystolic"
-            normal="<120"
+            normal="<140"
             onChange={handleVitalChange}
             error={status.validationErrors.bpSystolic}
-            category={getVitalCategory(parseFloat(vitals.bpSystolic), 90, 120, 140, 160)}
+            // Crit <= 90 (Red), Warn 140-159 (Amber), Crit >= 160 (Red)
+            category={getVitalCategory(
+              parseFloat(vitals.bpSystolic),
+              90,
+              140,
+              160,
+              160
+            )}
           />
           <VitalCard
             title="BP Diastolic"
@@ -560,10 +716,17 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
             unit="mmHg"
             icon={Heart}
             field="bpDiastolic"
-            normal="<80"
+            normal="<90"
             onChange={handleVitalChange}
             error={status.validationErrors.bpDiastolic}
-            category={getVitalCategory(parseFloat(vitals.bpDiastolic), 60, 80, 90, 100)}
+            // Crit >= 100 (Red), Warn 90-99 (Amber)
+            category={getVitalCategory(
+              parseFloat(vitals.bpDiastolic),
+              null,
+              90,
+              100,
+              100
+            )} // No low crit in checklist, using null. Warning is 90 up to 100 (non-inclusive).
           />
           <MAPResultCard map={vitals.map} />
 
@@ -574,9 +737,18 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
             unit="%"
             icon={Activity}
             field="spo2"
-            normal="95-100"
+            normal=">93"
             onChange={handleVitalChange}
-            category={getVitalCategory(parseFloat(vitals.spo2), null, 93, 95, 101)} // Note: SpO2 is often checked on the lower end
+            error={status.validationErrors.spo2}
+            // Crit < 90 (Red), Warn 90-93 (Amber)
+            category={getVitalCategory(
+              parseFloat(vitals.spo2),
+              90,
+              90,
+              94,
+              101
+            )}
+            customContent={<O2Alert spo2={vitals.spo2} />}
           />
           <VitalCard
             title="Resp. Rate"
@@ -584,9 +756,17 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
             unit="breaths/min"
             icon={Waves}
             field="respiratoryRate"
-            normal="12-20"
+            normal="12-21"
             onChange={handleVitalChange}
-            category={getVitalCategory(parseFloat(vitals.respiratoryRate), 8, 12, 22, 30)}
+            error={status.validationErrors.respiratoryRate}
+            // Crit <= 8 (Red), Warn 22-29 (Amber), Crit >= 30 (Red)
+            category={getVitalCategory(
+              parseFloat(vitals.respiratoryRate),
+              8,
+              22,
+              30,
+              30
+            )}
           />
           <VitalCard
             title="Pain Score"
@@ -597,47 +777,57 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
             normal="0-10"
             onChange={handleVitalChange}
             error={status.validationErrors.painScore}
-            category={getVitalCategory(parseFloat(vitals.painScore), null, null, null, null)} // No standard warnings
+            // No specific warnings/critical levels defined in the checklist
+            category={getVitalCategory(
+              parseFloat(vitals.painScore),
+              null,
+              null,
+              null,
+              null
+            )}
           />
         </div>
 
         {/* GCS Fields */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-            <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4 flex items-center space-x-2">
-                <Droplet className="w-5 h-5 text-[#012e58]"/>
-                <span>Glasgow Coma Scale (GCS)</span>
-                {vitals.gcsE && vitals.gcsV && vitals.gcsM && (
-                    <span className="ml-4 text-2xl font-bold text-[#1a4b7a]">
-                        Total: {parseInt(vitals.gcsE) + parseInt(vitals.gcsV) + parseInt(vitals.gcsM)}
-                    </span>
-                )}
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <GCSInputCard
-                    title="Eye Opening (E)"
-                    value={vitals.gcsE}
-                    field="gcsE"
-                    range="1-4"
-                    onChange={handleVitalChange}
-                    error={status.validationErrors.gcsE}
-                />
-                <GCSInputCard
-                    title="Verbal Response (V)"
-                    value={vitals.gcsV}
-                    field="gcsV"
-                    range="1-5"
-                    onChange={handleVitalChange}
-                    error={status.validationErrors.gcsV}
-                />
-                <GCSInputCard
-                    title="Motor Response (M)"
-                    value={vitals.gcsM}
-                    field="gcsM"
-                    range="1-6"
-                    onChange={handleVitalChange}
-                    error={status.validationErrors.gcsM}
-                />
-            </div>
+          <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4 flex items-center space-x-2">
+            <Droplet className="w-5 h-5 text-[#012e58]" />
+            <span>Glasgow Coma Scale (GCS)</span>
+            {vitals.gcsE && vitals.gcsV && vitals.gcsM && (
+              <span className="ml-4 text-2xl font-bold text-[#1a4b7a]">
+                Total:{" "}
+                {parseInt(vitals.gcsE) +
+                  parseInt(vitals.gcsV) +
+                  parseInt(vitals.gcsM)}
+              </span>
+            )}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <GCSInputCard
+              title="Eye Opening (E)"
+              value={vitals.gcsE}
+              field="gcsE"
+              range="1-4"
+              onChange={handleVitalChange}
+              error={status.validationErrors.gcsE}
+            />
+            <GCSInputCard
+              title="Verbal Response (V)"
+              value={vitals.gcsV}
+              field="gcsV"
+              range="1-5"
+              onChange={handleVitalChange}
+              error={status.validationErrors.gcsV}
+            />
+            <GCSInputCard
+              title="Motor Response (M)"
+              value={vitals.gcsM}
+              field="gcsM"
+              range="1-6"
+              onChange={handleVitalChange}
+              error={status.validationErrors.gcsM}
+            />
+          </div>
         </div>
 
         {/* Risk Assessment & Actions (Unchanged) */}
@@ -724,9 +914,22 @@ const VitalCard: React.FC<{
   ) => void;
   error?: string;
   category: { color: string; label: string };
-}> = ({ title, value, unit, icon: Icon, field, normal, onChange, error, category }) => (
+  customContent?: React.ReactNode;
+}> = ({
+  title,
+  value,
+  unit,
+  icon: Icon,
+  field,
+  normal,
+  onChange,
+  error,
+  category,
+  customContent,
+}) => (
   <div
-    className={`bg-white rounded-lg border p-4 transition-all ${
+    className={`bg-white rounded-lg border p-4 transition-all relative ${
+      // Added relative here
       error ? "border-red-400 shadow-sm shadow-red-100" : "border-gray-200"
     }`}
   >
@@ -734,6 +937,7 @@ const VitalCard: React.FC<{
       <Icon className="w-5 h-5 text-[#012e58]" />
       <h3 className="font-medium text-[#0B2D4D]">{title}</h3>
     </div>
+    {customContent} {/* Render custom content (like O2 icon) */}
     <div className="relative">
       <input
         type="text"
@@ -758,7 +962,7 @@ const VitalCard: React.FC<{
         </span>
       ) : (
         <span className={`text-xs font-medium ${category.color}`}>
-            {category.label}
+          {category.label}
         </span>
       )}
     </div>
@@ -807,51 +1011,52 @@ const MAPResultCard: React.FC<{ map: string }> = ({ map }) => (
       </span>
     </div>
     <div className="flex items-center justify-end mt-2 h-4">
-        {/* MAP Calculation: Diastolic + 1/3 (Systolic - Diastolic) */}
+      {/* MAP Calculation: Diastolic + 1/3 (Systolic - Diastolic) */}
     </div>
   </div>
 );
 
 const GCSInputCard: React.FC<{
-    title: string;
-    value: string;
-    field: keyof Pick<VitalsState, "gcsE" | "gcsV" | "gcsM">;
-    range: string;
-    onChange: (field: keyof VitalsState, value: string) => void;
-    error?: string;
+  title: string;
+  value: string;
+  field: keyof Pick<VitalsState, "gcsE" | "gcsV" | "gcsM">;
+  range: string;
+  onChange: (field: keyof VitalsState, value: string) => void;
+  error?: string;
 }> = ({ title, value, field, range, onChange, error }) => (
-    <div className={`bg-white rounded-lg border p-4 transition-all ${
-        error ? "border-red-400 shadow-sm shadow-red-100" : "border-gray-200"
-      }`}>
-        <h4 className="font-medium text-[#0B2D4D] mb-3">{title}</h4>
-        <div className="relative">
-            <input
-                type="text"
-                value={value}
-                onChange={(e) => onChange(field, e.target.value)}
-                className="w-full text-3xl font-bold text-[#0B2D4D] bg-transparent border-0 p-0 focus:ring-0 focus:outline-none"
-                placeholder="—"
-                maxLength={1}
-                autoComplete="off"
-            />
-            <span className="absolute right-0 top-1/2 -translate-y-1/2 text-sm text-gray-500">
-                {range}
-            </span>
-        </div>
-        <div className="flex items-center justify-end mt-2 h-4">
-            {error && (
-                <span className="text-xs text-red-600 flex items-center gap-1 font-medium">
-                <AlertCircle size={12} />
-                {error}
-                </span>
-            )}
-        </div>
+  <div
+    className={`bg-white rounded-lg border p-4 transition-all ${
+      error ? "border-red-400 shadow-sm shadow-red-100" : "border-gray-200"
+    }`}
+  >
+    <h4 className="font-medium text-[#0B2D4D] mb-3">{title}</h4>
+    <div className="relative">
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(field, e.target.value)}
+        className="w-full text-3xl font-bold text-[#0B2D4D] bg-transparent border-0 p-0 focus:ring-0 focus:outline-none"
+        placeholder="—"
+        maxLength={1}
+        autoComplete="off"
+      />
+      <span className="absolute right-0 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+        {range}
+      </span>
     </div>
+    <div className="flex items-center justify-end mt-2 h-4">
+      {error && (
+        <span className="text-xs text-red-600 flex items-center gap-1 font-medium">
+          <AlertCircle size={12} />
+          {error}
+        </span>
+      )}
+    </div>
+  </div>
 );
 
-
 const FormattedAiSummary: React.FC<{ summary: string }> = ({ summary }) => {
-// Unchanged
+  // Unchanged
   const lines = summary.split("\n").filter((line) => line.trim() !== "");
 
   return (
@@ -895,7 +1100,7 @@ const AiSummaryModal: React.FC<{
   isLoading: boolean;
 }> = ({ isOpen, onClose, summary, isLoading }) => {
   if (!isOpen) return null;
-// Unchanged
+  // Unchanged
   return (
     // Modal Overlay
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 animate-fade-in-fast">
