@@ -23,6 +23,7 @@ import Ai from "./components/doctor/Ai";
 import LabForm from "./components/LabModule/Lab";
 import InPatientsForm from "./components/IP/In-Patients";
 import LabTestQueue from "./components/LabModule/LabTestQueue";
+import PreOPDIntake from "./components/vitals/PreOPDIntake";
 
 // A layout component for all authenticated pages
 const AuthenticatedLayout: React.FC<{
@@ -52,6 +53,7 @@ function App() {
           <Route path="/ai" element={<Ai />} />
           <Route path="/lab" element={<LabForm />} />
           <Route path="/IP" element={<InPatientsForm />} />
+          <Route path="/inp" element={<PreOPDIntake />} />
           {/* NOTE: Removed redundant public route /labtest, as the Lab Queue must be protected. */}
           {/* Common Dashboard for all roles */}
           <Route

@@ -4,7 +4,6 @@ import React, {
   useCallback,
   useMemo,
   useState,
-  Fragment,
 } from "react";
 import {
   Activity,
@@ -158,6 +157,7 @@ const getVitalCategory = (
 interface VitalsAssessmentProps {
   selectedPatient?: Patient | null;
   onBack?: () => void;
+  isSubcomponent?: boolean; // New prop to indicate if used as subcomponent
 }
 
 // NEW HELPER for Oxygen Icon/Alert (UX Note)
@@ -176,9 +176,135 @@ const O2Alert: React.FC<{ spo2: string }> = ({ spo2 }) => {
   );
 };
 
+// Pain Scale Smiley Slider Component
+const PainScaleSlider: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+}> = ({ value, onChange, error }) => {
+  const painEmojis = [
+    "😊",
+    "🙂",
+    "😐",
+    "😟",
+    "😣",
+    "😰",
+    "😭",
+    "😵",
+    "😱",
+    "💀",
+    "☠️",
+  ];
+  const painValue = parseInt(value) || 0;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-xs text-gray-500">
+        <span>No Pain</span>
+        <span>Worst Pain</span>
+      </div>
+      <div className="relative">
+        <input
+          type="range"
+          min="0"
+          max="10"
+          value={painValue}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full h-2 bg-gradient-to-r from-green-200 via-yellow-200 to-red-200 rounded-lg appearance-none cursor-pointer slider"
+        />
+        <div className="flex justify-between text-xs mt-1">
+          {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+            <span
+              key={num}
+              className={
+                num === painValue ? "font-bold text-[#012e58]" : "text-gray-400"
+              }
+            >
+              {num}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="text-center">
+        <span className="text-2xl" title={`Pain Level: ${painValue}/10`}>
+          {painEmojis[painValue]}
+        </span>
+      </div>
+      {error && (
+        <span className="text-xs text-red-600 flex items-center gap-1 font-medium">
+          <AlertCircle size={12} />
+          {error}
+        </span>
+      )}
+    </div>
+  );
+};
+
+// GCS Compact Dropdown Component
+const GCSDropdown: React.FC<{
+  title: string;
+  value: string;
+  field: keyof Pick<VitalsState, "gcsE" | "gcsV" | "gcsM">;
+  options: { value: string; label: string }[];
+  onChange: (field: keyof VitalsState, value: string) => void;
+  error?: string;
+}> = ({ title, value, field, options, onChange, error }) => (
+  <div
+    className={`bg-white rounded-lg border p-3 transition-all ${
+      error ? "border-red-400 shadow-sm shadow-red-100" : "border-gray-200"
+    }`}
+  >
+    <h4 className="font-medium text-[#0B2D4D] mb-2 text-sm">{title}</h4>
+    <select
+      value={value}
+      onChange={(e) => onChange(field, e.target.value)}
+      className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] text-sm"
+    >
+      <option value="">Select</option>
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.value} - {opt.label}
+        </option>
+      ))}
+    </select>
+    {error && (
+      <span className="text-xs text-red-600 flex items-center gap-1 font-medium mt-1">
+        <AlertCircle size={12} />
+        {error}
+      </span>
+    )}
+  </div>
+);
+
+// GCS Options
+const GCS_OPTIONS = {
+  E: [
+    { value: "4", label: "Spontaneous" },
+    { value: "3", label: "To Speech" },
+    { value: "2", label: "To Pain" },
+    { value: "1", label: "None" },
+  ],
+  V: [
+    { value: "5", label: "Oriented" },
+    { value: "4", label: "Confused" },
+    { value: "3", label: "Inappropriate" },
+    { value: "2", label: "Incomprehensible" },
+    { value: "1", label: "None" },
+  ],
+  M: [
+    { value: "6", label: "Obeys Commands" },
+    { value: "5", label: "Localizes Pain" },
+    { value: "4", label: "Withdraws" },
+    { value: "3", label: "Flexion" },
+    { value: "2", label: "Extension" },
+    { value: "1", label: "None" },
+  ],
+};
+
 export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
   selectedPatient,
   onBack,
+  isSubcomponent = false,
 }) => {
   const [vitals, dispatch] = useReducer(vitalsReducer, INITIAL_VITALS_STATE);
   const [status, setStatus] = useReducer((s: any, a: any) => ({ ...s, ...a }), {
@@ -399,17 +525,8 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
       return;
     }
 
-    // IMPORTANT: Temporarily remove non-mandatory fields from validation check only if they are empty
-    // We only validate mandatory fields if empty. Ranges are checked regardless of mandatory status.
-    const mandatoryVitalsCheck = [
-      vitals.temperature,
-      vitals.pulse,
-      vitals.respiratoryRate,
-      vitals.spo2,
-      vitals.bpSystolic,
-      vitals.bpDiastolic,
-    ];
-    const isAnyMandatoryMissing = mandatoryVitalsCheck.some((v) => !v);
+    // IMPORTANT: Validation logic for mandatory fields
+    // We run full validation as it handles range checks for all fields
 
     // We run full validation anyway as it handles range checks for all.
     if (!validateVitals()) {
@@ -557,57 +674,63 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
 
   // --- RENDER ---
   return (
-    <div className="p-6 bg-[#F8F9FA] min-h-screen font-sans">
-      <div className="max-w-7xl mx-auto">
-        {/* Header (Unchanged) */}
-        <header className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="p-2 hover:bg-white rounded-lg border border-gray-200 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 text-[#1a4b7a]" />
-              </button>
-            )}
-            <Activity className="w-8 h-8 text-[#012e58]" />
-            <div>
-              <h1 className="text-3xl font-bold text-[#0B2D4D]">
-                Vitals & Assessment
-              </h1>
-              <p className="text-[#1a4b7a]">
-                Record patient vital signs and health metrics
+    <div
+      className={
+        isSubcomponent ? "p-4" : "p-6 bg-[#F8F9FA] min-h-screen font-sans"
+      }
+    >
+      <div className={isSubcomponent ? "" : "max-w-7xl mx-auto"}>
+        {/* Header - Only show if not a subcomponent */}
+        {!isSubcomponent && (
+          <header className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="p-2 hover:bg-white rounded-lg border border-gray-200 transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5 text-[#1a4b7a]" />
+                </button>
+              )}
+              <Activity className="w-8 h-8 text-[#012e58]" />
+              <div>
+                <h1 className="text-3xl font-bold text-[#0B2D4D]">
+                  Vitals & Assessment
+                </h1>
+                <p className="text-[#1a4b7a]">
+                  Record patient vital signs and health metrics
+                </p>
+              </div>
+            </div>
+
+            {/* Dynamic Patient Info */}
+            <div className="bg-white rounded-lg border border-gray-200 p-4 text-right">
+              <p className="text-sm text-[#1a4b7a]">Current Patient</p>
+              <p className="font-semibold text-[#0B2D4D]">
+                {selectedPatient?.fullName || "No Patient Selected"}
+              </p>
+              <p className="text-sm text-[#1a4b7a]">
+                {selectedPatient ? (
+                  <>
+                    {selectedPatient.uhid} • {selectedPatient.age}Y •{" "}
+                    {selectedPatient.gender}
+                  </>
+                ) : (
+                  "Please select a patient"
+                )}
               </p>
             </div>
-          </div>
+          </header>
+        )}
 
-          {/* Dynamic Patient Info (Unchanged) */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4 text-right">
-            <p className="text-sm text-[#1a4b7a]">Current Patient</p>
-            <p className="font-semibold text-[#0B2D4D]">
-              {selectedPatient?.fullName || "No Patient Selected"}
-            </p>
-            <p className="text-sm text-[#1a4b7a]">
-              {selectedPatient ? (
-                <>
-                  {selectedPatient.uhid} • {selectedPatient.age}Y •{" "}
-                  {selectedPatient.gender}
-                </>
-              ) : (
-                "Please select a patient"
-              )}
-            </p>
-          </div>
-        </header>
-
-        {/* Status Messages (Unchanged) */}
-        {status.showSuccess && (
+        {/* Status Messages - Only show if not a subcomponent */}
+        {!isSubcomponent && status.showSuccess && (
           <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4 flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             <span className="text-green-800">Vitals saved successfully!</span>
           </div>
         )}
-        {status.errorMessage && (
+        {!isSubcomponent && status.errorMessage && (
           <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2">
             <AlertCircle className="w-4 h-4 text-red-600" />
             <span className="text-red-800">{status.errorMessage}</span>
@@ -768,134 +891,154 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
               30
             )}
           />
-          <VitalCard
-            title="Pain Score"
+          <PainScoreCard
             value={vitals.painScore}
-            unit="/10"
-            icon={Waves}
-            field="painScore"
-            normal="0-10"
-            onChange={handleVitalChange}
+            onChange={(value) => handleVitalChange("painScore", value)}
             error={status.validationErrors.painScore}
-            // No specific warnings/critical levels defined in the checklist
-            category={getVitalCategory(
-              parseFloat(vitals.painScore),
-              null,
-              null,
-              null,
-              null
-            )}
           />
         </div>
 
-        {/* GCS Fields */}
+        {/* GCS Fields - Enhanced with Compact Dropdowns */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
           <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4 flex items-center space-x-2">
             <Droplet className="w-5 h-5 text-[#012e58]" />
             <span>Glasgow Coma Scale (GCS)</span>
             {vitals.gcsE && vitals.gcsV && vitals.gcsM && (
-              <span className="ml-4 text-2xl font-bold text-[#1a4b7a]">
-                Total:{" "}
-                {parseInt(vitals.gcsE) +
-                  parseInt(vitals.gcsV) +
-                  parseInt(vitals.gcsM)}
-              </span>
+              <div className="ml-4 flex items-center space-x-2">
+                <span className="text-2xl font-bold text-[#1a4b7a]">
+                  Total:{" "}
+                  {parseInt(vitals.gcsE) +
+                    parseInt(vitals.gcsV) +
+                    parseInt(vitals.gcsM)}
+                </span>
+                <span
+                  className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                    parseInt(vitals.gcsE) +
+                      parseInt(vitals.gcsV) +
+                      parseInt(vitals.gcsM) <=
+                    8
+                      ? "bg-red-100 text-red-700"
+                      : parseInt(vitals.gcsE) +
+                          parseInt(vitals.gcsV) +
+                          parseInt(vitals.gcsM) <=
+                        12
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-green-100 text-green-700"
+                  }`}
+                >
+                  {parseInt(vitals.gcsE) +
+                    parseInt(vitals.gcsV) +
+                    parseInt(vitals.gcsM) <=
+                  8
+                    ? "Severe"
+                    : parseInt(vitals.gcsE) +
+                        parseInt(vitals.gcsV) +
+                        parseInt(vitals.gcsM) <=
+                      12
+                    ? "Moderate"
+                    : "Mild"}
+                </span>
+              </div>
             )}
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <GCSInputCard
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <GCSDropdown
               title="Eye Opening (E)"
               value={vitals.gcsE}
               field="gcsE"
-              range="1-4"
+              options={GCS_OPTIONS.E}
               onChange={handleVitalChange}
               error={status.validationErrors.gcsE}
             />
-            <GCSInputCard
+            <GCSDropdown
               title="Verbal Response (V)"
               value={vitals.gcsV}
               field="gcsV"
-              range="1-5"
+              options={GCS_OPTIONS.V}
               onChange={handleVitalChange}
               error={status.validationErrors.gcsV}
             />
-            <GCSInputCard
+            <GCSDropdown
               title="Motor Response (M)"
               value={vitals.gcsM}
               field="gcsM"
-              range="1-6"
+              options={GCS_OPTIONS.M}
               onChange={handleVitalChange}
               error={status.validationErrors.gcsM}
             />
           </div>
         </div>
 
-        {/* Risk Assessment & Actions (Unchanged) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
-              Risk Assessment Flags
-            </h3>
-            <div className="space-y-4">
-              {Object.entries({
-                diabetes: "Diabetes",
-                heartDisease: "Heart Disease",
-                kidney: "Kidney Disease",
-              }).map(([key, label]) => (
-                <label
-                  key={key}
-                  className="flex items-center space-x-3 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={
-                      vitals.riskFlags[key as keyof typeof vitals.riskFlags]
-                    }
-                    onChange={() =>
-                      dispatch({
-                        type: ACTIONS.TOGGLE_RISK_FLAG,
-                        payload: { flag: key },
-                      })
-                    }
-                    className="h-4 w-4 text-[#012e58] rounded border-gray-300 focus:ring-[#1a4b7a]"
-                  />
-                  <span className="text-[#1a4b7a]">{label}</span>
-                </label>
-              ))}
+        {/* Risk Assessment & Actions - Only show if not a subcomponent */}
+        {!isSubcomponent && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-[#0B2D4D] mb-4">
+                Risk Assessment Flags
+              </h3>
+              <div className="space-y-4">
+                {Object.entries({
+                  diabetes: "Diabetes",
+                  heartDisease: "Heart Disease",
+                  kidney: "Kidney Disease",
+                }).map(([key, label]) => (
+                  <label
+                    key={key}
+                    className="flex items-center space-x-3 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={
+                        vitals.riskFlags[key as keyof typeof vitals.riskFlags]
+                      }
+                      onChange={() =>
+                        dispatch({
+                          type: ACTIONS.TOGGLE_RISK_FLAG,
+                          payload: { flag: key },
+                        })
+                      }
+                      className="h-4 w-4 text-[#012e58] rounded border-gray-300 focus:ring-[#1a4b7a]"
+                    />
+                    <span className="text-[#1a4b7a]">{label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-6 flex flex-col space-y-4">
-            <button
-              onClick={handleSaveVitals}
-              disabled={status.isSaving || !selectedPatient}
-              className="flex items-center justify-center space-x-2 w-full px-4 py-3 rounded-lg font-semibold transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed bg-[#012e58] text-white hover:bg-[#1a4b7a]"
-            >
-              <Save className="w-5 h-5" />
-              <span>{status.isSaving ? "Saving..." : "Save Vitals"}</span>
-            </button>
-            <div className="flex space-x-4">
-              <button className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300 transition-colors">
-                <Upload className="w-4 h-4" />
-                <span>Upload Report</span>
-              </button>
+            <div className="bg-white rounded-lg border border-gray-200 p-6 flex flex-col space-y-4">
               <button
-                onClick={handleAiAssist}
-                className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300 transition-colors"
+                onClick={handleSaveVitals}
+                disabled={status.isSaving || !selectedPatient}
+                className="flex items-center justify-center space-x-2 w-full px-4 py-3 rounded-lg font-semibold transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed bg-[#012e58] text-white hover:bg-[#1a4b7a]"
               >
-                <Bot className="w-4 h-4" />
-                <span>AI Assist</span>
+                <Save className="w-5 h-5" />
+                <span>{status.isSaving ? "Saving..." : "Save Vitals"}</span>
               </button>
+              <div className="flex space-x-4">
+                <button className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300 transition-colors">
+                  <Upload className="w-4 h-4" />
+                  <span>Upload Report</span>
+                </button>
+                <button
+                  onClick={handleAiAssist}
+                  className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300 transition-colors"
+                >
+                  <Bot className="w-4 h-4" />
+                  <span>AI Assist</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
-      <AiSummaryModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        summary={aiSummary}
-        isLoading={isAiLoading}
-      />
+      {!isSubcomponent && (
+        <AiSummaryModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          summary={aiSummary}
+          isLoading={isAiLoading}
+        />
+      )}
     </div>
   );
 };
@@ -926,46 +1069,87 @@ const VitalCard: React.FC<{
   error,
   category,
   customContent,
-}) => (
+}) => {
+  // Enhanced color chip styling
+  const getChipStyle = (label: string) => {
+    switch (label) {
+      case "Critical":
+        return "bg-red-100 text-red-700 border border-red-200";
+      case "Warning":
+        return "bg-yellow-100 text-yellow-700 border border-yellow-200";
+      case "Normal":
+        return "bg-green-100 text-green-700 border border-green-200";
+      default:
+        return "bg-gray-100 text-gray-600 border border-gray-200";
+    }
+  };
+
+  return (
+    <div
+      className={`bg-white rounded-lg border p-4 transition-all relative ${
+        error ? "border-red-400 shadow-sm shadow-red-100" : "border-gray-200"
+      }`}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center space-x-2">
+          <Icon className="w-5 h-5 text-[#012e58]" />
+          <h3 className="font-medium text-[#0B2D4D]">{title}</h3>
+        </div>
+        {category.label && (
+          <span
+            className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getChipStyle(
+              category.label
+            )}`}
+          >
+            {category.label}
+          </span>
+        )}
+      </div>
+      {customContent} {/* Render custom content (like O2 icon) */}
+      <div className="relative">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(field, e.target.value)}
+          className="w-full text-3xl font-bold text-[#0B2D4D] bg-transparent border-0 p-0 focus:ring-0 focus:outline-none"
+          placeholder="—"
+          autoComplete="off"
+        />
+        <span className="absolute right-0 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+          {unit}
+        </span>
+      </div>
+      <div className="flex items-center justify-between mt-2 h-4">
+        {normal && (
+          <span className="text-xs text-gray-400">Normal: {normal}</span>
+        )}
+        {error && (
+          <span className="text-xs text-red-600 flex items-center gap-1 font-medium">
+            <AlertCircle size={12} />
+            {error}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Pain Score Card with Smiley Slider
+const PainScoreCard: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+}> = ({ value, onChange, error }) => (
   <div
-    className={`bg-white rounded-lg border p-4 transition-all relative ${
-      // Added relative here
+    className={`bg-white rounded-lg border p-4 transition-all ${
       error ? "border-red-400 shadow-sm shadow-red-100" : "border-gray-200"
     }`}
   >
     <div className="flex items-center space-x-2 mb-3">
-      <Icon className="w-5 h-5 text-[#012e58]" />
-      <h3 className="font-medium text-[#0B2D4D]">{title}</h3>
+      <Waves className="w-5 h-5 text-[#012e58]" />
+      <h3 className="font-medium text-[#0B2D4D]">Pain Score</h3>
     </div>
-    {customContent} {/* Render custom content (like O2 icon) */}
-    <div className="relative">
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(field, e.target.value)}
-        className="w-full text-3xl font-bold text-[#0B2D4D] bg-transparent border-0 p-0 focus:ring-0 focus:outline-none"
-        placeholder="—"
-        autoComplete="off"
-      />
-      <span className="absolute right-0 top-1/2 -translate-y-1/2 text-sm text-gray-500">
-        {unit}
-      </span>
-    </div>
-    <div className="flex items-center justify-between mt-2 h-4">
-      {normal && (
-        <span className="text-xs text-gray-400">Normal: {normal}</span>
-      )}
-      {error ? (
-        <span className="text-xs text-red-600 flex items-center gap-1 font-medium">
-          <AlertCircle size={12} />
-          {error}
-        </span>
-      ) : (
-        <span className={`text-xs font-medium ${category.color}`}>
-          {category.label}
-        </span>
-      )}
-    </div>
+    <PainScaleSlider value={value} onChange={onChange} error={error} />
   </div>
 );
 
@@ -1016,44 +1200,45 @@ const MAPResultCard: React.FC<{ map: string }> = ({ map }) => (
   </div>
 );
 
-const GCSInputCard: React.FC<{
-  title: string;
-  value: string;
-  field: keyof Pick<VitalsState, "gcsE" | "gcsV" | "gcsM">;
-  range: string;
-  onChange: (field: keyof VitalsState, value: string) => void;
-  error?: string;
-}> = ({ title, value, field, range, onChange, error }) => (
-  <div
-    className={`bg-white rounded-lg border p-4 transition-all ${
-      error ? "border-red-400 shadow-sm shadow-red-100" : "border-gray-200"
-    }`}
-  >
-    <h4 className="font-medium text-[#0B2D4D] mb-3">{title}</h4>
-    <div className="relative">
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(field, e.target.value)}
-        className="w-full text-3xl font-bold text-[#0B2D4D] bg-transparent border-0 p-0 focus:ring-0 focus:outline-none"
-        placeholder="—"
-        maxLength={1}
-        autoComplete="off"
-      />
-      <span className="absolute right-0 top-1/2 -translate-y-1/2 text-sm text-gray-500">
-        {range}
-      </span>
-    </div>
-    <div className="flex items-center justify-end mt-2 h-4">
-      {error && (
-        <span className="text-xs text-red-600 flex items-center gap-1 font-medium">
-          <AlertCircle size={12} />
-          {error}
-        </span>
-      )}
-    </div>
-  </div>
-);
+// Legacy GCS Input Card - kept for backward compatibility but not used in enhanced version
+// const GCSInputCard: React.FC<{
+//   title: string;
+//   value: string;
+//   field: keyof Pick<VitalsState, "gcsE" | "gcsV" | "gcsM">;
+//   range: string;
+//   onChange: (field: keyof VitalsState, value: string) => void;
+//   error?: string;
+// }> = ({ title, value, field, range, onChange, error }) => (
+//   <div
+//     className={`bg-white rounded-lg border p-4 transition-all ${
+//       error ? "border-red-400 shadow-sm shadow-red-100" : "border-gray-200"
+//     }`}
+//   >
+//     <h4 className="font-medium text-[#0B2D4D] mb-3">{title}</h4>
+//     <div className="relative">
+//       <input
+//         type="text"
+//         value={value}
+//         onChange={(e) => onChange(field, e.target.value)}
+//         className="w-full text-3xl font-bold text-[#0B2D4D] bg-transparent border-0 p-0 focus:ring-0 focus:outline-none"
+//         placeholder="—"
+//         maxLength={1}
+//         autoComplete="off"
+//       />
+//       <span className="absolute right-0 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+//         {range}
+//       </span>
+//     </div>
+//     <div className="flex items-center justify-end mt-2 h-4">
+//       {error && (
+//         <span className="text-xs text-red-600 flex items-center gap-1 font-medium">
+//           <AlertCircle size={12} />
+//           {error}
+//         </span>
+//       )}
+//     </div>
+//   </div>
+// );
 
 const FormattedAiSummary: React.FC<{ summary: string }> = ({ summary }) => {
   // Unchanged
