@@ -1191,9 +1191,6 @@ export const RecordsUploadSection: React.FC = () => {
       name: string;
       type: string;
       size: number;
-      status: "uploading" | "processing" | "completed" | "error";
-      confidence: number;
-      extractedData?: any;
     }>;
   }>({
     "lab-reports": [],
@@ -1218,78 +1215,21 @@ export const RecordsUploadSection: React.FC = () => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Here, we simulate the actual upload and processing
-      mockUploadProcess(activeTab, file);
+      const newFile = {
+        id: Date.now().toString(),
+        name: file.name,
+        type: file.type,
+        size: file.size,
+      };
+      setUploadedFiles((prev) => ({
+        ...prev,
+        [activeTab]: [...(prev[activeTab] || []), newFile],
+      }));
     }
     // Clear the input value so the onChange event fires again if the user selects the same file
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-  };
-
-  const mockUploadProcess = (categoryId: string, file: File) => {
-    const mockFile = {
-      id: Date.now().toString(),
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      status: "uploading" as const,
-      confidence: 0,
-    };
-
-    setUploadedFiles((prev) => ({
-      ...prev,
-      [categoryId]: [...(prev[categoryId] || []), mockFile],
-    }));
-
-    // NOTE: To make this "really upload," replace this mock with a fetch/axios call
-    // to your backend, and update the status based on the server's response.
-
-    // Simulate upload and processing
-    setTimeout(() => {
-      setUploadedFiles((prev) => ({
-        ...prev,
-        [categoryId]: prev[categoryId].map((f) =>
-          f.id === mockFile.id ? { ...f, status: "processing" as const } : f
-        ),
-      }));
-    }, 1000);
-
-    setTimeout(() => {
-      const confidence = Math.floor(Math.random() * 30) + 70; // 70-100%
-      const extractedData = {
-        "lab-reports": {
-          tests: ["CBC", "Lipid Profile", "HbA1c"],
-          values: [
-            "Hemoglobin: 12.5 g/dL",
-            "Cholesterol: 180 mg/dL",
-            "HbA1c: 6.2%",
-          ],
-        },
-        radiology: {
-          findings: ["Normal chest X-ray", "No acute findings"],
-          impression: "No significant abnormality",
-        },
-        prescriptions: {
-          medications: ["Metformin 500mg BD", "Amlodipine 5mg OD"],
-          doctor: "Dr. Smith",
-        },
-      }[categoryId] || { content: "Document processed successfully" };
-
-      setUploadedFiles((prev) => ({
-        ...prev,
-        [categoryId]: prev[categoryId].map((f) =>
-          f.id === mockFile.id
-            ? {
-                ...f,
-                status: "completed" as const,
-                confidence,
-                extractedData,
-              }
-            : f
-        ),
-      }));
-    }, 3000);
   };
 
   const removeFile = (categoryId: string, fileId: string) => {
@@ -1299,40 +1239,7 @@ export const RecordsUploadSection: React.FC = () => {
     }));
   };
 
-  const getStatusBadge = (status: string, confidence?: number) => {
-    let color: "green" | "yellow" | "red" | "blue" | "gray" = "gray";
-    let text = "";
-
-    switch (status) {
-      case "uploading":
-        color = "blue";
-        text = "Uploading...";
-        break;
-      case "processing":
-        color = "yellow";
-        text = "Processing OCR...";
-        break;
-      case "completed":
-        if (confidence && confidence >= 90) color = "green";
-        else if (confidence && confidence >= 70) color = "yellow";
-        else color = "red";
-        text = `✓ ${confidence}% confident`;
-        break;
-      case "error":
-        color = "red";
-        text = "Error";
-        break;
-      default:
-        return null;
-    }
-    return (
-      <span
-        className={`px-2 py-0.5 text-xs bg-${color}-100 text-${color}-700 rounded-full`}
-      >
-        {text}
-      </span>
-    );
-  };
+  // Note: Real upload/OCR should be implemented by integrating with a backend.
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
@@ -1425,7 +1332,6 @@ export const RecordsUploadSection: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
-                  {getStatusBadge(file.status, file.confidence)}
                   <button
                     onClick={() => removeFile(activeTab, file.id)}
                     className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
@@ -1435,56 +1341,6 @@ export const RecordsUploadSection: React.FC = () => {
                 </div>
               </div>
             ))}
-          </div>
-        )}
-
-        {/* Extracted Data Preview */}
-        {uploadedFiles[activeTab]?.some(
-          (file) => file.status === "completed" && file.extractedData
-        ) && (
-          <div className="mt-4 p-4 border border-blue-200 rounded-lg bg-blue-50">
-            <h4 className="font-medium text-[#0B2D4D] mb-2 flex items-center space-x-2">
-              <Bot className="w-4 h-4" />
-              <span>Extracted Data (Verify & Apply)</span>
-            </h4>
-            {uploadedFiles[activeTab]
-              .filter(
-                (file) => file.status === "completed" && file.extractedData
-              )
-              .map((file) => (
-                <div
-                  key={file.id}
-                  className="mb-3 p-3 bg-white border border-blue-200 rounded"
-                >
-                  <p className="text-sm font-medium text-[#0B2D4D] mb-2">
-                    From: {file.name}
-                  </p>
-                  <div className="text-sm text-gray-700 space-y-1">
-                    {Object.entries(file.extractedData || {}).map(
-                      ([key, value]) => (
-                        <div key={key} className="flex">
-                          <span className="font-medium w-1/4 capitalize">
-                            {key.replace(/([A-Z])/g, " $1")}:
-                          </span>
-                          <span className="w-3/4">
-                            {Array.isArray(value)
-                              ? value.join(", ")
-                              : String(value)}
-                          </span>
-                        </div>
-                      )
-                    )}
-                  </div>
-                  <div className="mt-2 flex space-x-2">
-                    <button className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700">
-                      Apply to Form
-                    </button>
-                    <button className="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700">
-                      Edit First
-                    </button>
-                  </div>
-                </div>
-              ))}
           </div>
         )}
       </div>
