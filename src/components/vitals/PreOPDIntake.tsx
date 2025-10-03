@@ -32,7 +32,6 @@ import {
   ClipboardCopy,
 } from "lucide-react";
 
-// NOTE: Assuming VitalsAssessment and Firebase types/imports are configured correctly.
 import { VitalsAssessment } from "./VitalsAssessment";
 import { db } from "../../firebase";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
@@ -46,6 +45,10 @@ import {
   PastHistory,
 } from "../../types";
 
+import * as pdfjsLib from "pdfjs-dist";
+import mammoth from "mammoth";
+import Tesseract from "tesseract.js"; // 💡 MOCK IMPORT: Assume Tesseract.js is globally available/imported
+
 // 🚨 IMPORT MODULAR SECTIONS AND CONSTANTS
 import {
   MOCK_MASTERS,
@@ -58,8 +61,92 @@ import {
   AiClinicalSummarySection,
 } from "./PreOPDIntakeSections";
 
-// --- CONSTANTS & MOCK DATA ---
-// NOTE: MOCK_MASTERS and InputStyle are now imported from PreOPDIntakeSections.tsx
+// --- FILE EXTRACTION LOGIC (MOVED FROM DoctorModule.tsx) ---
+const extractTextFromFile = async (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = async (event) => {
+      try {
+        let text = "";
+
+        if (file.type === "application/pdf") {
+          const loadingTask = pdfjsLib.getDocument(
+            event.target?.result as ArrayBuffer
+          );
+          const pdf = await loadingTask.promise;
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            // Append a new line or separator for clarity between pages
+            text +=
+              content.items.map((item: any) => item.str).join(" ") +
+              "\n--- Page Break ---\n";
+          }
+          // Prefix PDF content with a tag
+          resolve(`[PDF Embedded Text Extracted]\n${text}`);
+        } else if (
+          file.type ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ) {
+          const arrayBuffer = event.target?.result as ArrayBuffer;
+          const result = await mammoth.extractRawText({ arrayBuffer });
+          // Prefix DOCX content with a tag
+          resolve(`[DOCX Text Content Extracted]\n${result.value}`);
+        } else if (file.type === "text/plain") {
+          // Prefix Plain Text content with a tag
+          resolve(`[Plain Text Content]\n${event.target?.result as string}`);
+        } else if (file.type.startsWith("image/")) {
+          // Read as data URL for browser-based OCR
+          const dataUrl = event.target?.result as string;
+
+          // 💡 OCR IMPLEMENTATION NOTE:
+          // The actual OCR call using Tesseract.recognize(dataUrl, 'eng') needs to be implemented here.
+          // The Tesseract.js library is not bundled/installed in the current environment.
+
+          // Returning an instructional placeholder/mock resolution:
+          const mockResolution = `
+            [Image OCR Required]
+            File: ${file.name}
+            Size: ${(file.size / 1024).toFixed(1)} KB
+            Type: ${file.type}
+            ***
+            To enable OCR for this file, you must:
+            1. Install Tesseract.js: 'npm install tesseract.js'
+            2. Implement the call here: const { data: { text } } = await Tesseract.recognize(dataUrl, 'eng');
+            ***`;
+          resolve(mockResolution);
+        } else {
+          reject(
+            new Error(
+              `Unsupported file type: ${file.type}. Text extraction failed.`
+            )
+          );
+        }
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    reader.onerror = (error) => {
+      reject(error);
+    };
+
+    // Read file based on type, reading images as DataURL for OCR
+    if (
+      file.type === "application/pdf" ||
+      file.type ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ) {
+      reader.readAsArrayBuffer(file);
+    } else if (file.type.startsWith("image/") || file.type === "text/plain") {
+      reader.readAsDataURL(file); // Reading images as DataURL
+    } else {
+      reader.readAsText(file);
+    }
+  });
+};
+// --- END FILE EXTRACTION LOGIC ---
 
 // --- INITIAL STATE (REMAINS) ---
 const INITIAL_INTAKE_STATE: PreOPDIntakeData = {
@@ -103,10 +190,6 @@ function intakeReducer(
 }
 
 // ------------------------------------------------------------------
-// --- REMOVED SECTION COMPONENTS (Now imported from PreOPDIntakeSections.tsx) ---
-// ------------------------------------------------------------------
-
-// ------------------------------------------------------------------
 // --- MAIN COMPONENT ---
 // ------------------------------------------------------------------
 interface PreOPDIntakeProps {
@@ -127,6 +210,11 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
     showSuccess: false,
     errorMessage: "",
   });
+
+  // NEW STATE: Holds extracted text data from uploaded files
+  const [extractedRecords, setExtractedRecords] = useState<
+    Record<string, string>
+  >({});
 
   // AI Summary state
   const [aiSummary, setAiSummary] = useState("");
@@ -155,8 +243,17 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
 
   const handleClearForm = useCallback(() => {
     dispatch({ type: "RESET_ALL", payload: null });
+    setExtractedRecords({}); // Clear extracted records on form reset
     setAiSummary("");
   }, []);
+
+  // NEW HANDLER: Passed to RecordsUploadSection for updating extracted content
+  const handleExtractedRecordsChange = useCallback(
+    (newRecords: Record<string, string>) => {
+      setExtractedRecords(newRecords);
+    },
+    []
+  );
 
   const generateAiSummary = useCallback(async () => {
     if (!selectedPatient) {
@@ -166,12 +263,17 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
 
     setIsAiLoading(true);
     setAiSummary("");
+    setAiExpanded(false); // Collapse during loading
 
-    // Gather all medications for a more comprehensive summary
+    // Collect all data for the AI prompt
     const allMeds = [
       ...intakeData.chronicConditions.flatMap((c) => c.medications),
       ...intakeData.pastHistory.currentMedications,
     ];
+
+    const extractedRecordText = Object.entries(extractedRecords)
+      .map(([type, content]) => `--- ${type} ---\n${content}`)
+      .join("\n\n");
 
     // Mock AI summary generation based on intake data
     const mockSummary = `Patient ${selectedPatient.fullName} (${
@@ -192,13 +294,14 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
     } regular medication(s). Current medication compliance is **${
       intakeData.pastHistory.overallCompliance
     }**. ${
-      intakeData.allergies.hasAllergies
-        ? `Patient has reported **${intakeData.allergies.severity}** allergies to **${intakeData.allergies.substance}** (Reaction: ${intakeData.allergies.reaction}). `
-        : "No known allergies reported. "
+      extractedRecordText.length > 0
+        ? `\n\n**Previous Records Analyzed:**\n${extractedRecordText.substring(
+            0,
+            500
+          )}...`
+        : "No previous records analyzed."
     }
-    Past history includes: ${
-      intakeData.pastHistory.illnesses.join(", ") || "None"
-    }. Comprehensive assessment recommended.`;
+    Comprehensive assessment recommended.`;
 
     // Simulate API delay
     setTimeout(() => {
@@ -206,7 +309,7 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
       setIsAiLoading(false);
       setAiExpanded(true);
     }, 2000);
-  }, [selectedPatient, intakeData]);
+  }, [selectedPatient, intakeData, extractedRecords]);
 
   const handleSubmit = async () => {
     if (!selectedPatient) {
@@ -225,6 +328,7 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
         chronicConditions: intakeData.chronicConditions,
         allergies: intakeData.allergies,
         pastHistory: intakeData.pastHistory,
+        extractedRecords, // Save the extracted text content
         aiSummary,
         recordedAt: Timestamp.now(),
         recordedBy: "Medical Staff",
@@ -370,7 +474,10 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
           />
 
           {/* 6. Previous Records Uploads */}
-          <RecordsUploadSection />
+          <RecordsUploadSection
+            extractTextFromFile={extractTextFromFile}
+            onRecordsChange={handleExtractedRecordsChange}
+          />
 
           {/* 7. AI Clinical Summary */}
           <AiClinicalSummarySection

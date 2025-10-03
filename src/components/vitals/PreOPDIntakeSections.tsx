@@ -524,9 +524,9 @@ export const ChronicConditionsSection: React.FC<
                         </button>
                         <div className="p-1 rounded">
                           {isExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-gray-500" />
+                            <ChevronUp className="w-4 h-4" />
                           ) : (
-                            <ChevronDown className="w-4 h-4 text-gray-500" />
+                            <ChevronDown className="w-4 h-4" />
                           )}
                         </div>
                       </div>
@@ -1181,9 +1181,18 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
 };
 
 // Records Upload Section with MOCK Upload/OCR Logic
-export const RecordsUploadSection: React.FC = () => {
+interface RecordsUploadSectionProps {
+  extractTextFromFile: (file: File) => Promise<string>;
+  onRecordsChange: (records: Record<string, string>) => void;
+}
+
+export const RecordsUploadSection: React.FC<RecordsUploadSectionProps> = ({
+  extractTextFromFile,
+  onRecordsChange,
+}) => {
   const [activeTab, setActiveTab] = useState("lab-reports");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const [uploadedFiles, setUploadedFiles] = useState<{
     [key: string]: Array<{
@@ -1200,6 +1209,11 @@ export const RecordsUploadSection: React.FC = () => {
     other: [],
   });
 
+  // Local state to store the extracted text content per file, categorized by tab.
+  const [extractedContents, setExtractedContents] = useState<
+    Record<string, string>
+  >({});
+
   const categories = [
     { id: "lab-reports", label: "Lab Reports", icon: "🧪" },
     { id: "radiology", label: "Radiology", icon: "🩻" },
@@ -1212,34 +1226,74 @@ export const RecordsUploadSection: React.FC = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
-    if (file) {
+    if (!file) return;
+
+    setIsProcessing(true);
+
+    try {
+      // 1. Extract text using the passed-in logic (handles PDF/DOCX/Image OCR)
+      const textContent = await extractTextFromFile(file);
+
       const newFile = {
         id: Date.now().toString(),
         name: file.name,
         type: file.type,
         size: file.size,
       };
-      setUploadedFiles((prev) => ({
-        ...prev,
-        [activeTab]: [...(prev[activeTab] || []), newFile],
-      }));
-    }
-    // Clear the input value so the onChange event fires again if the user selects the same file
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+
+      // 2. Update the file list state
+      setUploadedFiles((prev) => {
+        const newUploadedFiles = {
+          ...prev,
+          [activeTab]: [...(prev[activeTab] || []), newFile],
+        };
+        return newUploadedFiles;
+      });
+
+      // 3. Update the extracted contents state
+      const newExtractedContents = {
+        ...extractedContents,
+        [activeTab]:
+          (extractedContents[activeTab] || "") +
+          `\n\n--- FILE: ${newFile.name} ---\n${textContent}`,
+      };
+      setExtractedContents(newExtractedContents);
+      onRecordsChange(newExtractedContents);
+    } catch (error) {
+      console.error("Error processing file for OCR/Extraction:", error);
+      alert(`File processing failed: ${(error as Error).message}`);
+    } finally {
+      setIsProcessing(false);
+      // Clear the input value so the onChange event fires again if the user selects the same file
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
   const removeFile = (categoryId: string, fileId: string) => {
+    // NOTE: For simplicity, removing a file clears ALL extracted content in that category.
+    // A robust solution would track content per file ID.
     setUploadedFiles((prev) => ({
       ...prev,
       [categoryId]: prev[categoryId].filter((file) => file.id !== fileId),
     }));
+
+    setExtractedContents((prev) => ({
+      ...prev,
+      [categoryId]: "", // Clear all extracted text for this category
+    }));
+    onRecordsChange({
+      ...extractedContents,
+      [categoryId]: "",
+    });
   };
 
-  // Note: Real upload/OCR should be implemented by integrating with a backend.
+  const currentFileCount = uploadedFiles[activeTab]?.length || 0;
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
@@ -1259,7 +1313,8 @@ export const RecordsUploadSection: React.FC = () => {
           ref={fileInputRef}
           onChange={handleFileChange}
           className="hidden"
-          accept=".pdf,.docx,.jpg,.jpeg,.png"
+          // 💡 UPDATED ACCEPT FOR OCR/EXTRACTION
+          accept=".pdf,.docx,.txt,image/*"
           // To allow multiple files, uncomment the 'multiple' attribute:
           // multiple
         />
@@ -1293,29 +1348,46 @@ export const RecordsUploadSection: React.FC = () => {
         {/* Upload Area */}
         <div className="mb-4">
           <div
-            className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
-            onClick={triggerFileUpload}
+            className={`border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50 transition-colors cursor-pointer ${
+              isProcessing ? "bg-blue-100" : "hover:bg-gray-100"
+            }`}
+            onClick={!isProcessing ? triggerFileUpload : undefined}
           >
-            <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-            <p className="text-sm text-gray-600 mb-2 font-medium">
-              Upload {categories.find((c) => c.id === activeTab)?.label} files
-            </p>
-            <p className="text-xs text-gray-500 mb-3">
-              Drag and drop or **click to browse** • PDF, DOCX, JPG, PNG
-            </p>
-            <div className="px-4 py-2 bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors text-sm inline-block">
-              Browse Files
-            </div>
+            {isProcessing ? (
+              <div className="flex flex-col items-center">
+                <Loader className="w-8 h-8 text-[#012e58] mx-auto mb-2 animate-spin" />
+                <p className="text-sm text-[#012e58] mb-1 font-medium">
+                  Processing File...
+                </p>
+                <p className="text-xs text-gray-500">
+                  Extracting text content (OCR/Embedded)
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center">
+                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-600 mb-2 font-medium">
+                  Upload {categories.find((c) => c.id === activeTab)?.label}{" "}
+                  files
+                </p>
+                <p className="text-xs text-gray-500 mb-3">
+                  Drag and drop or **click to browse** • PDF, DOCX, JPG, PNG
+                </p>
+                <div className="px-4 py-2 bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors text-sm inline-block">
+                  Browse Files
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Uploaded Files */}
-        {uploadedFiles[activeTab]?.length > 0 && (
+        {currentFileCount > 0 && (
           <div className="space-y-3">
             <h4 className="font-medium text-[#0B2D4D]">
-              Uploaded Files ({uploadedFiles[activeTab].length})
+              Uploaded Files ({currentFileCount})
             </h4>
-            {uploadedFiles[activeTab].map((file) => (
+            {uploadedFiles[activeTab]?.map((file) => (
               <div
                 key={file.id}
                 className="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-gray-50"
@@ -1341,6 +1413,20 @@ export const RecordsUploadSection: React.FC = () => {
                 </div>
               </div>
             ))}
+
+            {/* Text Preview Box (New addition for feedback) */}
+            <div className="mt-4 p-3 bg-gray-100 border border-gray-200 rounded-lg">
+              <h5 className="text-xs font-semibold text-[#0B2D4D] mb-2">
+                Extracted Content Preview (Last Upload)
+              </h5>
+              <p className="text-xs text-gray-600 whitespace-pre-wrap max-h-40 overflow-y-auto">
+                {extractedContents[activeTab]
+                  ?.split("\n\n")
+                  .pop()
+                  ?.substring(0, 500) ||
+                  "No text extracted yet for the last file."}
+              </p>
+            </div>
           </div>
         )}
       </div>
