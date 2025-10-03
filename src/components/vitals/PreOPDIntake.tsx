@@ -1,5 +1,11 @@
 // src/components/vitals/PreOPDIntake.tsx
-import React, { useState, useReducer, useCallback, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useReducer,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   FileText,
   HeartPulse,
@@ -657,12 +663,20 @@ const ChronicConditionsSection: React.FC<ChronicConditionsSectionProps> = ({
                             <table className="w-full">
                               <thead className="bg-gray-100">
                                 <tr className="text-xs text-gray-600">
-                                  <th className="text-left p-2 w-1/4">Medication</th>
+                                  <th className="text-left p-2 w-1/4">
+                                    Medication
+                                  </th>
                                   <th className="text-left p-2 w-1/5">Dose</th>
-                                  <th className="text-left p-2 w-1/6">Frequency</th>
+                                  <th className="text-left p-2 w-1/6">
+                                    Frequency
+                                  </th>
                                   <th className="text-left p-2 w-1/6">Route</th>
-                                  <th className="text-left p-2 w-1/6">Compliance</th>
-                                  <th className="text-left p-2 w-1/12">Actions</th>
+                                  <th className="text-left p-2 w-1/6">
+                                    Compliance
+                                  </th>
+                                  <th className="text-left p-2 w-1/12">
+                                    Actions
+                                  </th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -689,11 +703,9 @@ const ChronicConditionsSection: React.FC<ChronicConditionsSectionProps> = ({
                                         placeholder="Medication name"
                                       />
                                       <datalist id="medication-list">
-                                        {MOCK_MASTERS.medications.map(
-                                          (med) => (
-                                            <option key={med} value={med} />
-                                          )
-                                        )}
+                                        {MOCK_MASTERS.medications.map((med) => (
+                                          <option key={med} value={med} />
+                                        ))}
                                       </datalist>
                                     </td>
                                     <td className="p-2">
@@ -907,8 +919,8 @@ const AllergiesSection: React.FC<AllergiesSectionProps> = ({
                   </p>
                   <p className="text-sm">
                     Patient is allergic to **"{data.substance}"** but is
-                    currently prescribed:{" "}
-                    **{drugConflicts.map((med) => med.name).join(", ")}**
+                    currently prescribed: **
+                    {drugConflicts.map((med) => med.name).join(", ")}**
                   </p>
                 </div>
               </div>
@@ -1028,7 +1040,11 @@ const PastHistorySection: React.FC<PastHistorySectionProps> = ({
 
   const handleAddIllness = (value: string) => {
     const newIllness = value.trim();
-    if (data.illnesses.length < 5 && newIllness && !data.illnesses.includes(newIllness)) {
+    if (
+      data.illnesses.length < 5 &&
+      newIllness &&
+      !data.illnesses.includes(newIllness)
+    ) {
       onChange({
         ...data,
         illnesses: [...data.illnesses, newIllness],
@@ -1041,7 +1057,7 @@ const PastHistorySection: React.FC<PastHistorySectionProps> = ({
   const handleRemoveIllness = (illness: string) => {
     onChange({
       ...data,
-      illnesses: data.illnesses.filter(i => i !== illness)
+      illnesses: data.illnesses.filter((i) => i !== illness),
     });
   };
 
@@ -1072,8 +1088,11 @@ const PastHistorySection: React.FC<PastHistorySectionProps> = ({
                   className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full border border-blue-200"
                 >
                   {illness}
-                  <button onClick={() => handleRemoveIllness(illness)} className="ml-1 text-blue-600 hover:text-red-500">
-                    <Trash2 className="w-3 h-3"/>
+                  <button
+                    onClick={() => handleRemoveIllness(illness)}
+                    className="ml-1 text-blue-600 hover:text-red-500"
+                  >
+                    <Trash2 className="w-3 h-3" />
                   </button>
                 </span>
               ))}
@@ -1084,7 +1103,7 @@ const PastHistorySection: React.FC<PastHistorySectionProps> = ({
               placeholder="Add illness (press Enter)"
               onKeyPress={(e) => {
                 if (e.key === "Enter") {
-                  if(handleAddIllness(e.currentTarget.value)) {
+                  if (handleAddIllness(e.currentTarget.value)) {
                     e.currentTarget.value = "";
                   }
                 }
@@ -1161,12 +1180,14 @@ const PastHistorySection: React.FC<PastHistorySectionProps> = ({
               Medication Table Implementation Note:
             </p>
             <p>
-              The medications currently listed below are for calculation (e.g., allergy check) only. 
-              The interactive table UI is complex and is pending full implementation here.
+              The medications currently listed below are for calculation (e.g.,
+              allergy check) only. The interactive table UI is complex and is
+              pending full implementation here.
             </p>
             {data.currentMedications.length > 0 && (
               <p className="mt-2 text-xs text-gray-600">
-                Currently displaying: {data.currentMedications.map(m => m.name).join(', ')}
+                Currently displaying:{" "}
+                {data.currentMedications.map((m) => m.name).join(", ")}
               </p>
             )}
           </div>
@@ -1234,12 +1255,12 @@ const RecordsUploadSection: React.FC = () => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-        // Here, we simulate the actual upload and processing
-        mockUploadProcess(activeTab, file);
+      // Here, we simulate the actual upload and processing
+      mockUploadProcess(activeTab, file);
     }
     // Clear the input value so the onChange event fires again if the user selects the same file
     if (fileInputRef.current) {
-        fileInputRef.current.value = ""; 
+      fileInputRef.current.value = "";
     }
   };
 
@@ -1257,8 +1278,8 @@ const RecordsUploadSection: React.FC = () => {
       ...prev,
       [categoryId]: [...(prev[categoryId] || []), mockFile],
     }));
-    
-    // NOTE: To make this "really upload," replace this mock with a fetch/axios call 
+
+    // NOTE: To make this "really upload," replace this mock with a fetch/axios call
     // to your backend, and update the status based on the server's response.
 
     // Simulate upload and processing
@@ -1266,9 +1287,7 @@ const RecordsUploadSection: React.FC = () => {
       setUploadedFiles((prev) => ({
         ...prev,
         [categoryId]: prev[categoryId].map((f) =>
-          f.id === mockFile.id
-            ? { ...f, status: "processing" as const }
-            : f
+          f.id === mockFile.id ? { ...f, status: "processing" as const } : f
         ),
       }));
     }, 1000);
@@ -1366,13 +1385,13 @@ const RecordsUploadSection: React.FC = () => {
       <div className="p-4">
         {/* Hidden file input */}
         <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            className="hidden"
-            accept=".pdf,.docx,.jpg,.jpeg,.png"
-            // To allow multiple files, uncomment the 'multiple' attribute:
-            // multiple 
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+          accept=".pdf,.docx,.jpg,.jpeg,.png"
+          // To allow multiple files, uncomment the 'multiple' attribute:
+          // multiple
         />
 
         {/* Category Tabs */}
@@ -1403,7 +1422,7 @@ const RecordsUploadSection: React.FC = () => {
 
         {/* Upload Area */}
         <div className="mb-4">
-          <div 
+          <div
             className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
             onClick={triggerFileUpload}
           >
@@ -1414,9 +1433,7 @@ const RecordsUploadSection: React.FC = () => {
             <p className="text-xs text-gray-500 mb-3">
               Drag and drop or **click to browse** • PDF, DOCX, JPG, PNG
             </p>
-            <div
-              className="px-4 py-2 bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors text-sm inline-block"
-            >
+            <div className="px-4 py-2 bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors text-sm inline-block">
               Browse Files
             </div>
           </div>
@@ -1621,7 +1638,6 @@ const AiClinicalSummarySection: React.FC<AiClinicalSummarySectionProps> = ({
   );
 };
 
-
 // ------------------------------------------------------------------
 // --- MAIN COMPONENT ---
 // ------------------------------------------------------------------
@@ -1685,8 +1701,8 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
 
     // Gather all medications for a more comprehensive summary
     const allMeds = [
-        ...intakeData.chronicConditions.flatMap((c) => c.medications),
-        ...intakeData.pastHistory.currentMedications,
+      ...intakeData.chronicConditions.flatMap((c) => c.medications),
+      ...intakeData.pastHistory.currentMedications,
     ];
 
     // Mock AI summary generation based on intake data
@@ -1695,7 +1711,7 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
     }Y, ${selectedPatient.gender}) presents with ${
       intakeData.complaints.length
     } chief complaint(s) including: ${
-        intakeData.complaints.map(c => c.complaint).join(', ') || 'None'
+      intakeData.complaints.map((c) => c.complaint).join(", ") || "None"
     }. ${
       intakeData.complaints.some((c) => c.redFlagTriggered)
         ? "🚨 **RED FLAG: Critical symptoms detected** requiring immediate attention. "
@@ -1703,7 +1719,9 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
     }
     Known chronic conditions: ${
       intakeData.chronicConditions.map((c) => c.name).join(", ") || "None"
-    }. The patient is currently on ${allMeds.length} regular medication(s). Current medication compliance is **${
+    }. The patient is currently on ${
+      allMeds.length
+    } regular medication(s). Current medication compliance is **${
       intakeData.pastHistory.overallCompliance
     }**. ${
       intakeData.allergies.hasAllergies
@@ -1711,7 +1729,7 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
         : "No known allergies reported. "
     }
     Past history includes: ${
-        intakeData.pastHistory.illnesses.join(', ') || 'None'
+      intakeData.pastHistory.illnesses.join(", ") || "None"
     }. Comprehensive assessment recommended.`;
 
     // Simulate API delay
@@ -1758,16 +1776,20 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
       setStatus({
         isSaving: false,
         showSuccess: false,
-        errorMessage: "Failed to save intake data. Please check console for details.",
+        errorMessage:
+          "Failed to save intake data. Please check console for details.",
       });
     }
   };
 
   // Combine all medications for the allergy check across all relevant components
-  const allMedsForCheck = useMemo(() => ([
-    ...intakeData.chronicConditions.flatMap((c) => c.medications),
-    ...intakeData.pastHistory.currentMedications,
-  ]), [intakeData.chronicConditions, intakeData.pastHistory.currentMedications]);
+  const allMedsForCheck = useMemo(
+    () => [
+      ...intakeData.chronicConditions.flatMap((c) => c.medications),
+      ...intakeData.pastHistory.currentMedications,
+    ],
+    [intakeData.chronicConditions, intakeData.pastHistory.currentMedications]
+  );
 
   // --- RENDER ---
   return (
@@ -1899,8 +1921,8 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                **{intakeData.complaints.length}** complaints,{" "}
-                **{intakeData.chronicConditions.length}** conditions recorded
+                **{intakeData.complaints.length}** complaints, **
+                {intakeData.chronicConditions.length}** conditions recorded
               </span>
               {intakeData.complaints.some((c) => c.redFlagTriggered) && (
                 <span className="flex items-center text-red-600 bg-red-100 px-2 py-1 rounded-full text-xs font-semibold">

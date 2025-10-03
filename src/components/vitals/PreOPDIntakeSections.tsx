@@ -258,7 +258,9 @@ interface ChronicConditionsProps {
   onChange: (data: ChronicCondition[]) => void;
 }
 
-export const ChronicConditionsSection: React.FC<ChronicConditionsProps> = () => {
+export const ChronicConditionsSection: React.FC<
+  ChronicConditionsProps
+> = () => {
   // Logic for this is complex due to nested medication tables and will be minimal here.
 
   return (
@@ -578,10 +580,12 @@ export const PastHistorySection: React.FC<PastHistoryProps> = ({
 
 interface RecordsUploadProps {
   // onFileUpload receives the File object after selection
-  onFileUpload?: (file: File) => void; 
+  onFileUpload?: (file: File) => void;
 }
 
-export const RecordsUploadSection: React.FC<RecordsUploadProps> = ({ onFileUpload }) => {
+export const RecordsUploadSection: React.FC<RecordsUploadProps> = ({
+  onFileUpload,
+}) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Ref to trigger the hidden file input
@@ -594,7 +598,7 @@ export const RecordsUploadSection: React.FC<RecordsUploadProps> = ({ onFileUploa
 
     // 1. Create FormData
     const formData = new FormData();
-    formData.append('labReport', file); 
+    formData.append("labReport", file);
 
     // 2. Network Request (using fetch or axios)
     /*
@@ -616,12 +620,11 @@ export const RecordsUploadSection: React.FC<RecordsUploadProps> = ({ onFileUploa
     });
     */
     // --- REAL UPLOAD LOGIC ENDS HERE ---
-    
+
     // In this demo, we notify the parent immediately after selection for simplicity
     // The actual network call should happen asynchronously as shown above
-    onFileUpload?.(file); 
+    onFileUpload?.(file);
   };
-
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
@@ -648,18 +651,21 @@ export const RecordsUploadSection: React.FC<RecordsUploadProps> = ({ onFileUploa
   };
 
   const removeFile = (e?: React.MouseEvent) => {
-    e?.stopPropagation(); 
+    e?.stopPropagation();
     setSelectedFile(null);
     if (fileInputRef.current) {
-        // Clear the input value so the onChange event fires again if the user selects the same file
-        fileInputRef.current.value = ""; 
+      // Clear the input value so the onChange event fires again if the user selects the same file
+      fileInputRef.current.value = "";
     }
   };
 
   return (
     <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-md">
-      <SectionHeader icon={Upload} title="Previous Records Uploads (OCR + NLP)" />
-      
+      <SectionHeader
+        icon={Upload}
+        title="Previous Records Uploads (OCR + NLP)"
+      />
+
       {/* Hidden file input: Triggered by clicking the custom drop zone */}
       <input
         type="file"
@@ -669,7 +675,7 @@ export const RecordsUploadSection: React.FC<RecordsUploadProps> = ({ onFileUploa
         accept=".pdf,.docx,.jpg,.jpeg,.png"
       />
 
-      <div 
+      <div
         className="p-4 border-2 border-dashed border-gray-300 rounded-lg text-center bg-gray-50 hover:bg-gray-100 transition duration-150 cursor-pointer"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
@@ -704,7 +710,8 @@ export const RecordsUploadSection: React.FC<RecordsUploadProps> = ({ onFileUploa
               Accepted formats: PDF, DOCX, JPG, PNG
             </p>
             <p className="text-xs text-yellow-600 mt-2 font-semibold">
-              To fully enable "uploading," you must uncomment and configure the `fetch` API call inside `uploadFileToServer`.
+              To fully enable "uploading," you must uncomment and configure the
+              `fetch` API call inside `uploadFileToServer`.
             </p>
           </>
         )}
@@ -712,7 +719,6 @@ export const RecordsUploadSection: React.FC<RecordsUploadProps> = ({ onFileUploa
     </div>
   );
 };
-
 
 export const AiClinicalSummarySection: React.FC = () => (
   <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-md">
