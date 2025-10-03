@@ -304,7 +304,7 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
               {
                 role: "system",
                 content:
-                  "You are a medical assistant. Summarize the patient's condition based on the provided data.",
+                  "You are a medical assistant. Summarize the patient's condition based on the provided data. Output concise, structured markdown with clear section headings (bold), bullet points for lists, and key: value lines for vitals/meds.",
               },
               {
                 role: "user",

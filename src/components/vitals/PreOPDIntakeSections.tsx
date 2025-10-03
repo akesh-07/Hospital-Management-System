@@ -1,7 +1,6 @@
 // src/components/vitals/PreOPDIntakeSections.tsx
 import React, { useState, useMemo, useRef } from "react";
 import {
-  FileText,
   HeartPulse,
   Syringe,
   ChevronDown,
@@ -15,25 +14,17 @@ import {
   Pill,
   Copy,
   Bot,
-  Save,
-  RotateCcw,
-  ArrowLeft,
-  Activity,
   Loader,
-  CheckCircle,
   Eye,
   EyeOff,
   ClipboardCopy,
 } from "lucide-react";
 import {
-  // Assuming standard type definitions exist in a types file
-  PreOPDIntakeData,
   Complaint,
   ChronicCondition,
   Allergy,
   MedicationDetails,
   PastHistory,
-  Patient,
 } from "../../types";
 
 // --- CONSTANTS & MOCK DATA (Extracted from PreOPDIntake.tsx) ---
@@ -95,6 +86,55 @@ export const SectionHeader: React.FC<{
     <h2 className="text-lg font-bold text-[#0B2D4D] tracking-tight">{title}</h2>
   </div>
 );
+
+// Formatted AI Summary renderer (headings, bullets, key: value)
+const FormattedAiSummary: React.FC<{ summary: string }> = ({ summary }) => {
+  const lines = summary.split("\n").filter((line) => line.trim() !== "");
+  return (
+    <div className="space-y-3 text-[#1a4b7a]">
+      {lines.map((line, index) => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith("**") && trimmed.endsWith("**")) {
+          return (
+            <h3 key={index} className="text-base font-bold text-[#0B2D4D] pt-1">
+              {trimmed.slice(2, -2)}
+            </h3>
+          );
+        }
+        if (trimmed.startsWith("# ") || trimmed.startsWith("## ")) {
+          return (
+            <h3 key={index} className="text-base font-bold text-[#0B2D4D] pt-1">
+              {trimmed.replace(/^#+\s*/, "")}
+            </h3>
+          );
+        }
+        if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+          return (
+            <ul key={index} className="list-disc list-inside pl-4">
+              <li>{trimmed.slice(2)}</li>
+            </ul>
+          );
+        }
+        if (trimmed.includes(":")) {
+          const parts = trimmed.split(":");
+          const key = parts[0];
+          const value = parts.slice(1).join(":");
+          return (
+            <div key={index} className="flex">
+              <span className="font-semibold w-1/3">{key}:</span>
+              <span className="w-2/3">{value}</span>
+            </div>
+          );
+        }
+        return (
+          <p key={index} className="text-sm text-gray-800">
+            {trimmed}
+          </p>
+        );
+      })}
+    </div>
+  );
+};
 
 // Presenting Complaints Section
 interface PresentingComplaintsSectionProps {
@@ -1521,9 +1561,7 @@ export const AiClinicalSummarySection: React.FC<
 
         {summary && isExpanded && (
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="prose prose-sm max-w-none">
-              <p className="text-gray-800 leading-relaxed">{summary}</p>
-            </div>
+            <FormattedAiSummary summary={summary} />
           </div>
         )}
 
