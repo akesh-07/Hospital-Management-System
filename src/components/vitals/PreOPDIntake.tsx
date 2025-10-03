@@ -1,35 +1,13 @@
 // src/components/vitals/PreOPDIntake.tsx
-import React, {
-  useState,
-  useReducer,
-  useCallback,
-  useMemo,
-  useRef,
-} from "react";
+import React, { useState, useReducer, useCallback, useMemo } from "react";
 import {
   FileText,
-  HeartPulse,
-  Syringe,
-  ChevronDown,
-  ChevronUp,
-  AlertTriangle,
-  Plus,
-  Trash2,
-  List,
-  Upload,
-  User,
-  Pill,
-  Copy,
-  Bot,
   Save,
   RotateCcw,
   ArrowLeft,
   Activity,
-  Loader,
   CheckCircle,
-  Eye,
-  EyeOff,
-  ClipboardCopy,
+  AlertTriangle,
 } from "lucide-react";
 
 import { VitalsAssessment } from "./VitalsAssessment";
@@ -41,18 +19,15 @@ import {
   Complaint,
   ChronicCondition,
   Allergy,
-  MedicationDetails,
   PastHistory,
 } from "../../types";
 
 import * as pdfjsLib from "pdfjs-dist";
 import mammoth from "mammoth";
-import Tesseract from "tesseract.js"; // 💡 MOCK IMPORT: Assume Tesseract.js is globally available/imported
+// import Tesseract from "tesseract.js"; // Optional: install and use for real OCR
 
 // 🚨 IMPORT MODULAR SECTIONS AND CONSTANTS
 import {
-  MOCK_MASTERS,
-  InputStyle,
   PresentingComplaintsSection,
   ChronicConditionsSection,
   AllergiesSection,
@@ -60,6 +35,12 @@ import {
   RecordsUploadSection,
   AiClinicalSummarySection,
 } from "./PreOPDIntakeSections";
+
+// --- PDF.JS WORKER CONFIG (same logic as DoctorModule.tsx) ---
+(
+  pdfjsLib as any
+).GlobalWorkerOptions.standardFontDataUrl = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/standard_fonts/`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`;
 
 // --- FILE EXTRACTION LOGIC (MOVED FROM DoctorModule.tsx) ---
 const extractTextFromFile = async (file: File): Promise<string> => {
@@ -98,7 +79,7 @@ const extractTextFromFile = async (file: File): Promise<string> => {
           resolve(`[Plain Text Content]\n${event.target?.result as string}`);
         } else if (file.type.startsWith("image/")) {
           // Read as data URL for browser-based OCR
-          const dataUrl = event.target?.result as string;
+          // const dataUrl = event.target?.result as string;
 
           // 💡 OCR IMPLEMENTATION NOTE:
           // The actual OCR call using Tesseract.recognize(dataUrl, 'eng') needs to be implemented here.
@@ -139,8 +120,10 @@ const extractTextFromFile = async (file: File): Promise<string> => {
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     ) {
       reader.readAsArrayBuffer(file);
-    } else if (file.type.startsWith("image/") || file.type === "text/plain") {
+    } else if (file.type.startsWith("image/")) {
       reader.readAsDataURL(file); // Reading images as DataURL
+    } else if (file.type === "text/plain") {
+      reader.readAsText(file);
     } else {
       reader.readAsText(file);
     }
@@ -263,52 +246,86 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
 
     setIsAiLoading(true);
     setAiSummary("");
-    setAiExpanded(false); // Collapse during loading
-
-    // Collect all data for the AI prompt
-    const allMeds = [
-      ...intakeData.chronicConditions.flatMap((c) => c.medications),
-      ...intakeData.pastHistory.currentMedications,
-    ];
+    setAiExpanded(false);
 
     const extractedRecordText = Object.entries(extractedRecords)
       .map(([type, content]) => `--- ${type} ---\n${content}`)
       .join("\n\n");
 
-    // Mock AI summary generation based on intake data
-    const mockSummary = `Patient ${selectedPatient.fullName} (${
-      selectedPatient.age
-    }Y, ${selectedPatient.gender}) presents with ${
-      intakeData.complaints.length
-    } chief complaint(s) including: ${
-      intakeData.complaints.map((c) => c.complaint).join(", ") || "None"
-    }. ${
-      intakeData.complaints.some((c) => c.redFlagTriggered)
-        ? "🚨 **RED FLAG: Critical symptoms detected** requiring immediate attention. "
-        : ""
-    }
-    Known chronic conditions: ${
-      intakeData.chronicConditions.map((c) => c.name).join(", ") || "None"
-    }. The patient is currently on ${
-      allMeds.length
-    } regular medication(s). Current medication compliance is **${
-      intakeData.pastHistory.overallCompliance
-    }**. ${
-      extractedRecordText.length > 0
-        ? `\n\n**Previous Records Analyzed:**\n${extractedRecordText.substring(
-            0,
-            500
-          )}...`
-        : "No previous records analyzed."
-    }
-    Comprehensive assessment recommended.`;
+    const combinedData = `
+      Uploaded Medical History:
+      ${extractedRecordText}
 
-    // Simulate API delay
-    setTimeout(() => {
-      setAiSummary(mockSummary);
-      setIsAiLoading(false);
+      Chief Complaints:
+      ${
+        intakeData.complaints
+          .map(
+            (c) =>
+              `- Symptom: ${c.complaint}, Duration: ${c.duration.value}${c.duration.unit}, Severity: ${c.severity}`
+          )
+          .join("\n") || "None"
+      }
+
+      Chronic Conditions:
+      ${intakeData.chronicConditions.map((c) => c.name).join(", ") || "None"}
+
+      Allergies:
+      ${
+        intakeData.allergies.hasAllergies
+          ? `${intakeData.allergies.type.join(", ")} to ${
+              intakeData.allergies.substance || "Unknown"
+            } (${intakeData.allergies.severity || "Unknown"})`
+          : "None"
+      }
+
+      Medications:
+      ${
+        [
+          ...intakeData.chronicConditions.flatMap((c) => c.medications),
+          ...intakeData.pastHistory.currentMedications,
+        ]
+          .map((m) => `${m.name} ${m.dose} ${m.frequency} ${m.route}`)
+          .join("; ") || "None"
+      }
+    `;
+
+    try {
+      const response = await fetch(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer ",
+          },
+          body: JSON.stringify({
+            model: "llama-3.1-8b-instant",
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are a medical assistant. Summarize the patient's condition based on the provided data.",
+              },
+              {
+                role: "user",
+                content: combinedData,
+              },
+            ],
+          }),
+        }
+      );
+      const data = await response.json();
+      const summary =
+        data?.choices?.[0]?.message?.content?.trim() ||
+        "Could not generate summary.";
+      setAiSummary(summary);
       setAiExpanded(true);
-    }, 2000);
+    } catch (error) {
+      console.error("Error generating AI summary:", error);
+      setAiSummary("An error occurred while generating the summary.");
+    } finally {
+      setIsAiLoading(false);
+    }
   }, [selectedPatient, intakeData, extractedRecords]);
 
   const handleSubmit = async () => {
