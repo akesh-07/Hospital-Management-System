@@ -1,13 +1,15 @@
+// Sidebar.tsx
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  Home,
   UserPlus,
   Users,
-  Stethoscope,
   Pill,
   LineChart,
-  FlaskConical, // Import new icon for Lab Requests
+  FlaskConical,
+  X,
+  Menu,
+  Bed,
 } from "lucide-react";
 import { UserRole } from "../../contexts/AuthContext";
 import { useAuth } from "../../contexts/AuthContext";
@@ -15,6 +17,8 @@ import HMS_LOGO from "./HMS-bgr.png";
 
 interface SidebarProps {
   activeSection: string;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 const allNavigationItems = [
@@ -24,7 +28,13 @@ const allNavigationItems = [
     icon: UserPlus,
     path: "/registration",
   },
-  { id: "queue", label: "Pre-OPD", icon: Users, path: "/pre-opd" }, // 🟢 ITEM FOR LAB TECHNICIAN
+  { id: "queue", label: "OPD", icon: Users, path: "/pre-opd" },
+  {
+    id: "ipd-queue",
+    label: "IPD Queue",
+    icon: Bed,
+    path: "/ipd-queue",
+  },
   {
     id: "lab-requests",
     label: "Lab Requests",
@@ -36,24 +46,26 @@ const allNavigationItems = [
 ];
 
 const rolePermissions: Record<UserRole, string[]> = {
-  doctor: ["dashboard", "queue"],
+  doctor: ["dashboard", "queue", "ipd-queue"],
   pharmacist: ["dashboard", "pharmacy"],
-  "staff-nurse": ["dashboard", "queue"],
-  receptionist: ["dashboard", "registration", "queue"], // 🟢 Technician is correctly allowed access to lab-requests
+  "staff-nurse": ["dashboard", "queue", "ipd-queue"],
+  receptionist: ["dashboard", "registration", "queue"],
   technician: ["dashboard", "lab-requests"],
 };
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeSection }) => {
+export const Sidebar: React.FC<SidebarProps> = ({
+  activeSection,
+  isOpen,
+  onClose,
+}) => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const getVisibleItems = () => {
-    // Return an empty array if user or role is not yet determined
     if (isLoading || !user?.role) {
       return [];
     }
-
     const allowedItemIds = rolePermissions[user.role];
     return allNavigationItems.filter((item) =>
       allowedItemIds.includes(item.id)
@@ -63,53 +75,66 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSection }) => {
   const visibleItems = getVisibleItems();
 
   return (
-    <aside className="w-64 min-h-screen bg-gradient-to-r from-[#012e58] to-[#1a4b7a] text-white shadow-2xl">
-      {/* Header */}
-      <div className="p-6 border-b border-white/10">
-        <div className="flex items-center space-x-3">
+    <>
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onClose}
+        ></div>
+      )}
+      <aside
+        // Key Fixes: h-screen ensures full viewport height.
+        // flex flex-col makes content stack vertically and utilize full height.
+        className={`fixed top-0 left-0 h-screen z-50 transition-all duration-300 transform flex flex-col 
+                    ${isOpen ? "translate-x-0 w-64" : "-translate-x-full w-0"}
+                    bg-gradient-to-r from-[#012e58] to-[#1a4b7a] text-white shadow-2xl lg:relative lg:translate-x-0 lg:w-64`}
+      >
+        <div className="p-6 border-b border-white/10 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="">
-              <img src={HMS_LOGO} alt="logo" />
-            </div>
+            <img src={HMS_LOGO} alt="logo" className="w-full" />
           </div>
+          <button
+            onClick={onClose}
+            className="lg:hidden p-1.5 text-white/80 hover:bg-white/10 rounded-lg"
+          >
+            <X className="w-6 h-6" />
+          </button>
         </div>
-      </div>
-      {/* Navigation */}
-      <nav className="p-4 flex-1">
-        <ul className="space-y-2">
-          {visibleItems.map((item) => {
-            const Icon = item.icon;
-            const isActive =
-              location.pathname === item.path || activeSection === item.id;
+        {/* Navigation now uses flex-1 to fill remaining vertical space */}
+        <nav className="p-4 flex-1 overflow-y-auto">
+          <ul className="space-y-2">
+            {visibleItems.map((item) => {
+              const Icon = item.icon;
+              const isActive =
+                location.pathname === item.path || activeSection === item.id;
 
-            return (
-              <li key={item.id}>
-                <button
-                  onClick={() => navigate(item.path)}
-                  className={`w-full flex items-center space-x-4 px-4 py-3 rounded-xl text-left transition-all duration-300 group ${
-                    isActive
-                      ? "bg-white/20 text-white shadow-lg backdrop-blur-sm border border-white/20"
-                      : "text-white/80 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  <div
-                    className={`p-2 rounded-lg transition-all duration-300 ${
+              return (
+                <li key={item.id}>
+                  <button
+                    onClick={() => navigate(item.path)}
+                    className={`w-full flex items-center space-x-4 px-4 py-3 rounded-xl text-left transition-all duration-300 group ${
                       isActive
-                        ? "bg-white/20 shadow-inner"
-                        : "bg-white/5 group-hover:bg-white/10"
+                        ? "bg-white/20 text-white shadow-lg backdrop-blur-sm border border-white/20"
+                        : "text-white/80 hover:bg-white/10 hover:text-white"
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
-                  </div>
-
-                  <span className="font-medium text-sm">{item.label}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-      {/* System Status - matching original bottom section */}
-    </aside>
+                    <div
+                      className={`p-2 rounded-lg transition-all duration-300 ${
+                        isActive
+                          ? "bg-white/20 shadow-inner"
+                          : "bg-white/5 group-hover:bg-white/10"
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <span className="font-medium text-sm">{item.label}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </aside>
+    </>
   );
 };
