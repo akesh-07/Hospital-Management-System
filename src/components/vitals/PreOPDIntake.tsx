@@ -10,9 +10,21 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-import { VitalsAssessment } from "./VitalsAssessment";
+import {
+  VitalsAssessment,
+  VitalsState as VitalsSnapshot,
+} from "./VitalsAssessment"; // Import VitalsState as VitalsSnapshot for type
 import { db } from "../../firebase";
-import { collection, addDoc, Timestamp } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  Timestamp,
+  query,
+  where,
+  getDocs,
+  orderBy,
+  limit,
+} from "firebase/firestore";
 import {
   Patient,
   PreOPDIntakeData,
@@ -24,9 +36,7 @@ import {
 
 import * as pdfjsLib from "pdfjs-dist";
 import mammoth from "mammoth";
-// import Tesseract from "tesseract.js"; // Optional: install and use for real OCR
-
-// 🚨 IMPORT MODULAR SECTIONS AND CONSTANTS
+// 🚨 IMPORT MODULAR SECTIONS AND THE NEW COMPONENT
 import {
   PresentingComplaintsSection,
   ChronicConditionsSection,
@@ -34,6 +44,7 @@ import {
   PastHistorySection,
   RecordsUploadSection,
   AiClinicalSummarySection,
+  PreviousMedicalHistorySummarySection, // <-- NEW IMPORT
 } from "./PreOPDIntakeSections";
 
 // --- PDF.JS WORKER CONFIG (same logic as DoctorModule.tsx) ---
@@ -42,7 +53,7 @@ import {
 ).GlobalWorkerOptions.standardFontDataUrl = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/standard_fonts/`;
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`;
 
-// --- FILE EXTRACTION LOGIC (MOVED FROM DoctorModule.tsx) ---
+// --- FILE EXTRACTION LOGIC ---
 const extractTextFromFile = async (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -78,13 +89,6 @@ const extractTextFromFile = async (file: File): Promise<string> => {
           // Prefix Plain Text content with a tag
           resolve(`[Plain Text Content]\n${event.target?.result as string}`);
         } else if (file.type.startsWith("image/")) {
-          // Read as data URL for browser-based OCR
-          // const dataUrl = event.target?.result as string;
-
-          // 💡 OCR IMPLEMENTATION NOTE:
-          // The actual OCR call using Tesseract.recognize(dataUrl, 'eng') needs to be implemented here.
-          // The Tesseract.js library is not bundled/installed in the current environment.
-
           // Returning an instructional placeholder/mock resolution:
           const mockResolution = `
             [Image OCR Required]
@@ -194,15 +198,19 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
     errorMessage: "",
   });
 
-  // NEW STATE: Holds extracted text data from uploaded files
   const [extractedRecords, setExtractedRecords] = useState<
     Record<string, string>
   >({});
 
-  // AI Summary state
-  const [aiSummary, setAiSummary] = useState("");
-  const [isAiLoading, setIsAiLoading] = useState(false);
-  const [aiExpanded, setAiExpanded] = useState(false);
+  // 1. AI Clinical Summary (Vitals + Complaints)
+  const [clinicalSummary, setClinicalSummary] = useState("");
+  const [isClinicalLoading, setIsClinicalLoading] = useState(false);
+  const [clinicalExpanded, setClinicalExpanded] = useState(false);
+
+  // 2. Previous Medical History Summary (Records + Past History)
+  const [historySummary, setHistorySummary] = useState("");
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [historyExpanded, setHistoryExpanded] = useState(false);
 
   // --- HANDLERS ---
   const handleComplaintsChange = useCallback((complaints: Complaint[]) => {
@@ -226,11 +234,13 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
 
   const handleClearForm = useCallback(() => {
     dispatch({ type: "RESET_ALL", payload: null });
-    setExtractedRecords({}); // Clear extracted records on form reset
-    setAiSummary("");
+    setExtractedRecords({});
+    setClinicalSummary("");
+    setHistorySummary("");
+    setClinicalExpanded(false);
+    setHistoryExpanded(false);
   }, []);
 
-  // NEW HANDLER: Passed to RecordsUploadSection for updating extracted content
   const handleExtractedRecordsChange = useCallback(
     (newRecords: Record<string, string>) => {
       setExtractedRecords(newRecords);
@@ -238,55 +248,81 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
     []
   );
 
-  const generateAiSummary = useCallback(async () => {
+  // Helper to fetch latest saved vitals for the AI Clinical Summary
+  const fetchLatestVitals =
+    useCallback(async (): Promise<VitalsSnapshot | null> => {
+      if (!selectedPatient?.id) return null;
+
+      try {
+        const q = query(
+          collection(db, "vitals"),
+          where("patientId", "==", selectedPatient.id),
+          orderBy("recordedAt", "desc"),
+          limit(1)
+        );
+
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          return querySnapshot.docs[0].data() as VitalsSnapshot;
+        }
+        return null;
+      } catch (error) {
+        console.error("Error fetching latest vitals:", error);
+        return null;
+      }
+    }, [selectedPatient]);
+
+  // 1. AI Clinical Summary (Vitals + Complaints)
+  const generateClinicalSummary = useCallback(async () => {
     if (!selectedPatient) {
-      setAiSummary("Please select a patient first.");
+      setClinicalSummary("Please select a patient first.");
       return;
     }
 
-    setIsAiLoading(true);
-    setAiSummary("");
-    setAiExpanded(false);
+    setIsClinicalLoading(true);
+    setClinicalSummary("");
+    setClinicalExpanded(false);
 
-    const extractedRecordText = Object.entries(extractedRecords)
-      .map(([type, content]) => `--- ${type} ---\n${content}`)
-      .join("\n\n");
+    const latestVitals = await fetchLatestVitals();
+
+    const vitalsText = latestVitals
+      ? `
+        --- LATEST VITALS ---
+        Pulse: ${latestVitals.pulse || "N/A"} bpm
+        BP: ${latestVitals.bpSystolic || "N/A"}/${
+          latestVitals.bpDiastolic || "N/A"
+        } mmHg
+        Temp: ${latestVitals.temperature || "N/A"} °F
+        SpO2: ${latestVitals.spo2 || "N/A"} %
+        Resp. Rate: ${latestVitals.respiratoryRate || "N/A"} /min
+        Pain Score: ${latestVitals.painScore || "N/A"} / 10
+        BMI: ${latestVitals.bmi || "N/A"} kg/m²
+      `
+      : "Vitals: No recent vitals recorded. Please prompt staff to record vitals first.";
+
+    const complaintsText =
+      intakeData.complaints
+        .map(
+          (c) =>
+            `- Symptom: ${c.complaint}, Duration: ${c.duration.value}${
+              c.duration.unit
+            }, Severity: ${c.severity} ${
+              c.redFlagTriggered ? "(RED FLAG)" : ""
+            }`
+        )
+        .join("\n") || "No chief complaints recorded.";
 
     const combinedData = `
-      Uploaded Medical History:
-      ${extractedRecordText}
+      **Patient Presentation Summary**
+      
+      Patient: ${selectedPatient.fullName}
+      Age/Gender: ${selectedPatient.age}Y, ${selectedPatient.gender}
+      
+      ${vitalsText}
 
-      Chief Complaints:
-      ${
-        intakeData.complaints
-          .map(
-            (c) =>
-              `- Symptom: ${c.complaint}, Duration: ${c.duration.value}${c.duration.unit}, Severity: ${c.severity}`
-          )
-          .join("\n") || "None"
-      }
-
-      Chronic Conditions:
-      ${intakeData.chronicConditions.map((c) => c.name).join(", ") || "None"}
-
-      Allergies:
-      ${
-        intakeData.allergies.hasAllergies
-          ? `${intakeData.allergies.type.join(", ")} to ${
-              intakeData.allergies.substance || "Unknown"
-            } (${intakeData.allergies.severity || "Unknown"})`
-          : "None"
-      }
-
-      Medications:
-      ${
-        [
-          ...intakeData.chronicConditions.flatMap((c) => c.medications),
-          ...intakeData.pastHistory.currentMedications,
-        ]
-          .map((m) => `${m.name} ${m.dose} ${m.frequency} ${m.route}`)
-          .join("; ") || "None"
-      }
+      --- CHIEF COMPLAINTS ---
+      ${complaintsText}
     `;
 
     try {
@@ -304,7 +340,7 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
               {
                 role: "system",
                 content:
-                  "You are a medical assistant. Summarize the patient's condition based on the provided data. Output concise, structured markdown with clear section headings (bold), bullet points for lists, and key: value lines for vitals/meds.",
+                  "You are a medical assistant. Summarize the patient's **current clinical status** based *only* on the Vitals and Chief Complaints. Highlight any abnormal vitals or red flags. Output concise, structured markdown with clear section headings, bullet points, and key: value lines. Keep the response focused on the immediate presentation and not past history.",
               },
               {
                 role: "user",
@@ -317,16 +353,122 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
       const data = await response.json();
       const summary =
         data?.choices?.[0]?.message?.content?.trim() ||
-        "Could not generate summary.";
-      setAiSummary(summary);
-      setAiExpanded(true);
+        "Could not generate clinical summary.";
+      setClinicalSummary(summary);
+      setClinicalExpanded(true);
     } catch (error) {
-      console.error("Error generating AI summary:", error);
-      setAiSummary("An error occurred while generating the summary.");
+      console.error("Error generating AI clinical summary:", error);
+      setClinicalSummary(
+        "An error occurred while generating the clinical summary."
+      );
     } finally {
-      setIsAiLoading(false);
+      setIsClinicalLoading(false);
     }
-  }, [selectedPatient, intakeData, extractedRecords]);
+  }, [selectedPatient, fetchLatestVitals, intakeData.complaints]);
+
+  // 2. Previous Medical History Summary (Records + Past History)
+  const generateHistorySummary = useCallback(async () => {
+    if (!selectedPatient) {
+      setHistorySummary("Please select a patient first.");
+      return;
+    }
+
+    setIsHistoryLoading(true);
+    setHistorySummary("");
+    setHistoryExpanded(false);
+
+    const extractedRecordText = Object.entries(extractedRecords)
+      .map(([type, content]) => `--- ${type} ---\n${content}`)
+      .join("\n\n");
+
+    const pastHistoryText = `
+      Chronic Conditions:
+      ${intakeData.chronicConditions.map((c) => c.name).join(", ") || "None"}
+
+      Allergies:
+      ${
+        intakeData.allergies.hasAllergies
+          ? `${intakeData.allergies.type.join(", ")} to ${
+              intakeData.allergies.substance || "Unknown"
+            } (${intakeData.allergies.severity || "Unknown"})`
+          : "None"
+      }
+
+      Past History/Illnesses: ${
+        intakeData.pastHistory.illnesses.join(", ") || "None"
+      }
+      Past Surgeries: ${
+        intakeData.pastHistory.surgeries
+          .map((s) => `${s.name} (${s.year})`)
+          .join("; ") || "None"
+      }
+      Current Medications (Chronic/Other):
+      ${
+        [
+          ...intakeData.chronicConditions.flatMap((c) => c.medications),
+          ...intakeData.pastHistory.currentMedications,
+        ]
+          .map((m) => `${m.name} ${m.dose} ${m.frequency} ${m.route}`)
+          .join("; ") || "None"
+      }
+    `;
+
+    const combinedData = `
+      **Patient Medical History for Review**
+      
+      --- STRUCTURED HISTORY INPUT ---
+      ${pastHistoryText}
+
+      --- EXTRACTED MEDICAL RECORDS (PDF/OCR) ---
+      ${extractedRecordText || "No digital records uploaded or text extracted."}
+    `;
+
+    try {
+      const response = await fetch(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer ",
+          },
+          body: JSON.stringify({
+            model: "llama-3.1-8b-instant",
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are a medical records archivist. Summarize the patient's **comprehensive medical history, allergies, and past surgical events** based on the provided structured and extracted data. Identify key historical problems. Output concise, structured markdown with clear section headings, bullet points, and key: value lines. If no uploaded records exist, focus solely on the structured history (Chronic Conditions, Allergies, etc.).",
+              },
+              {
+                role: "user",
+                content: combinedData,
+              },
+            ],
+          }),
+        }
+      );
+      const data = await response.json();
+      const summary =
+        data?.choices?.[0]?.message?.content?.trim() ||
+        "Could not generate medical history summary.";
+      setHistorySummary(summary);
+      setHistoryExpanded(true);
+    } catch (error) {
+      console.error("Error generating AI history summary:", error);
+      setHistorySummary(
+        "An error occurred while generating the medical history summary."
+      );
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  }, [
+    selectedPatient,
+    extractedRecords,
+    intakeData.chronicConditions,
+    intakeData.allergies,
+    intakeData.pastHistory,
+  ]);
 
   const handleSubmit = async () => {
     if (!selectedPatient) {
@@ -345,8 +487,9 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
         chronicConditions: intakeData.chronicConditions,
         allergies: intakeData.allergies,
         pastHistory: intakeData.pastHistory,
-        extractedRecords, // Save the extracted text content
-        aiSummary,
+        extractedRecords,
+        aiClinicalSummary: clinicalSummary,
+        aiHistorySummary: historySummary,
         recordedAt: Timestamp.now(),
         recordedBy: "Medical Staff",
         status: "completed",
@@ -384,7 +527,7 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-20">
       <div className="max-w-6xl mx-auto p-6">
-        {/* Header */}
+        {/* Header - UNCHANGED */}
         <header className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
             {onBack && (
@@ -454,7 +597,6 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
               </div>
             </div>
             <div className="p-0">
-              {/* NOTE: VitalsAssessment component assumes to be fully implemented separately */}
               <VitalsAssessment
                 selectedPatient={selectedPatient}
                 isSubcomponent={true}
@@ -496,13 +638,22 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
             onRecordsChange={handleExtractedRecordsChange}
           />
 
-          {/* 7. AI Clinical Summary */}
+          {/* 7. AI Clinical Summary (Vitals + Complaints) */}
           <AiClinicalSummarySection
-            summary={aiSummary}
-            isLoading={isAiLoading}
-            isExpanded={aiExpanded}
-            onToggleExpand={() => setAiExpanded(!aiExpanded)}
-            onGenerate={generateAiSummary}
+            summary={clinicalSummary}
+            isLoading={isClinicalLoading}
+            isExpanded={clinicalExpanded}
+            onToggleExpand={() => setClinicalExpanded(!clinicalExpanded)}
+            onGenerate={generateClinicalSummary}
+          />
+
+          {/* 8. Previous Medical History Summary (Records + Past History) - NEW SECTION */}
+          <PreviousMedicalHistorySummarySection
+            summary={historySummary}
+            isLoading={isHistoryLoading}
+            isExpanded={historyExpanded}
+            onToggleExpand={() => setHistoryExpanded(!historyExpanded)}
+            onGenerate={generateHistorySummary}
           />
         </div>
       </div>
