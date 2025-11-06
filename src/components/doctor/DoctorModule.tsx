@@ -147,7 +147,7 @@ const AutocompleteInput: React.FC<{
         )}
       </div>
       {showDropdown && filteredSymptoms.length > 0 && (
-        <div className1="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
           {filteredSymptoms.map((symptom, index) => (
             <div
               key={index}
@@ -595,6 +595,9 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     diagnosis: "",
     notes: "",
   });
+
+  // ✅ FIX: State for checkboxes, decoupled from the symptoms table
+  const [quickSymptoms, setQuickSymptoms] = useState<string[]>([]);
 
   const [symptomOptions, setSymptomOptions] = useState<string[]>([
     "Fever",
@@ -1194,6 +1197,8 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* ✅ START: CORRECTED CHIEF COMPLAINTS BLOCK */}
             <div className="bg-white p-4 rounded-lg border border-gray-200 transition-shadow hover:shadow-md">
               <SectionHeader icon={ClipboardList} title="Chief Complaints" />
               <div className="mb-4">
@@ -1209,45 +1214,16 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                       >
                         <input
                           type="checkbox"
-                          checked={consultation.symptoms.some(
-                            (s) => s.symptom === symptom
-                          )}
+                          // Read 'checked' from the new 'quickSymptoms' state
+                          checked={quickSymptoms.includes(symptom)}
+                          // 'onChange' only updates the 'quickSymptoms' state
                           onChange={(e) => {
                             if (e.target.checked) {
-                              // Add symptom
-                              const emptyRow = consultation.symptoms.find(
-                                (s) => s.symptom === ""
-                              );
-                              if (emptyRow) {
-                                handleSymptomChange(
-                                  emptyRow.id,
-                                  "symptom",
-                                  symptom
-                                );
-                              } else {
-                                addSymptomRow();
-                                // Use a temporary state update to set the symptom in the newly added row
-                                setTimeout(() => {
-                                  setConsultation((prev) => ({
-                                    ...prev,
-                                    symptoms: prev.symptoms.map((s) =>
-                                      s.id ===
-                                        prev.symptoms[prev.symptoms.length - 1]
-                                          .id && s.symptom === ""
-                                        ? { ...s, symptom: symptom }
-                                        : s
-                                    ),
-                                  }));
-                                }, 0);
-                              }
+                              setQuickSymptoms((prev) => [...prev, symptom]);
                             } else {
-                              // Remove symptom
-                              const rowToRemove = consultation.symptoms.find(
-                                (s) => s.symptom === symptom
+                              setQuickSymptoms((prev) =>
+                                prev.filter((s) => s !== symptom)
                               );
-                              if (rowToRemove) {
-                                removeSymptomRow(rowToRemove.id);
-                              }
                             }
                           }}
                           className="rounded border-gray-300 text-[#012e58] focus:ring-[#012e58] focus:ring-2"
@@ -1343,6 +1319,8 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                 </button>
               </div>
             </div>
+            {/* ✅ END: CORRECTED CHIEF COMPLAINTS BLOCK */}
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="bg-white p-4 rounded-lg border border-gray-200 transition-shadow hover:shadow-md">
                 <SectionHeader icon={Eye} title="General Examination" />
