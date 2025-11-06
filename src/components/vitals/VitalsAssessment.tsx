@@ -1,3 +1,4 @@
+// src/components/vitals/VitalsAssessment.tsx
 import React, {
   useReducer,
   useEffect,
@@ -220,7 +221,7 @@ const PainScaleSlider: React.FC<{
                 num === painValue ? "font-bold text-[#012e58]" : "text-gray-400"
               }
             >
-              ${num}
+              {num}
             </span>
           ))}
         </div>
@@ -543,7 +544,7 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
 
       const vitalsData = {
         patientId: selectedPatient.id,
-        patientUhid: selectedPatient.uhid || "",
+        patientUhid: selectedPatient.uhid || "", // ADDED: Ensure UHID is saved for lookup
         patientName: selectedPatient.fullName || "",
         weight: vitals.weight || "",
         height: vitals.height || "",
@@ -646,7 +647,7 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
               {
                 role: "system",
                 content:
-                  "You are a medical assistant. Analyze the provided patient vitals and generate a concise summary. Highlight any potential areas of concern, referencing normal ranges: Temp(97.8-99.1°F), Pulse(60-100bpm), Resp(12-20/min), SpO2(95-100%), BP(Sys<120, Dia<80).",
+                  "You are a medical assistant. Analyze the provided patient vitals and generate a concise summary. Highlight any abnormal vitals or red flags. Referencing normal ranges: Temp(97.8-99.1°F), Pulse(60-100bpm), Resp(12-20/min), SpO2(95-100%), BP(Sys<120, Dia<80).",
               },
               {
                 role: "user",
@@ -1217,46 +1218,6 @@ const MAPResultCard: React.FC<{ map: string }> = ({ map }) => (
     </div>
   </div>
 );
-
-// Legacy GCS Input Card - kept for backward compatibility but not used in enhanced version
-// const GCSInputCard: React.FC<{
-//   title: string;
-//   value: string;
-//   field: keyof Pick<VitalsState, "gcsE" | "gcsV" | "gcsM">;
-//   range: string;
-//   onChange: (field: keyof VitalsState, value: string) => void;
-//   error?: string;
-// }> = ({ title, value, field, range, onChange, error }) => (
-//   <div
-//     className={`bg-white rounded-lg border p-4 transition-all ${
-//       error ? "border-red-400 shadow-sm shadow-red-100" : "border-gray-200"
-//     }`}
-//   >
-//     <h4 className="font-medium text-[#0B2D4D] mb-3">{title}</h4>
-//     <div className="relative">
-//       <input
-//         type="text"
-//         value={value}
-//         onChange={(e) => onChange(field, e.target.value)}
-//         className="w-full text-3xl font-bold text-[#0B2D4D] bg-transparent border-0 p-0 focus:ring-0 focus:outline-none"
-//         placeholder="—"
-//         maxLength={1}
-//         autoComplete="off"
-//       />
-//       <span className="absolute right-0 top-1/2 -translate-y-1/2 text-sm text-gray-500">
-//         {range}
-//       </span>
-//     </div>
-//     <div className="flex items-center justify-end mt-2 h-4">
-//       {error && (
-//         <span className="text-xs text-red-600 flex items-center gap-1 font-medium">
-//           <AlertCircle size={12} />
-//           {error}
-//         </span>
-//       )}
-//     </div>
-//   </div>
-// );
 
 const FormattedAiSummary: React.FC<{ summary: string }> = ({ summary }) => {
   // Unchanged

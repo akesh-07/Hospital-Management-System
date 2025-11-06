@@ -187,7 +187,6 @@ export const PatientRegistration: React.FC = () => {
     setIsSubmitting(true);
 
     // MODIFIED: Removed !formData.dateOfBirth from the validation check, making DOB optional.
-    // Age and other core fields are still required.
     if (
       !formData.fullName ||
       !formData.age ||
@@ -438,7 +437,7 @@ export const PatientRegistration: React.FC = () => {
                   {/* DOB | Age | Sex */}
                   <div className="grid grid-cols-3 gap-3 mt-3">
                     <div>
-                      {/* MODIFIED: Label no longer marked as required */}
+                      {/* MODIFIED: Label text changed to reflect optionality */}
                       <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
                         DOB (Optional)
                       </label>
@@ -448,7 +447,7 @@ export const PatientRegistration: React.FC = () => {
                         className="pr-2"
                         value={formData.dateOfBirth}
                         onChange={handleDOBChange}
-                        // MODIFIED: Removed 'required' attribute, making DOB optional
+                        // MODIFIED: Removed 'required' attribute
                         disabled={isSubmitting}
                       />
                     </div>
@@ -528,7 +527,7 @@ export const PatientRegistration: React.FC = () => {
                       </StyledInput>
                     </div>
                     <div>
-                      {/* MODIFIED: Label removed the '*' as requirement is in placeholder */}
+                      {/* MODIFIED: Label for consistency, removed '*' */}
                       <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
                         Consulting Doctor
                       </label>
@@ -538,8 +537,7 @@ export const PatientRegistration: React.FC = () => {
                         onChange={handleDoctorChange}
                         symptomOptions={doctorOptions}
                         addSymptomOption={() => {}}
-                        // MODIFIED: Changed placeholder text
-                        placeholder="Doctor Name *"
+                        placeholder="Doctor Name *" // MODIFIED: Custom placeholder
                       />
                     </div>
                   </div>

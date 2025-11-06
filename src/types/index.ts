@@ -22,22 +22,30 @@ export interface Patient {
   token: string;
 }
 
+// UPDATED: Vitals interface now includes all assessment fields as strings to match Firestore structure
 export interface Vitals {
   patientId: string;
-  weight: number;
-  height: number;
-  bmi: number;
-  pulse: number;
-  bloodPressure: string;
-  temperature: number;
-  spo2: number;
-  respiratoryRate: number;
+  patientUhid: string; // ADDED: To support querying by UHID
+  weight: string;
+  height: string;
+  bmi: string;
+  pulse: string;
+  bpSystolic: string;
+  bpDiastolic: string;
+  temperature: string;
+  spo2: string;
+  respiratoryRate: string;
+  painScore: string;
+  gcsE: string;
+  gcsV: string;
+  gcsM: string;
+  map: string;
   riskFlags: {
     diabetes: boolean;
     heartDisease: boolean;
     kidney: boolean;
   };
-  recordedAt: string;
+  recordedAt: any;
   recordedBy: string;
 }
 

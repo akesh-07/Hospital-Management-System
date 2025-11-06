@@ -78,7 +78,15 @@ const AutocompleteInput: React.FC<{
   onChange: (symptomId: number, value: string) => void;
   symptomOptions: string[];
   addSymptomOption: (symptom: string) => void;
-}> = ({ symptomId, value, onChange, symptomOptions, addSymptomOption }) => {
+  placeholder?: string;
+}> = ({
+  symptomId,
+  value,
+  onChange,
+  symptomOptions,
+  addSymptomOption,
+  placeholder = "Enter symptom",
+}) => {
   const [inputValue, setInputValue] = useState(value);
   const [showDropdown, setShowDropdown] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -134,7 +142,7 @@ const AutocompleteInput: React.FC<{
           onChange={handleInputChange}
           onFocus={() => setShowDropdown(true)}
           className="p-2 border border-gray-300 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-sm"
-          placeholder="Enter symptom"
+          placeholder={placeholder}
         />
         {showAddButton && (
           <button
@@ -845,12 +853,21 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     });
   };
 
-  const formatBloodPressure = (bp: string): string => {
-    if (!bp || bp === "0/0") return "N/A";
-    return bp.includes("/") ? bp : `${bp}/N/A`;
+  // FIXED: Format BP using the two separate fields
+  const formatBloodPressure = (vitalsData: Vitals | null): string => {
+    if (!vitalsData) return "N/A";
+    const systolic = vitalsData.bpSystolic || "N/A";
+    const diastolic = vitalsData.bpDiastolic || "N/A";
+    if (systolic === "N/A" && diastolic === "N/A") return "N/A";
+    return `${systolic}/${diastolic}`;
   };
 
-  const getVitalsDisplay = () => {
+  // FIXED: Include Weight and Height in the display
+  const getVitalsDisplay = (): {
+    label: string;
+    value: string;
+    unit: string;
+  }[] => {
     if (!vitals) {
       return [
         { label: "BP", value: "N/A", unit: "mmHg" },
@@ -858,13 +875,15 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
         { label: "SpO₂", value: "N/A", unit: "%" },
         { label: "BMI", value: "N/A", unit: "" },
         { label: "RR", value: "N/A", unit: "/min" },
+        { label: "Wt", value: "N/A", unit: "kg" },
+        { label: "Ht", value: "N/A", unit: "cm" },
       ];
     }
 
     return [
       {
         label: "BP",
-        value: formatBloodPressure(vitals.bloodPressure),
+        value: formatBloodPressure(vitals),
         unit: "mmHg",
       },
       {
@@ -886,6 +905,16 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
         label: "RR",
         value: vitals.respiratoryRate?.toString() || "N/A",
         unit: "/min",
+      },
+      {
+        label: "Wt",
+        value: vitals.weight?.toString() || "N/A",
+        unit: "kg",
+      },
+      {
+        label: "Ht",
+        value: vitals.height?.toString() || "N/A",
+        unit: "cm",
       },
     ];
   };
@@ -912,13 +941,14 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
 
   // Fetch vitals from Firebase when a patient is selected
   useEffect(() => {
-    if (!selectedPatient?.id) {
+    if (!selectedPatient?.uhid) {
+      // FIXED: Query by UHID
       setVitals(null);
       return;
     }
     const vitalsQuery = query(
       collection(db, "vitals"),
-      where("patientId", "==", selectedPatient.id),
+      where("patientUhid", "==", selectedPatient.uhid), // FIXED: Query by patientUhid
       orderBy("recordedAt", "desc") // Fetch latest vital
     );
     const unsubscribe = onSnapshot(vitalsQuery, (snapshot) => {
@@ -1010,101 +1040,6 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
         </div>
 
         {/* Tab Content */}
-        {activeTab === "history" && (
-          <div className="space-y-4">
-            <div className="bg-white p-4 rounded-lg border border-gray-200 transition-shadow hover:shadow-md">
-              <SectionHeader icon={UserCheck} title="Patient Information" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
-                      Contact Number
-                    </label>
-                    <p className="font-semibold text-sm text-[#0B2D4D] bg-gray-50 p-2 rounded-md">
-                      {selectedPatient.contactNumber}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
-                      Visit Type
-                    </label>
-                    <p className="font-semibold text-sm text-[#0B2D4D] bg-gray-50 p-2 rounded-md">
-                      {selectedPatient.visitType}
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
-                      Address
-                    </label>
-                    <p className="font-semibold text-sm text-[#0B2D4D] bg-gray-50 p-2 rounded-md">
-                      {selectedPatient.address}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
-                      Payment Method
-                    </label>
-                    <p className="font-semibold text-sm text-[#0B2D4D] bg-gray-50 p-2 rounded-md">
-                      {selectedPatient.paymentMethod}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              {selectedPatient.chronicConditions &&
-                selectedPatient.chronicConditions.length > 0 && (
-                  <div className="mt-4 pt-3 border-t border-gray-200">
-                    <label className="text-xs font-medium text-[#1a4b7a] mb-2 block">
-                      Chronic Conditions
-                    </label>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedPatient.chronicConditions.map(
-                        (condition, index) => (
-                          <span
-                            key={index}
-                            className="px-3 py-1 bg-red-50 border border-red-200 text-red-700 text-xs font-medium rounded-md"
-                          >
-                            {condition}
-                          </span>
-                        )
-                      )}
-                    </div>
-                  </div>
-                )}
-            </div>
-            <div className="bg-white p-4 rounded-lg border border-gray-200 transition-shadow hover:shadow-md">
-              <SectionHeader icon={Clock} title="Previous Consultations" />
-              <div className="space-y-2">
-                {mockHistory.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-gray-50/50 rounded-md border border-gray-100 hover:shadow-sm transition-shadow"
-                  >
-                    <div>
-                      <p className="font-semibold text-[#0B2D4D] text-sm">
-                        {item.diagnosis}
-                      </p>
-                      <p className="text-[#1a4b7a] font-medium text-xs">
-                        {item.doctor}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="flex items-center space-x-1.5 px-2 py-1 bg-[#012e58]/10 rounded-md">
-                        <Calendar className="w-3 h-3 text-[#012e58]" />
-                        <span className="text-xs font-medium text-[#012e58]">
-                          {item.date}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Assessment Tab */}
         {activeTab === "assessment" && (
           <div className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
