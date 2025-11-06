@@ -21,6 +21,7 @@ import {
   query,
   doc,
   updateDoc,
+  setDoc, // <-- ADDED setDoc
   orderBy,
 } from "firebase/firestore";
 import { db } from "../../firebase";
@@ -202,9 +203,14 @@ const PatientQueue: React.FC = () => {
     e.stopPropagation();
     if (patient.status === "Waiting") {
       const patientRef = doc(db, "patients", patient.id);
-      updateDoc(patientRef, {
-        status: "In Progress",
-      });
+
+      // FIX: Use setDoc with { merge: true } instead of updateDoc
+      setDoc(patientRef, { status: "In Progress" }, { merge: true }).catch(
+        (error) => {
+          console.error("Failed to update status with setDoc/merge:", error);
+          // Logging or alert for user if the document write still fails
+        }
+      );
     }
     setDoctorPatient(patient);
     setShowDoctor(true);
@@ -222,9 +228,16 @@ const PatientQueue: React.FC = () => {
 
   const handleCompleteConsultation = async (patientId: string) => {
     const patientRef = doc(db, "patients", patientId);
-    await updateDoc(patientRef, {
-      status: "Completed",
-    });
+
+    // FIX: Use setDoc with { merge: true } instead of updateDoc
+    await setDoc(
+      patientRef,
+      {
+        status: "Completed",
+      },
+      { merge: true }
+    );
+
     setShowDoctor(false);
     setDoctorPatient(null);
   };

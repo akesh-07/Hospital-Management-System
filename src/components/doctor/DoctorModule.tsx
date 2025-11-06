@@ -1,3 +1,4 @@
+// src/components/doctor/DoctorModule.tsx
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Stethoscope,
@@ -910,34 +911,50 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
   const inputStyle =
     "p-2 border border-gray-300 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-sm";
 
-  // Fetch vitals from Firebase when a patient is selected
+  // *****************************************************************
+  // ** START FIX: Client-Side Sorting to avoid Composite Index Error **
+  // *****************************************************************
   useEffect(() => {
-    // 1. Ensure a patient is selected and has a UHID
     if (!selectedPatient?.uhid) {
       setVitals(null);
       return;
     }
-
-    // 2. Query the 'vitals' collection using the patient's UHID
+    // 1. Query only by filter to avoid composite index requirement
     const vitalsQuery = query(
       collection(db, "vitals"),
-      where("patientUhid", "==", selectedPatient.uhid), // Fetch vitals where patientUhid matches the current patient's UHID
-      orderBy("recordedAt", "desc") // Fetch the latest vital record
+      where("patientUhid", "==", selectedPatient.uhid)
     );
 
     const unsubscribe = onSnapshot(vitalsQuery, (snapshot) => {
       if (snapshot.docs.length > 0) {
-        // The latest record is the first in the snapshot
-        const latestVitals = snapshot.docs[0].data() as Vitals;
-        setVitals(latestVitals);
+        // 2. Map all documents and prepare for JavaScript sorting
+        const allVitals = snapshot.docs.map((doc) => {
+          const data = doc.data() as Vitals;
+          // Safely convert Timestamp to Date object
+          const recordedAtDate =
+            data.recordedAt && (data.recordedAt as any).toDate
+              ? (data.recordedAt as any).toDate()
+              : new Date(0);
+          return { ...data, recordedAt: recordedAtDate };
+        });
+
+        // 3. Sort the array client-side by recordedAt descending
+        allVitals.sort(
+          (a, b) => b.recordedAt.getTime() - a.recordedAt.getTime()
+        );
+
+        // 4. Set the state to the first (latest) element
+        setVitals(allVitals[0]);
       } else {
         setVitals(null);
       }
     });
 
-    // Unsubscribe when the component unmounts or selectedPatient changes
     return () => unsubscribe();
   }, [selectedPatient]);
+  // *****************************************************************
+  // ** END FIX **
+  // *****************************************************************
 
   // --- ADMISSION LOGIC ---
   const handleAddToInPatient = () => {
