@@ -21,7 +21,12 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "../../firebase";
-import { Patient } from "../../types";
+// Assuming Patient interface is imported from src/types/index.ts (which is implicitly available)
+interface Patient {
+  id: string;
+  fullName: string;
+  contactNumber: string;
+}
 
 // --- Type Definitions for Lab Request Data ---
 
@@ -62,7 +67,7 @@ const LabTestQueue: React.FC = () => {
   const [queueItems, setQueueItems] = useState<LabQueueItem[]>([]);
   const [rawRequests, setRawRequests] = useState<LabRequest[]>([]);
   const [allPatients, setAllPatients] = useState<{ [key: string]: Patient }>(
-    {}
+    {} as { [key: string]: Patient }
   );
   const [openRequestId, setOpenRequestId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -131,6 +136,7 @@ const LabTestQueue: React.FC = () => {
     const combinedData: LabQueueItem[] = rawRequests
       .map((req) => {
         console.log(req.patId);
+        // Ensure patient is found via req.patId which maps to doc.id in 'patients' collection
         const patient = allPatients[req.patId] || {
           fullName: "Unknown Patient",
           contactNumber: "N/A",
@@ -425,9 +431,9 @@ const LabTestQueue: React.FC = () => {
                                      
         <button
           onClick={onBack}
-          className="mb-6 px-4 py-2 text-sm bg-gray-100 text-[#0B2D4D] rounded-lg hover:bg-gray-200 transition-colors"
+          className="mb-6 flex items-center space-x-2 px-4 py-2 text-sm bg-gray-100 text-[#0B2D4D] rounded-lg hover:bg-gray-200 transition-colors"
         >
-                                      &larr; Back to Lab Queue                  
+                                      <ArrowLeft className="w-4 h-4" /> <span>Back to Lab Queue</span>                  
              
         </button>
                                                    

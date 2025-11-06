@@ -50,6 +50,7 @@ const rolePermissions: Record<UserRole, string[]> = {
   pharmacist: ["dashboard", "pharmacy"],
   "staff-nurse": ["dashboard", "queue", "ipd-queue"],
   receptionist: ["dashboard", "registration", "queue"],
+  // 🟢 Technician Role Configuration for Dashboard (Analytics) and Lab Requests
   technician: ["dashboard", "lab-requests"],
 };
 
