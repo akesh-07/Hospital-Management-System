@@ -1,5 +1,4 @@
 // PatientQueue.tsx
-
 import Cookies from "js-cookie";
 import React, { useEffect, useState, useCallback } from "react";
 import {
@@ -28,6 +27,15 @@ import { db } from "../../firebase";
 import { PreOPDIntake } from "../vitals/PreOPDIntake";
 import { DoctorModule } from "../doctor/DoctorModule";
 import { Patient } from "../../types";
+
+// Helper function to normalize names (e.g., "Dr. John Doe" -> "john doe")
+const normalizeName = (name: string | undefined | null) => {
+  if (!name) return "";
+  return name
+    .replace(/^(Dr\.\s*|dr\.\s*)/i, "")
+    .trim()
+    .toLowerCase();
+};
 
 const getStatusColor = (status: Patient["status"]) => {
   switch (status) {
@@ -104,6 +112,9 @@ const PatientQueue: React.FC = () => {
       orderBy("createdAt")
     );
 
+    // Normalize the doctor's name from cookie *once*
+    const normalizedDoctorName = normalizeName(name);
+
     const unsubscribe = onSnapshot(
       patientsQuery,
       (snapshot) => {
@@ -119,11 +130,15 @@ const PatientQueue: React.FC = () => {
         data = data.filter((patient) => patient.patientType === "OPD");
 
         if (storedRole === "doctor" && name) {
-          data = data.filter((patient) => patient.doctorAssigned === name);
+          // Compare normalized names to fix the "no patients" bug
+          data = data.filter(
+            (patient) =>
+              normalizeName(patient.doctorAssigned) === normalizedDoctorName
+          );
         }
 
         setPatients(data);
-        setFilteredPatients(data);
+        // Note: We no longer setFilteredPatients here, the second useEffect will handle it.
       },
       (error) => {
         console.error("Firebase query error:", error);
@@ -137,13 +152,18 @@ const PatientQueue: React.FC = () => {
   useEffect(() => {
     setIsSearching(true);
     const filterPatients = () => {
+      // Search term is already debounced, just convert to lower case
+      // No need to check for term.length > 0, an empty string won't match
       const term = debouncedSearchTerm.toLowerCase();
       const results = patients.filter((patient) => {
+        // Check for search term match (Added contactNumber)
         const matchesSearch =
-          patient.fullName.toLowerCase().includes(term) ||
-          patient.uhid.toLowerCase().includes(term) ||
-          patient.token.toLowerCase().includes(term.replace("t", ""));
+          (patient.fullName ?? "").toLowerCase().includes(term) ||
+          (patient.uhid ?? "").toLowerCase().includes(term) ||
+          (patient.token ?? "").toLowerCase().includes(term.replace("t", "")) ||
+          (patient.contactNumber ?? "").toLowerCase().includes(term); // ✅ ADDED THIS LINE
 
+        // Check for status filter match
         const matchesStatus =
           statusFilter === "all" ||
           (statusFilter === "Not Visited" && patient.status === "Waiting") ||
@@ -158,7 +178,7 @@ const PatientQueue: React.FC = () => {
     };
 
     filterPatients();
-  }, [patients, debouncedSearchTerm, statusFilter]);
+  }, [patients, debouncedSearchTerm, statusFilter]); // This effect now correctly depends on 'patients'
 
   // Status Counts Calculation
   const statusCounts = patients.reduce(
@@ -218,7 +238,7 @@ const PatientQueue: React.FC = () => {
       className={`bg-white rounded-xl border p-4 hover:shadow-md transition-all cursor-pointer ${
         isOpen ? "ring-2 ring-[#012e58]" : "border-gray-200"
       }`}
-      onClick={onToggle}
+      onClick={onToggle} // This is safe, no "magic" click logic
     >
       <div className="flex justify-between gap-6 text-sm items-center">
         <div className="col-span-2 rounded-none flex items-center space-x-3">
@@ -233,13 +253,14 @@ const PatientQueue: React.FC = () => {
           <div>
             <h3 className="font-semibold text-[#0B2D4D]">{patient.fullName}</h3>
             <p className="text-xs text-[#1a4b7a]">
-              Token: {patient.token} • ID: {patient.uhid}
+              Token: {patient.token} • ID: {patient.uhid || "N/A"}
             </p>
           </div>
         </div>
         <div className="flex flex-col">
           <span className="text-xs font-medium text-gray-500">Doctor</span>
           <span className="text-sm text-[#1a4b7a] font-medium">
+            {/* Display "Dr. " for consistency, but comparison logic is normalized */}
             Dr. {patient.doctorAssigned || "Not Assigned"}
           </span>
         </div>
@@ -319,7 +340,7 @@ const PatientQueue: React.FC = () => {
           {(currentUserRole === "Nurse" ||
             currentUserRole === "Receptionist") && (
             <button
-              onClick={(e) => handleVitalsClick(patient, e)}
+              onClick={(e) => handleVitalsClick(patient, e)} // This click handler is correct
               className="flex-1 px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200"
             >
               Vitals
@@ -408,7 +429,7 @@ const PatientQueue: React.FC = () => {
             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search by name or token/ID"
+              placeholder="Search by name, ID, or mobile" // ✅ UPDATED PLACEHOLDER
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent w-full"
@@ -436,13 +457,27 @@ const PatientQueue: React.FC = () => {
       </div>
       <div className="grid grid-cols-1 gap-6">
         <div className="space-y-4">
-          {filteredPatients.length === 0 &&
-          !isSearching &&
-          searchTerm.length > 0 ? (
+          {/* Loading / No Results UI */}
+          {isSearching && filteredPatients.length === 0 && (
             <div className="text-center p-10 text-gray-500">
-              No patients found matching "{searchTerm}".
+              <Loader className="w-6 h-6 mx-auto animate-spin" />
+              <p>Searching...</p>
             </div>
-          ) : (
+          )}
+
+          {!isSearching && filteredPatients.length === 0 && (
+            <div className="text-center p-10 text-gray-500">
+              {searchTerm.length > 0 ? (
+                <span>No patients found matching "{searchTerm}".</span>
+              ) : (
+                <span>No patients currently in the queue.</span>
+              )}
+            </div>
+          )}
+
+          {/* Patient List */}
+          {!isSearching &&
+            filteredPatients.length > 0 &&
             filteredPatients.map((patient) => (
               <PatientCard
                 key={patient.id}
@@ -454,8 +489,7 @@ const PatientQueue: React.FC = () => {
                   )
                 }
               />
-            ))
-          )}
+            ))}
         </div>
       </div>
     </div>
