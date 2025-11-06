@@ -8,6 +8,8 @@ interface AutocompleteInputProps {
   onChange: (symptomId: number, value: string) => void;
   symptomOptions: string[];
   addSymptomOption: (symptom: string) => void;
+  // ADDED: Optional placeholder prop
+  placeholder?: string;
 }
 
 export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
@@ -16,6 +18,8 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   onChange,
   symptomOptions,
   addSymptomOption,
+  // MODIFIED: Use passed placeholder or default to "Enter symptom"
+  placeholder = "Enter symptom",
 }) => {
   const [inputValue, setInputValue] = useState(value);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -72,7 +76,8 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
           onChange={handleInputChange}
           onFocus={() => setShowDropdown(true)}
           className="p-2 border border-gray-300 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-sm"
-          placeholder="Enter symptom"
+          // MODIFIED: Use the passed placeholder
+          placeholder={placeholder}
         />
         {showAddButton && (
           <button
