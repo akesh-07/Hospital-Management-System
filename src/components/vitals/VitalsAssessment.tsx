@@ -1030,6 +1030,24 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
             </div>
           </div>
         )}
+
+        {/* NEW: Dedicated Save Vitals Button for Subcomponent (Pre-OPD Intake) */}
+        {isSubcomponent && (
+          <div className="bg-white rounded-lg border border-gray-200 p-4 mt-6">
+            <button
+              onClick={handleSaveVitals}
+              disabled={status.isSaving || !selectedPatient}
+              className="flex items-center justify-center space-x-2 w-full px-4 py-2 rounded-lg font-semibold transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed bg-green-600 text-white hover:bg-green-700 shadow-md"
+            >
+              <Save className="w-5 h-5" />
+              <span>
+                {status.isSaving
+                  ? "Saving Vitals Snapshot..."
+                  : "Save Vitals Snapshot"}
+              </span>
+            </button>
+          </div>
+        )}
       </div>
       {!isSubcomponent && (
         <AiSummaryModal
