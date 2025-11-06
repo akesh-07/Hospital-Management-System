@@ -220,7 +220,7 @@ const PainScaleSlider: React.FC<{
                 num === painValue ? "font-bold text-[#012e58]" : "text-gray-400"
               }
             >
-              {num}
+              ${num}
             </span>
           ))}
         </div>

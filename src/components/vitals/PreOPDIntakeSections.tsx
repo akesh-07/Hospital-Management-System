@@ -280,7 +280,8 @@ export const PresentingComplaintsSection: React.FC<
                     </label>
                     <div className="flex space-x-1">
                       <input
-                        type="text"
+                        type="number"
+                        min="1"
                         value={complaint.duration.value}
                         onChange={(e) =>
                           updateComplaint(complaint.id, "duration", {
@@ -288,7 +289,8 @@ export const PresentingComplaintsSection: React.FC<
                             value: e.target.value,
                           })
                         }
-                        className={`${InputStyle} flex-1`}
+                        // FIX: Ensure numerical input takes 2/3 space
+                        className={`${InputStyle} w-2/3`}
                         placeholder="3"
                       />
                       <select
@@ -296,10 +298,11 @@ export const PresentingComplaintsSection: React.FC<
                         onChange={(e) =>
                           updateComplaint(complaint.id, "duration", {
                             ...complaint.duration,
-                            unit: e.target.value,
+                            unit: e.target.value as any,
                           })
                         }
-                        className={`${InputStyle} w-16`}
+                        // FIX: Ensure unit selection takes 1/3 space
+                        className={`${InputStyle} w-1/3`}
                       >
                         <option value="h">hrs</option>
                         <option value="d">days</option>
