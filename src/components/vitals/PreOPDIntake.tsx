@@ -663,10 +663,16 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">
-                **{intakeData.complaints.length}** complaints, **
-                {intakeData.chronicConditions.length}** conditions recorded
-              </span>
+              {/* ✅ START: This is the conditional fix */}
+              {(intakeData.complaints.length > 0 ||
+                intakeData.chronicConditions.length > 0) && (
+                <span className="text-sm text-gray-600">
+                  **{intakeData.complaints.length}** complaints, **
+                  {intakeData.chronicConditions.length}** conditions recorded
+                </span>
+              )}
+              {/* ✅ END: This is the conditional fix */}
+
               {intakeData.complaints.some((c) => c.redFlagTriggered) && (
                 <span className="flex items-center text-red-600 bg-red-100 px-2 py-1 rounded-full text-xs font-semibold">
                   <AlertTriangle className="w-3 h-3 mr-1" />

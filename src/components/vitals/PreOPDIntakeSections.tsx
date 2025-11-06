@@ -1041,7 +1041,14 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
   chronicMeds,
 }) => {
   const copyFromChronic = () => {
-    onChange({ ...data, currentMedications: [...chronicMeds] });
+    // Merge, avoiding duplicates
+    const newMeds = [...data.currentMedications];
+    chronicMeds.forEach((chronicMed) => {
+      if (!newMeds.some((med) => med.name === chronicMed.name)) {
+        newMeds.push({ ...chronicMed, id: Date.now().toString() });
+      }
+    });
+    onChange({ ...data, currentMedications: newMeds });
   };
 
   const handleAddIllness = (value: string) => {
@@ -1067,7 +1074,46 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
     });
   };
 
-  // NOTE: For brevity, Surgery and Hospitalization input logic remains simple text entry for this large merge.
+  // --- NEW MEDICATION HANDLERS ---
+
+  const handleAddMedicationRow = () => {
+    const newMedication: MedicationDetails = {
+      id: Date.now().toString(),
+      name: "",
+      dose: "",
+      frequency: "OD",
+      route: "Oral",
+      duration: "Unknown",
+      compliance: "Taking",
+      notes: "",
+    };
+    onChange({
+      ...data,
+      currentMedications: [...data.currentMedications, newMedication],
+    });
+  };
+
+  const handleUpdateMedication = (
+    medId: string,
+    field: keyof MedicationDetails,
+    value: string
+  ) => {
+    const updatedMeds = data.currentMedications.map((med) => {
+      if (med.id === medId) {
+        return { ...med, [field]: value };
+      }
+      return med;
+    });
+    onChange({ ...data, currentMedications: updatedMeds });
+  };
+
+  const handleRemoveMedication = (medId: string) => {
+    const updatedMeds = data.currentMedications.filter(
+      (med) => med.id !== medId
+    );
+    onChange({ ...data, currentMedications: updatedMeds });
+  };
+  // --- END NEW MEDICATION HANDLERS ---
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
@@ -1087,7 +1133,7 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Past Illnesses (Max 5)
             </label>
-            <div className="flex flex-wrap gap-1 mb-2 min-h-[2.5rem]">
+            <div className="flex flex-wrap gap-1 mb-2 min-h-[28px]">
               {data.illnesses.map((illness, index) => (
                 <span
                   key={index}
@@ -1122,7 +1168,7 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Past Surgeries
             </label>
-            <div className="flex flex-wrap gap-1 mb-2">
+            <div className="flex flex-wrap gap-1 mb-2 min-h-[28px]">
               {data.surgeries.map((surgery, index) => (
                 <span
                   key={index}
@@ -1143,7 +1189,7 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Past Hospitalizations
             </label>
-            <div className="flex flex-wrap gap-1 mb-2">
+            <div className="flex flex-wrap gap-1 mb-2 min-h-[28px]">
               {data.hospitalizations.map((hosp, index) => (
                 <span
                   key={index}
@@ -1181,22 +1227,148 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
             )}
           </div>
 
-          <div className="p-4 border-l-4 border-yellow-500 bg-yellow-50 text-sm text-gray-700 rounded-r-md">
-            <p className="font-semibold text-yellow-800 mb-1">
-              Medication Table Implementation Note:
-            </p>
-            <p>
-              The medications currently listed below are for calculation (e.g.,
-              allergy check) only. The interactive table UI is complex and is
-              pending full implementation here.
-            </p>
-            {data.currentMedications.length > 0 && (
-              <p className="mt-2 text-xs text-gray-600">
-                Currently displaying:{" "}
-                {data.currentMedications.map((m) => m.name).join(", ")}
-              </p>
-            )}
+          {/* === START: NEW MEDICATION TABLE === */}
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <datalist id="medication-list">
+              {MOCK_MASTERS.medications.map((med) => (
+                <option key={med} value={med} />
+              ))}
+            </datalist>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[700px]">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr className="text-xs text-gray-600">
+                    <th className="text-left p-2 w-[25%]">Medication</th>
+                    <th className="text-left p-2 w-[15%]">Dose</th>
+                    <th className="text-left p-2 w-[15%]">Frequency</th>
+                    <th className="text-left p-2 w-[15%]">Route</th>
+                    <th className="text-left p-2 w-[20%]">Compliance</th>
+                    <th className="text-center p-2 w-[10%]">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {data.currentMedications.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center p-6 text-gray-500">
+                        No current medications listed.
+                      </td>
+                    </tr>
+                  ) : (
+                    data.currentMedications.map((medication) => (
+                      <tr key={medication.id}>
+                        <td className="p-2">
+                          <input
+                            type="text"
+                            list="medication-list"
+                            value={medication.name}
+                            onChange={(e) =>
+                              handleUpdateMedication(
+                                medication.id,
+                                "name",
+                                e.target.value
+                              )
+                            }
+                            className={`${InputStyle} text-xs`}
+                            placeholder="Medication name"
+                          />
+                        </td>
+                        <td className="p-2">
+                          <input
+                            type="text"
+                            value={medication.dose}
+                            onChange={(e) =>
+                              handleUpdateMedication(
+                                medication.id,
+                                "dose",
+                                e.target.value
+                              )
+                            }
+                            className={`${InputStyle} text-xs`}
+                            placeholder="e.g., 500mg"
+                          />
+                        </td>
+                        <td className="p-2">
+                          <select
+                            value={medication.frequency}
+                            onChange={(e) =>
+                              handleUpdateMedication(
+                                medication.id,
+                                "frequency",
+                                e.target.value
+                              )
+                            }
+                            className={`${InputStyle} text-xs`}
+                          >
+                            {MOCK_MASTERS.frequencies.map((freq) => (
+                              <option key={freq} value={freq}>
+                                {freq}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="p-2">
+                          <select
+                            value={medication.route}
+                            onChange={(e) =>
+                              handleUpdateMedication(
+                                medication.id,
+                                "route",
+                                e.target.value
+                              )
+                            }
+                            className={`${InputStyle} text-xs`}
+                          >
+                            {MOCK_MASTERS.routes.map((route) => (
+                              <option key={route} value={route}>
+                                {route}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="p-2">
+                          <select
+                            value={medication.compliance}
+                            onChange={(e) =>
+                              handleUpdateMedication(
+                                medication.id,
+                                "compliance",
+                                e.target.value
+                              )
+                            }
+                            className={`${InputStyle} text-xs`}
+                          >
+                            {MOCK_MASTERS.compliance.map((comp) => (
+                              <option key={comp} value={comp}>
+                                {comp}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="p-2 text-center">
+                          <button
+                            onClick={() =>
+                              handleRemoveMedication(medication.id)
+                            }
+                            className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <button
+              onClick={handleAddMedicationRow}
+              className="w-full mt-2 flex items-center justify-center space-x-1.5 p-2 text-xs font-medium text-[#012e58] bg-gray-50 hover:bg-gray-100 border-t border-gray-200"
+            >
+              <Plus className="w-3 h-3" />
+              <span>Add Medication Row</span>
+            </button>
           </div>
+          {/* === END: NEW MEDICATION TABLE === */}
         </div>
 
         {/* Overall Compliance */}
