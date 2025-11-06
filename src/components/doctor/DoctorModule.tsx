@@ -1,26 +1,22 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Stethoscope,
   FileText,
-  TestTube,
   Pill,
   User,
   Clock,
   Upload,
   Bot,
-  ChevronRight,
   Activity,
   ArrowLeft,
   Loader,
   Brain,
   AlertCircle,
   CheckCircle,
-  Calendar,
   Save,
   Heart,
   FileDown,
   Search,
-  UserCheck,
   ClipboardList,
   Eye,
   BookOpen,
@@ -28,8 +24,8 @@ import {
   Plus,
   Trash2,
   Hospital,
+  ChevronRight,
 } from "lucide-react";
-import AIAssistTab from "./AIAssistTab";
 import { db } from "../../firebase";
 import {
   collection,
@@ -50,8 +46,11 @@ import { PrescriptionProvider } from "../../contexts/PrescriptionContext";
 import Ai from "./Ai";
 
 // --- GLOBAL UTILITY SETUP ---
+// NOTE: PDF.js configuration setup (required for document upload in this component)
+(
+  pdfjsLib as any
+).GlobalWorkerOptions.standardFontDataUrl = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/standard_fonts/`;
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`;
-pdfjsLib.GlobalWorkerOptions.standardFontDataUrl = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/standard_fonts/`;
 
 // --- INTERFACES ---
 interface DoctorModuleProps {
@@ -71,7 +70,7 @@ interface AdmissionData {
   additionalNotes: string;
 }
 
-// --- AUTOCMPLETE INPUT COMPONENT ---
+// --- AUTOCMPLETE INPUT COMPONENT (Copied from AutocompleteInput.tsx) ---
 const AutocompleteInput: React.FC<{
   symptomId: number;
   value: string;
@@ -184,7 +183,7 @@ const SectionHeader: React.FC<{ icon: React.ElementType; title: string }> = ({
   </div>
 );
 
-// Component for rendering formatted AI summary
+// Component for rendering formatted AI summary (Copied from AiSummaryModal.tsx)
 const FormattedAiSummary: React.FC<{ summary: string }> = ({ summary }) => {
   const lines = summary.split("\n").filter((line) => line.trim() !== "");
 
@@ -222,7 +221,7 @@ const FormattedAiSummary: React.FC<{ summary: string }> = ({ summary }) => {
   );
 };
 
-// AI Summary Modal Component
+// AI Summary Modal Component (for Document History)
 const AiSummaryModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
@@ -344,8 +343,11 @@ const InPatientAdmissionModal: React.FC<{
 
     try {
       // --- STEP 1: MOCK DATABASE UPDATE (Replace with actual Firestore/API call) ---
-      // await updateDoc(doc(db, "patients", patient.id), { patientType: "IPD", ipdDetails: formData });
+      // For this implementation, we will mock the admission logic
       await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // In a real app, you would perform a Firestore update here:
+      // await updateDoc(doc(db, "patients", patient.id), { patientType: "IPD", status: "Admitted", ipdDetails: formData });
 
       setSuccessMessage(
         `Patient ${patient.fullName} successfully admitted to Ward ${formData.wardNumber}, Room ${formData.roomNumber}.`
@@ -588,9 +590,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
   onBack,
   onCompleteConsultation,
 }) => {
-  const [activeTab, setActiveTab] = useState<
-    "history" | "assessment" | "prescriptions" | "ai-assist"
-  >("assessment");
+  // --- Original state initialization from DoctorModule.tsx ---
   const [vitals, setVitals] = useState<Vitals | null>(null);
   const [showAdmissionModal, setShowAdmissionModal] = useState(false);
   const [consultation, setConsultation] = useState({
@@ -598,15 +598,13 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     duration: "",
     aggravatingFactors: [] as string[],
     generalExamination: [] as string[],
-    systemicExamination: [] as string[], // Placeholder for CNS, RS, etc.
+    systemicExamination: [] as string[],
     investigations: [] as string[],
     diagnosis: "",
     notes: "",
   });
 
-  // ✅ FIX: State for checkboxes, decoupled from the symptoms table
   const [quickSymptoms, setQuickSymptoms] = useState<string[]>([]);
-
   const [symptomOptions, setSymptomOptions] = useState<string[]>([
     "Fever",
     "Cold",
@@ -635,8 +633,9 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     "USG (PDF)": useRef<HTMLInputElement>(null),
     "Investigation ROP": useRef<HTMLInputElement>(null),
   };
+  // --- End original state initialization ---
 
-  // --- Utility functions: File Handling and Text Extraction ---
+  // --- Utility functions: File Handling and Text Extraction (Copied from DoctorModule.tsx) ---
   const extractTextFromFile = async (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -695,17 +694,14 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
       try {
         const text = await extractTextFromFile(file);
         setUploadedFilesData((prev) => ({ ...prev, [fileType]: text }));
-        // alert(`Successfully extracted text from ${fileType}!`);
       } catch (error) {
         console.error("Error extracting text from file:", error);
         alert(`Failed to extract text from ${fileType}.`);
       }
-      // Reset file input to allow uploading the same file again if needed
       event.target.value = "";
     }
   };
 
-  // 🧠 CORE AI LOGIC: Document-Only Summary
   const handleAiSummary = async () => {
     setIsSummaryModalOpen(true);
     setIsAiSummaryLoading(true);
@@ -717,7 +713,6 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
         ([fileType, text]) => `**--- ${fileType.toUpperCase()} ---**\n${text}`
       );
 
-    // Safety check for no content
     if (fileContentArray.length === 0) {
       setIsAiSummaryLoading(false);
       setAiSummary(
@@ -726,7 +721,6 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
       return;
     }
 
-    // Prompt content STRICTLY limits input to uploaded files
     const combinedData = `
         DOCUMENT-ONLY MEDICAL HISTORY SUMMARY REQUEST:
         
@@ -747,7 +741,6 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     `;
 
     try {
-      // NOTE: This API Key is exposed in client-side code and SHOULD BE PROXIED through a backend in a production environment.
       const response = await fetch(
         "https://api.groq.com/openai/v1/chat/completions",
         {
@@ -786,8 +779,6 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
       setIsAiSummaryLoading(false);
     }
   };
-
-  // --- Utility functions: Consultation & Vitals ---
 
   const handleSymptomChange = (
     id: number,
@@ -835,7 +826,6 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
 
   const handleSystemicExamChange = (system: string, value: string) => {
     setConsultation((prev) => {
-      // Simple approach: find the existing entry for the system and update it, or add it.
       const existingIndex = prev.systemicExamination.findIndex((item) =>
         item.startsWith(`${system}:`)
       );
@@ -853,7 +843,6 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     });
   };
 
-  // FIXED: Format BP using the two separate fields
   const formatBloodPressure = (vitalsData: Vitals | null): string => {
     if (!vitalsData) return "N/A";
     const systolic = vitalsData.bpSystolic || "N/A";
@@ -862,7 +851,6 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     return `${systolic}/${diastolic}`;
   };
 
-  // FIXED: Include Weight and Height in the display
   const getVitalsDisplay = (): {
     label: string;
     value: string;
@@ -922,54 +910,34 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
   const inputStyle =
     "p-2 border border-gray-300 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-sm";
 
-  const TabButton: React.FC<{
-    id: string;
-    label: string;
-    icon: React.ComponentType<any>;
-  }> = ({ id, label, icon: Icon }) => (
-    <button
-      onClick={() => setActiveTab(id as any)}
-      className={`flex items-center space-x-1.5 px-3 py-2 rounded-md font-medium text-sm transition-all duration-200 ${
-        activeTab === id
-          ? "bg-[#012e58] text-white shadow-md"
-          : "text-[#1a4b7a] hover:bg-[#012e58]/10 border border-gray-200 bg-white"
-      }`}
-    >
-      <Icon className="w-4 h-4" /> <span>{label}</span>
-    </button>
-  );
-
   // Fetch vitals from Firebase when a patient is selected
   useEffect(() => {
+    // 1. Ensure a patient is selected and has a UHID
     if (!selectedPatient?.uhid) {
-      // FIXED: Query by UHID
       setVitals(null);
       return;
     }
+
+    // 2. Query the 'vitals' collection using the patient's UHID
     const vitalsQuery = query(
       collection(db, "vitals"),
-      where("patientUhid", "==", selectedPatient.uhid), // FIXED: Query by patientUhid
-      orderBy("recordedAt", "desc") // Fetch latest vital
+      where("patientUhid", "==", selectedPatient.uhid), // Fetch vitals where patientUhid matches the current patient's UHID
+      orderBy("recordedAt", "desc") // Fetch the latest vital record
     );
+
     const unsubscribe = onSnapshot(vitalsQuery, (snapshot) => {
       if (snapshot.docs.length > 0) {
+        // The latest record is the first in the snapshot
         const latestVitals = snapshot.docs[0].data() as Vitals;
         setVitals(latestVitals);
       } else {
         setVitals(null);
       }
     });
+
+    // Unsubscribe when the component unmounts or selectedPatient changes
     return () => unsubscribe();
   }, [selectedPatient]);
-
-  const mockHistory = [
-    { date: "2024-08-15", diagnosis: "Routine Checkup", doctor: "Dr. Dhinesh" },
-    {
-      date: "2024-07-10",
-      diagnosis: "Hypertension Follow-up",
-      doctor: "Dr. Dhinesh",
-    },
-  ];
 
   // --- ADMISSION LOGIC ---
   const handleAddToInPatient = () => {
@@ -983,14 +951,16 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
       `IPD Admission Confirmed for ${selectedPatient?.fullName}:`,
       admissionData
     );
-    // Real logic to update DB and redirect/refresh goes here.
+    setShowAdmissionModal(false);
   };
   // --- END ADMISSION LOGIC ---
 
   if (!selectedPatient) {
+    // Fallback if no patient is selected
     return <PatientQueue />;
   }
 
+  // --- SINGLE PAGE RENDER ---
   return (
     <div className="p-2 bg-gray-100 min-h-screen font-sans">
       <div className="w-full bg-white p-4 rounded-lg shadow-lg border border-gray-200">
@@ -1002,19 +972,8 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
               className="flex items-center space-x-1.5 px-3 py-1.5 text-[#1a4b7a] hover:text-[#0B2D4D] hover:bg-gray-100 rounded-md transition-colors border border-gray-200 text-sm"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span className="font-medium">Back</span>
+              <span className="font-medium">Back to Queue</span>
             </button>
-            <div className="h-6 w-px bg-gray-300"></div>
-            <div className="flex space-x-2">
-              <TabButton id="history" label="History" icon={FileText} />
-              <TabButton
-                id="assessment"
-                label="Assessment"
-                icon={Stethoscope}
-              />
-              <TabButton id="ai-assist" label="AI Assist" icon={Bot} />
-              <TabButton id="prescriptions" label="Prescriptions" icon={Pill} />
-            </div>
           </div>
           <div className="bg-gradient-to-r from-[#012e58]/5 to-[#1a4b7a]/5 rounded-lg border border-gray-200 p-3 shadow-sm">
             <div className="flex items-center space-x-2">
@@ -1039,229 +998,237 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
           </div>
         </div>
 
-        {/* Tab Content */}
-        {activeTab === "assessment" && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <div className="lg:col-span-2 bg-white p-4 rounded-lg border border-gray-200 transition-shadow hover:shadow-md">
-                <SectionHeader icon={Activity} title="Patient Vitals" />
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  {getVitalsDisplay().map((vital) => (
-                    <div
-                      key={vital.label}
-                      className="text-center p-3 bg-gradient-to-b from-gray-50 to-white rounded-md border border-gray-100"
-                    >
-                      <p className="text-xs font-medium text-gray-500 mb-1">
-                        {vital.label}
-                      </p>
-                      <p className="font-bold text-lg text-[#0B2D4D]">
-                        {vital.value}
-                      </p>
-                      {vital.unit && (
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {vital.unit}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {vitals && (
-                  <div className="mt-3 pt-2 border-t border-gray-200">
-                    <p className="text-xs text-gray-600">
-                      Last recorded:{" "}
-                      {vitals.recordedAt && (vitals.recordedAt as any).toDate
-                        ? (vitals.recordedAt as any).toDate().toLocaleString()
-                        : new Date(vitals.recordedAt).toLocaleString()}
+        {/* --- ASSESSMENT & HISTORY SECTION (COMBINED) --- */}
+        <div className="space-y-6 pb-6 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-[#0B2D4D] tracking-tight flex items-center space-x-2">
+            <Stethoscope className="w-6 h-6" />
+            <span>Clinical Assessment</span>
+          </h2>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Vitals & File Upload - Top Left & Right */}
+            <div className="lg:col-span-2 bg-white p-4 rounded-lg border border-gray-200 shadow-md">
+              <SectionHeader icon={Activity} title="Current Vitals Snapshot" />
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {getVitalsDisplay().map((vital) => (
+                  <div
+                    key={vital.label}
+                    className="text-center p-3 bg-gradient-to-b from-gray-50 to-white rounded-md border border-gray-100"
+                  >
+                    <p className="text-xs font-medium text-gray-500 mb-1">
+                      {vital.label}
                     </p>
-                    {vitals.recordedBy && (
-                      <p className="text-xs text-gray-600">
-                        Recorded by: {vitals.recordedBy}
+                    <p className="font-bold text-lg text-[#0B2D4D]">
+                      {vital.value}
+                    </p>
+                    {vital.unit && (
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {vital.unit}
                       </p>
                     )}
                   </div>
-                )}
+                ))}
               </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 transition-shadow hover:shadow-md">
-                <SectionHeader icon={FileDown} title="Medical History" />
-                <div className="space-y-2">
-                  {Object.keys(fileInputRefs).map((name) => (
-                    <div key={name}>
-                      <input
-                        type="file"
-                        accept=".pdf,.docx,.txt"
-                        ref={fileInputRefs[name as keyof typeof fileInputRefs]}
-                        onChange={(e) => handleFileUpload(e, name)}
-                        style={{ display: "none" }}
-                      />
-                      <button
-                        onClick={() =>
-                          fileInputRefs[
-                            name as keyof typeof fileInputRefs
-                          ].current?.click()
-                        }
-                        className="flex items-center space-x-2 w-full px-3 py-2 text-xs bg-gradient-to-r from-[#012e58]/5 to-[#012e58]/10 hover:from-[#012e58]/10 hover:to-[#012e58]/15 rounded-md border border-gray-200 transition-all duration-200 group"
-                      >
-                        <Upload className="w-3 h-3 text-[#012e58] group-hover:scale-110 transition-transform" />
-                        <span className="font-medium text-[#0B2D4D]">
-                          {name}
-                        </span>
-                        {uploadedFilesData[name] && (
-                          <CheckCircle className="w-3 h-3 text-green-500 ml-auto" />
-                        )}
-                      </button>
-                    </div>
-                  ))}
+              {vitals && (
+                <div className="mt-3 pt-2 border-t border-gray-200">
+                  <p className="text-xs text-gray-600">
+                    Last recorded:{" "}
+                    {vitals.recordedAt && (vitals.recordedAt as any).toDate
+                      ? (vitals.recordedAt as any).toDate().toLocaleString()
+                      : new Date(vitals.recordedAt).toLocaleString()}
+                  </p>
                 </div>
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <button
-                    onClick={handleAiSummary}
-                    disabled={isAiSummaryLoading}
-                    className="w-full flex items-center justify-center space-x-1.5 text-[#012e58] hover:bg-gray-100 p-2 rounded-md transition-colors"
-                  >
-                    {isAiSummaryLoading ? (
-                      <Loader className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <Brain className="w-3 h-3" />
-                    )}
-                    <span className="text-xs font-semibold">
-                      {isAiSummaryLoading
-                        ? "Generating..."
-                        : "AI Assisted Summary"}
-                    </span>
-                  </button>
-                </div>
-              </div>
+              )}
             </div>
 
-            {/* ✅ START: CORRECTED CHIEF COMPLAINTS BLOCK */}
-            <div className="bg-white p-4 rounded-lg border border-gray-200 transition-shadow hover:shadow-md">
-              <SectionHeader icon={ClipboardList} title="Chief Complaints" />
-              <div className="mb-4">
-                <label className="text-xs font-medium text-[#1a4b7a] mb-2 block">
-                  Quick Symptom Selection
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                  {["Fever", "Cold", "Cough", "Diarrhea", "Vomiting"].map(
-                    (symptom) => (
-                      <label
-                        key={symptom}
-                        className="flex items-center space-x-1.5 p-2 bg-gray-50 rounded-md border border-gray-200 hover:bg-[#012e58]/5 transition-colors cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          // Read 'checked' from the new 'quickSymptoms' state
-                          checked={quickSymptoms.includes(symptom)}
-                          // 'onChange' only updates the 'quickSymptoms' state
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setQuickSymptoms((prev) => [...prev, symptom]);
-                            } else {
-                              setQuickSymptoms((prev) =>
-                                prev.filter((s) => s !== symptom)
-                              );
-                            }
-                          }}
-                          className="rounded border-gray-300 text-[#012e58] focus:ring-[#012e58] focus:ring-2"
-                        />
-                        <span className="text-xs font-medium text-[#0B2D4D]">
-                          {symptom}
-                        </span>
-                      </label>
-                    )
-                  )}
-                </div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-md">
+              <SectionHeader
+                icon={FileDown}
+                title="Upload/Review Past Records"
+              />
+              <div className="space-y-2">
+                {Object.keys(fileInputRefs).map((name) => (
+                  <div key={name}>
+                    <input
+                      type="file"
+                      accept=".pdf,.docx,.txt"
+                      ref={fileInputRefs[name as keyof typeof fileInputRefs]}
+                      onChange={(e) => handleFileUpload(e, name)}
+                      style={{ display: "none" }}
+                    />
+                    <button
+                      onClick={() =>
+                        fileInputRefs[
+                          name as keyof typeof fileInputRefs
+                        ].current?.click()
+                      }
+                      className="flex items-center space-x-2 w-full px-3 py-2 text-xs bg-gradient-to-r from-[#012e58]/5 to-[#012e58]/10 hover:from-[#012e58]/10 hover:to-[#012e58]/15 rounded-md border border-gray-200 transition-all duration-200 group"
+                    >
+                      <Upload className="w-3 h-3 text-[#012e58] group-hover:scale-110 transition-transform" />
+                      <span className="font-medium text-[#0B2D4D]">{name}</span>
+                      {uploadedFilesData[name] && (
+                        <CheckCircle className="w-3 h-3 text-green-500 ml-auto" />
+                      )}
+                    </button>
+                  </div>
+                ))}
               </div>
-              <div className="overflow-x-auto bg-gray-50 rounded-md border border-gray-200">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gradient-to-r from-[#012e58] to-[#1a4b7a] text-white">
-                      <th className="p-2 text-left font-semibold text-xs">
-                        Symptom
-                      </th>
-                      <th className="p-2 text-left font-semibold text-xs">
-                        Duration
-                      </th>
-                      <th className="p-2 text-left font-semibold text-xs">
-                        Aggravating/Relieving Factors
-                      </th>
-                      <th className="p-2 text-center font-semibold text-xs">
-                        Action
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {consultation.symptoms.map((symptom) => (
-                      <tr key={symptom.id} className="border-t border-gray-200">
-                        <td className="p-2">
-                          <AutocompleteInput
-                            symptomId={symptom.id}
-                            value={symptom.symptom}
-                            onChange={(id, value) =>
-                              handleSymptomChange(id, "symptom", value)
-                            }
-                            symptomOptions={symptomOptions}
-                            addSymptomOption={addSymptomOption}
-                          />
-                        </td>
-                        <td className="p-2">
-                          <input
-                            type="text"
-                            value={symptom.duration}
-                            onChange={(e) =>
-                              handleSymptomChange(
-                                symptom.id,
-                                "duration",
-                                e.target.value
-                              )
-                            }
-                            className={inputStyle}
-                            placeholder="Duration (e.g., 2 days)"
-                          />
-                        </td>
-                        <td className="p-2">
-                          <input
-                            type="text"
-                            value={symptom.factors}
-                            onChange={(e) =>
-                              handleSymptomChange(
-                                symptom.id,
-                                "factors",
-                                e.target.value
-                              )
-                            }
-                            className={inputStyle}
-                            placeholder="Factors that worsen/improve"
-                          />
-                        </td>
-                        <td className="p-2 text-center">
-                          <button
-                            onClick={() => removeSymptomRow(symptom.id)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="mt-3 pt-3 border-t border-gray-200">
                 <button
-                  onClick={addSymptomRow}
-                  className="w-full mt-2 flex items-center justify-center space-x-1.5 p-2 text-xs font-medium text-[#012e58] bg-gray-100 hover:bg-gray-200 rounded-md"
+                  onClick={handleAiSummary}
+                  disabled={isAiSummaryLoading}
+                  className="w-full flex items-center justify-center space-x-1.5 text-[#012e58] hover:bg-gray-100 p-2 rounded-md transition-colors"
                 >
-                  <Plus className="w-3 h-3" />
-                  <span>Add Symptom</span>
+                  {isAiSummaryLoading ? (
+                    <Loader className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Brain className="w-3 h-3" />
+                  )}
+                  <span className="text-xs font-semibold">
+                    {isAiSummaryLoading
+                      ? "Generating Document Summary..."
+                      : "AI Assisted Document Summary"}
+                  </span>
                 </button>
               </div>
             </div>
-            {/* ✅ END: CORRECTED CHIEF COMPLAINTS BLOCK */}
+          </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="bg-white p-4 rounded-lg border border-gray-200 transition-shadow hover:shadow-md">
-                <SectionHeader icon={Eye} title="General Examination" />
-                <div className="mb-4">
+          {/* Chief Complaints / HPI */}
+          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-md">
+            <SectionHeader
+              icon={ClipboardList}
+              title="History of Present Illness (HPI) & Complaints"
+            />
+            <div className="mb-4">
+              <label className="text-xs font-medium text-[#1a4b7a] mb-2 block">
+                Quick Symptom Selection
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                {["Fever", "Cold", "Cough", "Diarrhea", "Vomiting"].map(
+                  (symptom) => (
+                    <label
+                      key={symptom}
+                      className="flex items-center space-x-1.5 p-2 bg-gray-50 rounded-md border border-gray-200 hover:bg-[#012e58]/5 transition-colors cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={quickSymptoms.includes(symptom)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setQuickSymptoms((prev) => [...prev, symptom]);
+                          } else {
+                            setQuickSymptoms((prev) =>
+                              prev.filter((s) => s !== symptom)
+                            );
+                          }
+                        }}
+                        className="rounded border-gray-300 text-[#012e58] focus:ring-[#012e58] focus:ring-2"
+                      />
+                      <span className="text-xs font-medium text-[#0B2D4D]">
+                        {symptom}
+                      </span>
+                    </label>
+                  )
+                )}
+              </div>
+            </div>
+            <div className="overflow-x-auto bg-gray-50 rounded-md border border-gray-200">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gradient-to-r from-[#012e58] to-[#1a4b7a] text-white">
+                    <th className="p-2 text-left font-semibold text-xs">
+                      Symptom
+                    </th>
+                    <th className="p-2 text-left font-semibold text-xs">
+                      Duration
+                    </th>
+                    <th className="p-2 text-left font-semibold text-xs">
+                      Aggravating/Relieving Factors
+                    </th>
+                    <th className="p-2 text-center font-semibold text-xs">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {consultation.symptoms.map((symptom) => (
+                    <tr key={symptom.id} className="border-t border-gray-200">
+                      <td className="p-2">
+                        <AutocompleteInput
+                          symptomId={symptom.id}
+                          value={symptom.symptom}
+                          onChange={(id, value) =>
+                            handleSymptomChange(id, "symptom", value)
+                          }
+                          symptomOptions={symptomOptions}
+                          addSymptomOption={addSymptomOption}
+                        />
+                      </td>
+                      <td className="p-2">
+                        <input
+                          type="text"
+                          value={symptom.duration}
+                          onChange={(e) =>
+                            handleSymptomChange(
+                              symptom.id,
+                              "duration",
+                              e.target.value
+                            )
+                          }
+                          className={inputStyle}
+                          placeholder="Duration (e.g., 2 days)"
+                        />
+                      </td>
+                      <td className="p-2">
+                        <input
+                          type="text"
+                          value={symptom.factors}
+                          onChange={(e) =>
+                            handleSymptomChange(
+                              symptom.id,
+                              "factors",
+                              e.target.value
+                            )
+                          }
+                          className={inputStyle}
+                          placeholder="Factors that worsen/improve"
+                        />
+                      </td>
+                      <td className="p-2 text-center">
+                        <button
+                          onClick={() => removeSymptomRow(symptom.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <button
+                onClick={addSymptomRow}
+                className="w-full mt-2 flex items-center justify-center space-x-1.5 p-2 text-xs font-medium text-[#012e58] bg-gray-100 hover:bg-gray-200 rounded-md"
+              >
+                <Plus className="w-3 h-3" />
+                <span>Add Symptom</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Examination Section (Left) & Notes/Diagnosis (Right) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-md">
+              <SectionHeader
+                icon={Eye}
+                title="General & Systemic Examination"
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                {/* General Examination (Checkboxes) */}
+                <div className="col-span-1">
                   <label className="text-xs font-medium text-[#1a4b7a] mb-2 block">
-                    Clinical Findings
+                    General Findings
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     {["Pallor", "Icterus", "Cyanosis", "Clubbing", "LAP"].map(
@@ -1288,87 +1255,22 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                     )}
                   </div>
                 </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
-                      Consciousness
-                    </label>
-                    <input
-                      type="text"
-                      className={inputStyle}
-                      placeholder="Level of consciousness"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
-                      Built
-                    </label>
-                    <select className={inputStyle}>
-                      <option value="">Select built</option>
-                      <option value="Mild">Mild</option>
-                      <option value="Moderate">Moderate</option>
-                      <option value="Severe">Severe</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 transition-shadow hover:shadow-md">
-                <SectionHeader icon={BookOpen} title="Templates & Quick Fill" />
-                <div className="mb-4">
-                  <label className="text-xs font-medium text-[#1a4b7a] mb-2 block">
-                    Common Templates
-                  </label>
-                  <div className="grid grid-cols-1 gap-2">
-                    {["Knee Pain", "Back Pain", "Muscle Spasm"].map((item) => (
-                      <label
-                        key={item}
-                        className="flex items-center space-x-2 p-2 bg-gradient-to-r from-[#012e58]/5 to-[#012e58]/10 rounded-md border border-gray-200 hover:shadow-sm transition-all cursor-pointer group"
-                      >
-                        <input
-                          type="checkbox"
-                          className="rounded border-gray-300 text-[#012e58] focus:ring-[#012e58] focus:ring-2"
-                        />
-                        <span className="font-medium text-xs text-[#0B2D4D] group-hover:text-[#012e58] transition-colors">
-                          {item}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div className="relative">
-                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search symptoms/findings"
-                    className="pl-8 pr-3 py-2 w-full border border-gray-300 rounded-md bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 text-sm"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="bg-white p-4 rounded-lg border border-gray-200 transition-shadow hover:shadow-md">
-                <SectionHeader icon={Heart} title="Systemic Examination" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+                {/* Systemic Examination (Textareas) */}
+                <div className="col-span-1 space-y-2">
                   {[
-                    {
-                      label: "CNS",
-                      placeholder: "Central Nervous System findings",
-                    },
-                    { label: "RS", placeholder: "Respiratory System findings" },
-                    {
-                      label: "CVS",
-                      placeholder: "Cardiovascular System findings",
-                    },
-                    { label: "P/A", placeholder: "Per Abdomen findings" },
+                    { label: "CNS", placeholder: "CNS findings" },
+                    { label: "RS", placeholder: "Respiratory findings" },
+                    { label: "CVS", placeholder: "Cardiovascular findings" },
+                    { label: "P/A", placeholder: "Abdomen findings" },
                   ].map((system) => {
-                    // Extract the current value from the state based on the system label
                     const currentEntry =
                       consultation.systemicExamination.find((item) =>
                         item.startsWith(`${system.label}:`)
                       ) || `${system.label}: `;
                     const currentValue = currentEntry.substring(
                       system.label.length + 2
-                    ); // Get text after "CNS: "
+                    );
 
                     return (
                       <div key={system.label} className="space-y-1">
@@ -1377,7 +1279,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                         </label>
                         <textarea
                           className="w-full p-2 border border-gray-300 rounded-md bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 resize-none text-sm"
-                          rows={2}
+                          rows={1}
                           placeholder={system.placeholder}
                           value={currentValue}
                           onChange={(e) =>
@@ -1392,44 +1294,48 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                   })}
                 </div>
               </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 transition-shadow hover:shadow-md">
-                <SectionHeader icon={Stethoscope} title="Local Examination" />
-                <div className="flex items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100">
-                  <div className="text-center space-y-1">
-                    <Stethoscope className="w-8 h-8 text-gray-400 mx-auto" />
-                    <p className="text-gray-500 font-medium text-sm">
-                      Case-Specific Examination
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      Orthopedic module integration
-                    </p>
-                  </div>
-                </div>
-              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-md">
+              <SectionHeader icon={BookOpen} title="Notes and Diagnosis" />
+              <textarea
+                rows={4}
+                placeholder="Enter final notes, diagnosis, or impression here before running AI analysis..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent text-sm resize-none"
+              />
             </div>
           </div>
-        )}
+        </div>
 
-        {activeTab === "prescriptions" && selectedPatient && (
-          <div className="space-y-4">
-            <PrescriptionModule
-              selectedPatient={selectedPatient}
-              consultation={consultation}
-            />
-          </div>
-        )}
-        {activeTab === "ai-assist" && selectedPatient && (
-          <div className="space-y-4">
-            <Ai
-              consultation={consultation}
-              selectedPatient={selectedPatient}
-              vitals={vitals}
-            />
-          </div>
-        )}
+        {/* --- AI ASSIST SECTION (PREVIOUSLY A TAB) --- */}
+        <div className="space-y-4 pt-6 pb-6 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-[#0B2D4D] tracking-tight flex items-center space-x-2">
+            <Brain className="w-6 h-6" />
+            <span>AI Diagnostic & Treatment Assist</span>
+          </h2>
+          {/* Render the Ai component directly */}
+          <Ai
+            consultation={consultation}
+            selectedPatient={selectedPatient}
+            vitals={vitals}
+          />
+        </div>
 
-        {/* Action Footer */}
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-200">
+        {/* --- PRESCRIPTION SECTION (PREVIOUSLY A TAB) --- */}
+        <div className="space-y-4 pt-6">
+          <h2 className="text-xl font-bold text-[#0B2D4D] tracking-tight flex items-center space-x-2">
+            <Pill className="w-6 h-6" />
+            <span>Medication & Advice</span>
+          </h2>
+          {/* Render the PrescriptionModule component directly */}
+          <PrescriptionModule
+            selectedPatient={selectedPatient}
+            consultation={consultation}
+          />
+        </div>
+
+        {/* --- ACTION FOOTER --- */}
+        <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
           <div className="flex items-center space-x-3">
             <button className="group flex items-center px-4 py-2 border border-[#012e58] rounded-md text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm font-medium">
               <Save className="w-4 h-4 mr-1.5 transition-transform duration-300 group-hover:scale-110" />
@@ -1444,36 +1350,15 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
               <Hospital className="w-4 h-4 mr-1.5" />
               <span>Add to In-Patient</span>
             </button>
-
-            {activeTab === "assessment" && (
-              <button
-                onClick={() => setActiveTab("ai-assist")}
-                className="group flex items-center px-4 py-2 border border-[#012e58] rounded-md  bg-[#012e58] hover:bg-[#012e58e3] text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm font-medium"
-              >
-                <Bot className="w-4 h-4 mr-1.5 transition-transform duration-300 group-hover:scale-110" />
-                AI Assist
-              </button>
-            )}
-            {activeTab === "ai-assist" && (
-              <button
-                onClick={() => setActiveTab("prescriptions")}
-                className="group flex items-center px-4 py-2 bg-[#012e58] text-white font-semibold rounded-md shadow-md hover:bg-[#1a4b7a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm"
-              >
-                <span>Prescription</span>
-                <ChevronRight className="w-4 h-4 ml-1.5" />
-              </button>
-            )}
           </div>
 
-          {(activeTab === "prescriptions" || activeTab === "assessment") && (
-            <button
-              onClick={() => onCompleteConsultation(selectedPatient.id)}
-              className="group flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 transition-all duration-300 text-sm"
-            >
-              <span>Complete Consultation</span>
-              <CheckCircle className="w-4 h-4 ml-1.5" />
-            </button>
-          )}
+          <button
+            onClick={() => onCompleteConsultation(selectedPatient.id)}
+            className="group flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 transition-all duration-300 text-sm"
+          >
+            <span>Complete Consultation & Submit</span>
+            <CheckCircle className="w-4 h-4 ml-1.5" />
+          </button>
         </div>
       </div>
       <AiSummaryModal
