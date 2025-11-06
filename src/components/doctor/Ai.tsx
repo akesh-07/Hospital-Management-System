@@ -1,11 +1,36 @@
 import React, { useState } from "react";
-import { Copy, Plus, Bot, User, Brain, Loader, FlaskConical } from "lucide-react";
+import {
+  Copy,
+  Plus,
+  Bot,
+  User,
+  Brain,
+  Loader,
+  FlaskConical,
+  Trash2,
+} from "lucide-react";
 import { Patient, Medication } from "../../types";
 import { usePrescription } from "../../contexts/PrescriptionContext";
-import { db } from "../../firebase"; 
-import { collection, addDoc } from 'firebase/firestore'; 
+import { db } from "../../firebase";
+import { collection, addDoc } from "firebase/firestore";
 
-// Type definitions (unchanged)
+// Type definitions (expanded for clarity)
+interface ConsultationData {
+  symptoms: Array<{
+    id: number;
+    symptom: string;
+    duration: string;
+    factors: string;
+  }>;
+  duration: string;
+  aggravatingFactors: string[];
+  generalExamination: string[];
+  systemicExamination: string[];
+  investigations: string[];
+  diagnosis: string;
+  notes: string;
+}
+
 interface DiagnosisData {
   aiSuggested: string;
   doctorEntry: string;
@@ -42,13 +67,13 @@ interface MedicationRow {
 }
 
 const MedicalDashboard: React.FC<{
-  consultation: any;
+  consultation: ConsultationData; // Using the explicit type
   selectedPatient: Patient;
 }> = ({ consultation, selectedPatient }) => {
   const { addMedications } = usePrescription();
 
   // --- Mock Current User ID (Replace with actual context/auth data) ---
-  const currentUser = { staffId: 'DOC_987' }; 
+  const currentUser = { staffId: "DOC_987" };
 
   // State management
   const [diagnosis, setDiagnosis] = useState<DiagnosisData>({
@@ -72,6 +97,17 @@ const MedicalDashboard: React.FC<{
   const labResults = ["ECG", "X-RAY", "TCA-troraric", "In-xity coavortiatric"];
 
   const handleGenerateSuggestions = async () => {
+    // 🚨 IMPORTANT: PASTE YOUR GROQ API KEY HERE FOR DIRECT ACCESS.
+    // Replace the empty string below with your actual key (e.g., "gsk_...")
+    const GROQ_API_KEY = "";
+
+    if (!GROQ_API_KEY) {
+      alert(
+        "Please paste your Groq API Key directly into the 'GROQ_API_KEY' variable inside the handleGenerateSuggestions function to enable AI."
+      );
+      return;
+    }
+
     setIsLoading(true);
 
     const systemPrompt = `You are an expert medical AI assistant. Based on the provided patient consultation details, generate a concise and structured JSON object with suggestions for the attending doctor. The JSON object must strictly follow this structure with the following keys:
@@ -82,29 +118,37 @@ const MedicalDashboard: React.FC<{
 
 Do not include any explanatory text or markdown formatting outside of the JSON object.`;
 
-    const userPrompt = `
-      Patient Information:
-      - Name: ${selectedPatient.fullName}
-      - Age: ${selectedPatient.age}
-      - Gender: ${selectedPatient.gender}
-      - Chronic Conditions: ${
-        selectedPatient.chronicConditions?.join(", ") || "None"
-      }
+    // 🟢 FIXED: Map symptoms array to a readable string format
+    const formattedSymptoms = consultation.symptoms
+      .filter((s) => s.symptom.trim() !== "") // filter out empty rows
+      .map(
+        (s) =>
+          `Symptom: ${s.symptom}, Duration: ${s.duration || "N/A"}, Factors: ${
+            s.factors || "N/A"
+          }`
+      )
+      .join("; ");
 
-      Consultation Details from Assessment:
-      - Symptoms: ${consultation.symptoms?.join(", ") || "Not specified"}
-      - Duration: ${consultation.duration || "Not specified"}
-      - Aggravating Factors: ${
-        consultation.aggravatingFactors?.join(", ") || "Not specified"
-      }
-      - General Examination: ${
-        consultation.generalExamination?.join(", ") || "Not specified"
-      }
-      - Systemic Examination: ${
-        consultation.systemicExamination?.join(", ") || "Not specified"
-      }
-    `;
-    console.log("Using API Key:", import.meta.env.VITE_GROQ_API_KEY);
+    const userPrompt = `
+      Patient Information:
+      - Name: ${selectedPatient.fullName}
+      - Age: ${selectedPatient.age}
+      - Gender: ${selectedPatient.gender}
+      - Chronic Conditions: ${
+        selectedPatient.chronicConditions?.join(", ") || "None"
+      }
+
+      Consultation Details from Assessment:
+      - Symptoms: ${formattedSymptoms || "Not specified"}
+      - General Examination Findings: ${
+        consultation.generalExamination?.join(", ") || "Not specified"
+      }
+      - Systemic Examination: ${
+        consultation.systemicExamination?.join(", ") || "Not specified"
+      }
+    `;
+
+    console.log("Sending prompt to AI...");
 
     try {
       const response = await fetch(
@@ -113,9 +157,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-
-            // 🚨 SECURITY NOTE: NEVER hardcode API keys in frontend code. Use environment variables.
-            Authorization: "Bearer ",
+            Authorization: `Bearer ${GROQ_API_KEY}`, // ⬅️ API Key used directly here
           },
           body: JSON.stringify({
             model: "llama-3.1-8b-instant",
@@ -130,7 +172,11 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
       );
 
       if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
+        throw new Error(
+          `API request failed with status ${
+            response.status
+          }: ${await response.text()}`
+        );
       }
 
       const data = await response.json();
@@ -138,14 +184,14 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
 
       if (content) {
         try {
-          const aiResponse = JSON.parse(content); 
+          const aiResponse = JSON.parse(content);
 
           if (aiResponse.diagnosis) {
             setDiagnosis((prev) => ({
               ...prev,
               aiSuggested: aiResponse.diagnosis,
             }));
-          } 
+          }
 
           if (aiResponse.labInvestigationSuggestion || aiResponse.labTests) {
             setLabInvestigation((prev) => ({
@@ -158,7 +204,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                 rft: aiResponse.labTests?.rft ?? false,
               },
             }));
-          } 
+          }
 
           if (Array.isArray(aiResponse.medications)) {
             const newMedicationRows = aiResponse.medications.map(
@@ -169,7 +215,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                 aiDosage: med.dosage || "",
                 aiFrequency: med.frequency || "",
                 aiDuration: med.duration || "",
-                aiInstructions: med.instructions || "", 
+                aiInstructions: med.instructions || "",
                 doctorMedication: "",
                 doctorDosage: "",
                 doctorFrequency: "",
@@ -182,15 +228,26 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
             }
           }
         } catch (e) {
-          console.error("Failed to parse AI response JSON:", e);
+          console.error(
+            "Failed to parse AI response JSON. Raw content:",
+            content,
+            "Error:",
+            e
+          );
+          alert(
+            "AI generated suggestions, but they were in an unreadable format. See console for details."
+          );
         }
       }
     } catch (err) {
       console.error("Error calling Groq API:", err);
+      alert(
+        "Failed to connect to the AI service. Check network or API key setup."
+      );
     } finally {
       setIsLoading(false);
     }
-  }; 
+  };
 
   const handleCopyPrescription = () => {
     const medicationsToCopy: Omit<Medication, "id">[] = medicationRows.map(
@@ -241,68 +298,76 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
       doctorTests: { ...prev.aiTests },
     }));
   };
-  
+
   // 🟢 CORRECTED HANDLER: Parses Doctor's Manual Input and adds items to the 'tests' array
   const handleSendLabOrder = async () => {
-    
     // 1. Determine the patient ID using patId or generic id.
-    const patientIdentifier = (selectedPatient.patId || selectedPatient.id);
+    const patientIdentifier = selectedPatient.patId || selectedPatient.id;
 
     if (!patientIdentifier) {
-        alert("Cannot send lab order: Patient ID is missing. Please ensure a patient is properly selected.");
-        return; 
+      alert(
+        "Cannot send lab order: Patient ID is missing. Please ensure a patient is properly selected."
+      );
+      return;
     }
 
     // 2. Identify specific selected test codes (CBC, LFT, etc.)
-    const specificTests = (Object.keys(labInvestigation.doctorTests) as Array<keyof typeof labInvestigation.doctorTests>)
+    const specificTests = (
+      Object.keys(labInvestigation.doctorTests) as Array<
+        keyof typeof labInvestigation.doctorTests
+      >
+    )
       .filter((key) => labInvestigation.doctorTests[key])
-      .map(test => test.toUpperCase()); 
+      .map((test) => test.toUpperCase());
 
-    
-    // 3. 🆕 PARSE DOCTOR'S MANUAL INPUT
+    // 3. PARSE DOCTOR'S MANUAL INPUT
     let manualTests: string[] = [];
     if (labInvestigation.doctorEntry) {
-        // Split by comma (,) OR the word " and " (case-insensitive)
-        manualTests = labInvestigation.doctorEntry
-            .split(/,\s*|\s+and\s+/i) 
-            .map(item => item.trim()) 
-            .filter(item => item.length > 0); 
+      // Split by comma (,) OR the word " and " (case-insensitive)
+      manualTests = labInvestigation.doctorEntry
+        .split(/,\s*|\s+and\s+/i)
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0);
     }
 
     // 4. Construct the final tests array: specific test codes + parsed manual text
-    const finalTestsArray = [...specificTests, ...manualTests];
+    const finalTestsArray = [...new Set([...specificTests, ...manualTests])]; // Use Set to de-duplicate
 
     if (finalTestsArray.length === 0) {
-        alert("No specific tests selected and no manual notes provided to send to the lab.");
-        return;
+      alert(
+        "No specific tests selected and no manual notes provided to send to the lab."
+      );
+      return;
     }
-    
+
     setIsSendingLab(true);
 
     try {
-        // 5. Prepare the data payload
-        const labRequestPayload = {
-            patId: patientIdentifier, 
-            tests: finalTestsArray, // This array is now fully parsed into individual elements
-            assignDoctorId: currentUser.staffId, // Doctor placing the order
-            requestedAt: new Date(),
-        };
+      // 5. Prepare the data payload
+      const labRequestPayload = {
+        patId: patientIdentifier,
+        tests: finalTestsArray, // This array is now fully parsed into individual elements
+        assignDoctorId: currentUser.staffId, // Doctor placing the order
+        requestedAt: new Date(),
+      };
 
-        // 6. Send data to the Firestore 'labRequests' collection
-        const labRequestsCollection = collection(db, 'labRequests');
-        await addDoc(labRequestsCollection, labRequestPayload);
+      // 6. Send data to the Firestore 'labRequests' collection
+      const labRequestsCollection = collection(db, "labRequests");
+      await addDoc(labRequestsCollection, labRequestPayload);
 
-        console.log("Lab order sent successfully:", labRequestPayload);
-        alert(`Lab order initiated for ${selectedPatient.fullName}. Tests: ${finalTestsArray.join(' | ')}.`);
-
+      console.log("Lab order sent successfully:", labRequestPayload);
+      alert(
+        `Lab order initiated for ${
+          selectedPatient.fullName
+        }. Tests: ${finalTestsArray.join(" | ")}.`
+      );
     } catch (error) {
-        console.error("Error sending lab order to Firebase:", error);
-        alert("Failed to send lab order. Check console and Firebase rules.");
+      console.error("Error sending lab order to Firebase:", error);
+      alert("Failed to send lab order. Check console and Firebase rules.");
     } finally {
-        setIsSendingLab(false);
+      setIsSendingLab(false);
     }
   };
-
 
   // Handlers
   const handleDiagnosisChange = (value: string) => {
@@ -319,6 +384,41 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
       ...prev,
       doctorTests: { ...prev.doctorTests, [test]: !prev.doctorTests[test] },
     }));
+  };
+
+  // Handlers for Doctor's manual medication table, for future implementation
+  const handleDoctorMedicationChange = (
+    rowId: string,
+    field: keyof MedicationRow,
+    value: string
+  ) => {
+    setMedicationRows((prev) =>
+      prev.map((row) => (row.id === rowId ? { ...row, [field]: value } : row))
+    );
+  };
+
+  const addManualMedicationRow = () => {
+    setMedicationRows((prev) => [
+      ...prev,
+      {
+        id: String(Date.now()), // Unique ID for the new row
+        sno: prev.length + 1,
+        aiMedication: "",
+        aiDosage: "",
+        aiFrequency: "",
+        aiDuration: "",
+        aiInstructions: "",
+        doctorMedication: "",
+        doctorDosage: "",
+        doctorFrequency: "",
+        doctorDuration: "",
+        doctorInstructions: "",
+      },
+    ]);
+  };
+
+  const removeMedicationRow = (rowId: string) => {
+    setMedicationRows((prev) => prev.filter((row) => row.id !== rowId));
   };
 
   return (
@@ -407,46 +507,48 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
           <div className="p-2 space-y-2">
             <input
               type="text"
-              placeholder="Enter lab investigation"
+              placeholder="Enter lab investigation (e.g., Blood Culture, Liver scan)"
               value={labInvestigation.doctorEntry}
               onChange={(e) => handleLabInvestigationChange(e.target.value)}
               className="w-full p-1.5 border border-gray-300 rounded bg-gray-50 focus:ring-1 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-xs"
             />
             {/* 🟢 Lab Test Tags Display (based on doctor selection) */}
             <div className="flex flex-wrap gap-1">
-                {(["cbc", "lft", "rft"] as const).map((test) => 
-                    labInvestigation.doctorTests[test] && (
-                        <span 
-                            key={`tag-${test}`}
-                            className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full border border-blue-300"
-                        >
-                            {test.toUpperCase()}
-                        </span>
-                    )
-                )}
+              {(["cbc", "lft", "rft"] as const).map(
+                (test) =>
+                  labInvestigation.doctorTests[test] && (
+                    <span
+                      key={`tag-${test}`}
+                      className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full border border-blue-300"
+                    >
+                      {test.toUpperCase()}
+                    </span>
+                  )
+              )}
             </div>
             {/* End Tags Display */}
 
             <div className="flex flex-col gap-1">
               <div className="flex gap-2">
-              {/* 🟢 TEST SELECTION AS TAGS (Toggles state on click) */}
-              {(["cbc", "lft", "rft"] as const).map((test) => (
-                <span
-                  key={test}
-                  onClick={() => handleTestChange(test)}
-                  className={`
-                    cursor-pointer px-3 py-1 text-xs font-semibold rounded-full border transition-all duration-200 
-                    ${labInvestigation.doctorTests[test]
-                      ? 'bg-[#012e58] text-white border-[#012e58]'
-                      : 'bg-white text-[#0B2D4D] border-gray-300 hover:bg-gray-100'
-                    }
-                  `}
-                >
-                  {test.toUpperCase()}
-                </span>
-              ))}
+                {/* 🟢 TEST SELECTION AS TAGS (Toggles state on click) */}
+                {(["cbc", "lft", "rft"] as const).map((test) => (
+                  <span
+                    key={test}
+                    onClick={() => handleTestChange(test)}
+                    className={`
+                      cursor-pointer px-3 py-1 text-xs font-semibold rounded-full border transition-all duration-200 
+                      ${
+                        labInvestigation.doctorTests[test]
+                          ? "bg-[#012e58] text-white border-[#012e58]"
+                          : "bg-white text-[#0B2D4D] border-gray-300 hover:bg-gray-100"
+                      }
+                    `}
+                  >
+                    {test.toUpperCase()}
+                  </span>
+                ))}
               </div>
-              <div className="flex gap-2 pt-1"> 
+              <div className="flex gap-2 pt-1">
                 <button
                   onClick={copyAiTests}
                   className="flex items-center gap-1 px-2 py-1 text-xs border border-[#012e58] rounded text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-1 focus:ring-[#012e58] transition-all duration-300"
@@ -466,7 +568,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                   ) : (
                     <FlaskConical size={10} />
                   )}
-                  {isSendingLab ? 'Sending...' : 'Send to Lab'}
+                  {isSendingLab ? "Sending..." : "Send to Lab"}
                 </button>
               </div>
             </div>
@@ -479,39 +581,41 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
             </h3>
           </div>
           <div className="p-2 space-y-1">
-            
             {/* 🟢 AI Suggested Text as a Single Tag */}
             <div className="flex flex-wrap gap-2">
-                <span className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full font-medium">
-                    {labInvestigation.aiSuggestion}
-                </span>
+              <span className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full font-medium">
+                {labInvestigation.aiSuggestion || "No suggestions yet."}
+              </span>
             </div>
-            
+
             <button
-                onClick={() =>
-                  copyToField(labInvestigation.aiSuggestion, "labInvestigation")
-                }
-                className="px-1 py-0.5 border border-[#012e58] rounded text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-1 focus:ring-[#012e58] transition-all duration-300"
-              >
-                <Copy size={10} />
+              onClick={() =>
+                copyToField(labInvestigation.aiSuggestion, "labInvestigation")
+              }
+              disabled={!labInvestigation.aiSuggestion}
+              className="px-1 py-0.5 border border-[#012e58] rounded text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-1 focus:ring-[#012e58] transition-all duration-300 disabled:opacity-50"
+            >
+              <Copy size={10} />
             </button>
-            
+
             {/* 🟢 AI Suggested Individual Test Tags */}
             <div className="flex flex-wrap gap-1 pt-2">
-                <span className="text-gray-500 text-xs font-semibold mr-1">Suggested Tests:</span>
-                {(["cbc", "lft", "rft"] as const).map((test) => 
-                    labInvestigation.aiTests[test] && (
-                        <span 
-                            key={`ai-tag-${test}`}
-                            className="px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded-full border border-purple-300"
-                        >
-                            {test.toUpperCase()}
-                        </span>
-                    )
-                )}
+              <span className="text-gray-500 text-xs font-semibold mr-1">
+                Suggested Tests:
+              </span>
+              {(["cbc", "lft", "rft"] as const).map(
+                (test) =>
+                  labInvestigation.aiTests[test] && (
+                    <span
+                      key={`ai-tag-${test}`}
+                      className="px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded-full border border-purple-300"
+                    >
+                      {test.toUpperCase()}
+                    </span>
+                  )
+              )}
             </div>
             {/* End AI Tags Display */}
-
           </div>
         </div>
       </div>
@@ -541,30 +645,37 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
           </h3>
           <button
             onClick={handleCopyPrescription}
-            className="flex items-center space-x-2 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs"
+            disabled={medicationRows.length === 0}
+            className="flex items-center space-x-2 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs disabled:opacity-50"
           >
             <Copy className="w-3 h-3" />
-            <span>Copy Prescription</span>
+            <span>Copy All Suggestions</span>
           </button>
         </div>
         <div className="p-2 overflow-x-auto">
           <table className="w-full text-xs border-collapse border border-gray-300">
             <thead className="bg-gradient-to-r from-[#012e58] to-[#1a4b7a] text-white">
               <tr>
-                <th className="p-1 border border-gray-300 font-semibold text-xs">
-                  Name
+                <th className="p-1 border border-gray-300 font-semibold text-xs min-w-[100px]">
+                  Name (AI)
                 </th>
-                <th className="p-1 border border-gray-300 font-semibold text-xs">
-                  Dosage
+                <th className="p-1 border border-gray-300 font-semibold text-xs min-w-[70px]">
+                  Dosage (AI)
                 </th>
-                <th className="p-1 border border-gray-300 font-semibold text-xs">
-                  Frequency
+                <th className="p-1 border border-gray-300 font-semibold text-xs min-w-[70px]">
+                  Freq (AI)
                 </th>
-                <th className="p-1 border border-gray-300 font-semibold text-xs">
-                  Duration
+                <th className="p-1 border border-gray-300 font-semibold text-xs min-w-[70px]">
+                  Duration (AI)
                 </th>
-                <th className="p-1 border border-gray-300 font-semibold text-xs">
-                  Instructions
+                <th className="p-1 border border-gray-300 font-semibold text-xs min-w-[120px]">
+                  Instructions (AI)
+                </th>
+                <th className="p-1 border border-gray-300 font-semibold text-xs min-w-[100px]">
+                  Name (Dr. Entry)
+                </th>
+                <th className="p-1 border border-gray-300 font-semibold text-xs text-center min-w-[30px]">
+                  Action
                 </th>
               </tr>
             </thead>
@@ -665,15 +776,46 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                       </button>
                     </div>
                   </td>
+                  {/* Doctor Entry Column (Only Name field shown here for compactness) */}
+                  <td className="p-1 border border-gray-300">
+                    <input
+                      type="text"
+                      value={row.doctorMedication}
+                      onChange={(e) =>
+                        handleDoctorMedicationChange(
+                          row.id,
+                          "doctorMedication",
+                          e.target.value
+                        )
+                      }
+                      className="w-full p-1 border border-gray-200 rounded text-xs focus:ring-1 focus:ring-blue-300"
+                      placeholder="Dr. Name"
+                    />
+                  </td>
+                  {/* Action Column */}
+                  <td className="p-1 border border-gray-300 text-center">
+                    <button
+                      onClick={() => removeMedicationRow(row.id)}
+                      className="text-red-500 hover:text-red-700 p-1"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-
-        </div>
-      </div>
-    </div>
-  );
+          <button
+            onClick={addManualMedicationRow}
+            className="mt-2 flex items-center gap-1 px-3 py-1 text-xs bg-gray-200 text-[#0B2D4D] rounded hover:bg-gray-300 transition-colors"
+          >
+            <Plus size={12} />
+            Add Manual Row
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default MedicalDashboard;

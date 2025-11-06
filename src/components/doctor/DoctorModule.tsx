@@ -71,7 +71,7 @@ interface AdmissionData {
   additionalNotes: string;
 }
 
-// --- AUTOCMPLETE INPUT COMPONENT (Stubbed for brevity) ---
+// --- AUTOCMPLETE INPUT COMPONENT ---
 const AutocompleteInput: React.FC<{
   symptomId: number;
   value: string;
@@ -83,7 +83,20 @@ const AutocompleteInput: React.FC<{
   const [showDropdown, setShowDropdown] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // (Component logic removed for brevity, assuming AutocompleteInput is correct)
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node)
+      ) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [wrapperRef]);
 
   const filteredSymptoms = symptomOptions.filter((s) =>
     s.toLowerCase().includes(inputValue.toLowerCase())
@@ -94,6 +107,23 @@ const AutocompleteInput: React.FC<{
     onChange(symptomId, e.target.value);
     setShowDropdown(true);
   };
+
+  const handleSelectSymptom = (symptom: string) => {
+    setInputValue(symptom);
+    onChange(symptomId, symptom);
+    setShowDropdown(false);
+  };
+
+  const handleAddSymptom = () => {
+    if (inputValue && !symptomOptions.includes(inputValue)) {
+      addSymptomOption(inputValue);
+      handleSelectSymptom(inputValue);
+    }
+  };
+
+  const showAddButton =
+    inputValue &&
+    !symptomOptions.some((s) => s.toLowerCase() === inputValue.toLowerCase());
 
   return (
     <div className="relative" ref={wrapperRef}>
@@ -106,8 +136,29 @@ const AutocompleteInput: React.FC<{
           className="p-2 border border-gray-300 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-sm"
           placeholder="Enter symptom"
         />
-        {/* Placeholder for Plus button and Dropdown */}
+        {showAddButton && (
+          <button
+            type="button"
+            onClick={handleAddSymptom}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 bg-gray-200 rounded-full hover:bg-gray-300"
+          >
+            <Plus className="w-4 h-4 text-gray-600" />
+          </button>
+        )}
       </div>
+      {showDropdown && filteredSymptoms.length > 0 && (
+        <div className1="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+          {filteredSymptoms.map((symptom, index) => (
+            <div
+              key={index}
+              onClick={() => handleSelectSymptom(symptom)}
+              className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+            >
+              {symptom}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -125,13 +176,45 @@ const SectionHeader: React.FC<{ icon: React.ElementType; title: string }> = ({
   </div>
 );
 
-// New Component for rendering formatted AI summary (stubbed)
+// Component for rendering formatted AI summary
 const FormattedAiSummary: React.FC<{ summary: string }> = ({ summary }) => {
-  // Logic for rendering summary is assumed to be correct
-  return <div>Formatted AI Summary Content</div>;
+  const lines = summary.split("\n").filter((line) => line.trim() !== "");
+
+  return (
+    <div className="space-y-4 text-[#1a4b7a]">
+      {lines.map((line, index) => {
+        if (line.startsWith("**") && line.endsWith("**")) {
+          return (
+            <h3 key={index} className="text-lg font-bold text-[#0B2D4D] pt-2">
+              {line.slice(2, -2)}
+            </h3>
+          );
+        }
+        if (line.startsWith("* ") || line.startsWith("- ")) {
+          return (
+            <ul key={index} className="list-disc list-inside pl-4">
+              <li>{line.slice(2)}</li>
+            </ul>
+          );
+        }
+        if (line.includes(":")) {
+          const parts = line.split(":");
+          const key = parts[0];
+          const value = parts.slice(1).join(":");
+          return (
+            <div key={index} className="flex">
+              <span className="font-semibold w-1/3">{key}:</span>
+              <span className="w-2/3">{value}</span>
+            </div>
+          );
+        }
+        return <p key={index}>{line}</p>;
+      })}
+    </div>
+  );
 };
 
-// New AI Summary Modal Component (stubbed)
+// AI Summary Modal Component
 const AiSummaryModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
@@ -139,14 +222,60 @@ const AiSummaryModal: React.FC<{
   isLoading: boolean;
 }> = ({ isOpen, onClose, summary, isLoading }) => {
   if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      {/* Modal Content */}
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between p-5 border-b border-gray-200 bg-[#F8F9FA] rounded-t-xl">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-[#e0f7fa] rounded-full">
+              <Bot className="w-6 h-6 text-[#012e58]" />
+            </div>
+            <h2 className="text-xl font-bold text-[#0B2D4D]">
+              AI-Generated Summary (Document History)
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Modal Body */}
+        <div className="p-6 overflow-y-auto flex-grow">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center h-full min-h-[250px] text-center">
+              <Loader className="w-12 h-12 text-[#012e58] animate-spin mb-4" />
+              <p className="text-lg font-semibold text-[#0B2D4D]">
+                Analyzing Documents...
+              </p>
+              <p className="text-sm text-[#1a4b7a]">
+                Please wait while our AI processes the historical information.
+              </p>
+            </div>
+          ) : (
+            <FormattedAiSummary summary={summary} />
+          )}
+        </div>
+
+        {/* Modal Footer */}
+        <div className="flex items-center justify-end p-4 border-t border-gray-200 bg-[#F8F9FA] rounded-b-xl">
+          <button
+            onClick={onClose}
+            className="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1a4b7a] transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
 
-// --- NEW IN-PATIENT ADMISSION MODAL ---
+// --- IN-PATIENT ADMISSION MODAL ---
 const InPatientAdmissionModal: React.FC<{
   patient: Patient;
   onClose: () => void;
@@ -446,7 +575,6 @@ const InPatientAdmissionModal: React.FC<{
 };
 
 // --- Main DoctorModule Component ---
-// Show PatientQueue
 const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
   selectedPatient,
   onBack,
@@ -456,13 +584,13 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     "history" | "assessment" | "prescriptions" | "ai-assist"
   >("assessment");
   const [vitals, setVitals] = useState<Vitals | null>(null);
-  const [showAdmissionModal, setShowAdmissionModal] = useState(false); // <--- NEW STATE
+  const [showAdmissionModal, setShowAdmissionModal] = useState(false);
   const [consultation, setConsultation] = useState({
     symptoms: [{ id: 1, symptom: "", duration: "", factors: "" }],
     duration: "",
     aggravatingFactors: [] as string[],
     generalExamination: [] as string[],
-    systemicExamination: [] as string[],
+    systemicExamination: [] as string[], // Placeholder for CNS, RS, etc.
     investigations: [] as string[],
     diagnosis: "",
     notes: "",
@@ -497,38 +625,271 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     "Investigation ROP": useRef<HTMLInputElement>(null),
   };
 
-  // --- Utility functions (extracted for brevity) ---
-  // Note: These functions' bodies were removed in the consolidation steps but are assumed to exist.
+  // --- Utility functions: File Handling and Text Extraction ---
   const extractTextFromFile = async (file: File): Promise<string> => {
-    /* ... */ return new Promise((resolve) => resolve(""));
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          if (file.type === "application/pdf") {
+            const loadingTask = pdfjsLib.getDocument(
+              event.target?.result as ArrayBuffer
+            );
+            const pdf = await loadingTask.promise;
+            let text = "";
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const content = await page.getTextContent();
+              text += content.items.map((item: any) => item.str).join(" ");
+            }
+            resolve(text);
+          } else if (
+            file.type ===
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          ) {
+            const arrayBuffer = event.target?.result as ArrayBuffer;
+            const result = await mammoth.extractRawText({ arrayBuffer });
+            resolve(result.value);
+          } else if (file.type === "text/plain") {
+            resolve(event.target?.result as string);
+          } else {
+            reject(new Error("Unsupported file type"));
+          }
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = (error) => {
+        reject(error);
+      };
+
+      if (
+        file.type === "application/pdf" ||
+        file.type ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ) {
+        reader.readAsArrayBuffer(file);
+      } else {
+        reader.readAsText(file);
+      }
+    });
   };
-  const handleFileUpload = (
+
+  const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
     fileType: string
   ) => {
-    /* ... */
+    const file = event.target.files?.[0];
+    if (file) {
+      try {
+        const text = await extractTextFromFile(file);
+        setUploadedFilesData((prev) => ({ ...prev, [fileType]: text }));
+        // alert(`Successfully extracted text from ${fileType}!`);
+      } catch (error) {
+        console.error("Error extracting text from file:", error);
+        alert(`Failed to extract text from ${fileType}.`);
+      }
+      // Reset file input to allow uploading the same file again if needed
+      event.target.value = "";
+    }
   };
-  const handleAiSummary = () => {
-    /* ... */
+
+  // 🧠 CORE AI LOGIC: Document-Only Summary
+  const handleAiSummary = async () => {
+    setIsSummaryModalOpen(true);
+    setIsAiSummaryLoading(true);
+    setAiSummary("");
+
+    const fileContentArray = Object.entries(uploadedFilesData)
+      .filter(([_, text]) => text && text.trim().length > 0)
+      .map(
+        ([fileType, text]) => `**--- ${fileType.toUpperCase()} ---**\n${text}`
+      );
+
+    // Safety check for no content
+    if (fileContentArray.length === 0) {
+      setIsAiSummaryLoading(false);
+      setAiSummary(
+        "No uploaded or successfully processed medical history documents found to generate a summary from."
+      );
+      return;
+    }
+
+    // Prompt content STRICTLY limits input to uploaded files
+    const combinedData = `
+        DOCUMENT-ONLY MEDICAL HISTORY SUMMARY REQUEST:
+        
+        The following documents were uploaded for Patient ${
+          selectedPatient?.uhid || "N/A"
+        }:
+        
+        ${fileContentArray.join("\n\n")}
+        
+        TASK: You are a medical records specialist. Your task is to generate a comprehensive and objective summary based *strictly* on the text provided in the documents above. Do not include any external information. Structure the summary with clear markdown headers and bullet points covering:
+        1. **Patient Demographics (if present in documents)**
+        2. **Key Past Diagnoses/Procedures**
+        3. **Medications (if listed)**
+        4. **Date and Reason for Document Creation**
+        5. **Overall Summary/Conclusion of the Documents**
+        
+        If a section's information is not present in the documents, state 'N/A' for that section.
+    `;
+
+    try {
+      // NOTE: This API Key is exposed in client-side code and SHOULD BE PROXIED through a backend in a production environment.
+      const response = await fetch(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer ",
+          },
+          body: JSON.stringify({
+            model: "llama-3.1-8b-instant",
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are a medical records specialist. Generate the summary ONLY from the provided text using clear markdown. Do not hallucinate or include outside information.",
+              },
+              {
+                role: "user",
+                content: combinedData,
+              },
+            ],
+          }),
+        }
+      );
+      const data = await response.json();
+      const summary =
+        data?.choices?.[0]?.message?.content?.trim() ||
+        "Could not generate summary from documents.";
+      setAiSummary(summary);
+    } catch (error) {
+      console.error("Error generating AI summary:", error);
+      setAiSummary(
+        "An error occurred while connecting to the AI service. Check console for details."
+      );
+    } finally {
+      setIsAiSummaryLoading(false);
+    }
   };
+
+  // --- Utility functions: Consultation & Vitals ---
+
   const handleSymptomChange = (
     id: number,
     field: "symptom" | "duration" | "factors",
     value: string
   ) => {
-    /* ... */
+    setConsultation((prev) => ({
+      ...prev,
+      symptoms: prev.symptoms.map((symptom) =>
+        symptom.id === id ? { ...symptom, [field]: value } : symptom
+      ),
+    }));
   };
+
   const addSymptomRow = () => {
-    /* ... */
+    setConsultation((prev) => ({
+      ...prev,
+      symptoms: [
+        ...prev.symptoms,
+        {
+          id: Date.now(),
+          symptom: "",
+          duration: "",
+          factors: "",
+        },
+      ],
+    }));
   };
-  const removeSymptomRow = () => {
-    /* ... */
+
+  const removeSymptomRow = (id: number) => {
+    setConsultation((prev) => ({
+      ...prev,
+      symptoms: prev.symptoms.filter((symptom) => symptom.id !== id),
+    }));
   };
+
+  const handleToggleGeneralExam = (finding: string, isChecked: boolean) => {
+    setConsultation((prev) => ({
+      ...prev,
+      generalExamination: isChecked
+        ? [...prev.generalExamination, finding]
+        : prev.generalExamination.filter((f) => f !== finding),
+    }));
+  };
+
+  const handleSystemicExamChange = (system: string, value: string) => {
+    setConsultation((prev) => {
+      // Simple approach: find the existing entry for the system and update it, or add it.
+      const existingIndex = prev.systemicExamination.findIndex((item) =>
+        item.startsWith(`${system}:`)
+      );
+      const newEntry = `${system}: ${value}`;
+
+      const newSystemicExam = [...prev.systemicExamination];
+
+      if (existingIndex > -1) {
+        newSystemicExam[existingIndex] = newEntry;
+      } else {
+        newSystemicExam.push(newEntry);
+      }
+
+      return { ...prev, systemicExamination: newSystemicExam };
+    });
+  };
+
+  const formatBloodPressure = (bp: string): string => {
+    if (!bp || bp === "0/0") return "N/A";
+    return bp.includes("/") ? bp : `${bp}/N/A`;
+  };
+
   const getVitalsDisplay = () => {
-    /* ... */ return [];
+    if (!vitals) {
+      return [
+        { label: "BP", value: "N/A", unit: "mmHg" },
+        { label: "PR", value: "N/A", unit: "bpm" },
+        { label: "SpO₂", value: "N/A", unit: "%" },
+        { label: "BMI", value: "N/A", unit: "" },
+        { label: "RR", value: "N/A", unit: "/min" },
+      ];
+    }
+
+    return [
+      {
+        label: "BP",
+        value: formatBloodPressure(vitals.bloodPressure),
+        unit: "mmHg",
+      },
+      {
+        label: "PR",
+        value: vitals.pulse?.toString() || "N/A",
+        unit: "bpm",
+      },
+      {
+        label: "SpO₂",
+        value: vitals.spo2?.toString() || "N/A",
+        unit: "%",
+      },
+      {
+        label: "BMI",
+        value: vitals.bmi?.toString() || "N/A",
+        unit: "",
+      },
+      {
+        label: "RR",
+        value: vitals.respiratoryRate?.toString() || "N/A",
+        unit: "/min",
+      },
+    ];
   };
+
   const inputStyle =
     "p-2 border border-gray-300 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-sm";
+
   const TabButton: React.FC<{
     id: string;
     label: string;
@@ -546,7 +907,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     </button>
   );
 
-  // Fetch vitals from Firebase when a patient is selected (from original code)
+  // Fetch vitals from Firebase when a patient is selected
   useEffect(() => {
     if (!selectedPatient?.id) {
       setVitals(null);
@@ -554,7 +915,8 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     }
     const vitalsQuery = query(
       collection(db, "vitals"),
-      where("patientId", "==", selectedPatient.id)
+      where("patientId", "==", selectedPatient.id),
+      orderBy("recordedAt", "desc") // Fetch latest vital
     );
     const unsubscribe = onSnapshot(vitalsQuery, (snapshot) => {
       if (snapshot.docs.length > 0) {
@@ -566,6 +928,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     });
     return () => unsubscribe();
   }, [selectedPatient]);
+
   const mockHistory = [
     { date: "2024-08-15", diagnosis: "Routine Checkup", doctor: "Dr. Dhinesh" },
     {
@@ -575,7 +938,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     },
   ];
 
-  // --- NEW ADMISSION LOGIC ---
+  // --- ADMISSION LOGIC ---
   const handleAddToInPatient = () => {
     if (selectedPatient) {
       setShowAdmissionModal(true);
@@ -587,10 +950,9 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
       `IPD Admission Confirmed for ${selectedPatient?.fullName}:`,
       admissionData
     );
-    // In a real app, you would dispatch a success action or perform a redirect here.
-    // The modal's success state is handled internally for immediate feedback.
+    // Real logic to update DB and redirect/refresh goes here.
   };
-  // --- END NEW ADMISSION LOGIC ---
+  // --- END ADMISSION LOGIC ---
 
   if (!selectedPatient) {
     return <PatientQueue />;
@@ -645,7 +1007,6 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
         </div>
 
         {/* Tab Content */}
-        {/* Placeholder for History Tab */}
         {activeTab === "history" && (
           <div className="space-y-4">
             <div className="bg-white p-4 rounded-lg border border-gray-200 transition-shadow hover:shadow-md">
@@ -740,7 +1101,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
           </div>
         )}
 
-        {/* Placeholder for Assessment Tab */}
+        {/* Assessment Tab */}
         {activeTab === "assessment" && (
           <div className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -806,6 +1167,9 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                         <span className="font-medium text-[#0B2D4D]">
                           {name}
                         </span>
+                        {uploadedFilesData[name] && (
+                          <CheckCircle className="w-3 h-3 text-green-500 ml-auto" />
+                        )}
                       </button>
                     </div>
                   ))}
@@ -845,6 +1209,47 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                       >
                         <input
                           type="checkbox"
+                          checked={consultation.symptoms.some(
+                            (s) => s.symptom === symptom
+                          )}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              // Add symptom
+                              const emptyRow = consultation.symptoms.find(
+                                (s) => s.symptom === ""
+                              );
+                              if (emptyRow) {
+                                handleSymptomChange(
+                                  emptyRow.id,
+                                  "symptom",
+                                  symptom
+                                );
+                              } else {
+                                addSymptomRow();
+                                // Use a temporary state update to set the symptom in the newly added row
+                                setTimeout(() => {
+                                  setConsultation((prev) => ({
+                                    ...prev,
+                                    symptoms: prev.symptoms.map((s) =>
+                                      s.id ===
+                                        prev.symptoms[prev.symptoms.length - 1]
+                                          .id && s.symptom === ""
+                                        ? { ...s, symptom: symptom }
+                                        : s
+                                    ),
+                                  }));
+                                }, 0);
+                              }
+                            } else {
+                              // Remove symptom
+                              const rowToRemove = consultation.symptoms.find(
+                                (s) => s.symptom === symptom
+                              );
+                              if (rowToRemove) {
+                                removeSymptomRow(rowToRemove.id);
+                              }
+                            }
+                          }}
                           className="rounded border-gray-300 text-[#012e58] focus:ring-[#012e58] focus:ring-2"
                         />
                         <span className="text-xs font-medium text-[#0B2D4D]">
@@ -954,6 +1359,12 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                         >
                           <input
                             type="checkbox"
+                            checked={consultation.generalExamination.includes(
+                              item
+                            )}
+                            onChange={(e) =>
+                              handleToggleGeneralExam(item, e.target.checked)
+                            }
                             className="rounded border-gray-300 text-[#012e58] focus:ring-[#012e58] focus:ring-2"
                           />
                           <span className="text-xs font-medium text-[#0B2D4D]">
@@ -1036,18 +1447,36 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                       placeholder: "Cardiovascular System findings",
                     },
                     { label: "P/A", placeholder: "Per Abdomen findings" },
-                  ].map((system) => (
-                    <div key={system.label} className="space-y-1">
-                      <label className="text-xs font-semibold text-[#1a4b7a] block">
-                        {system.label}
-                      </label>
-                      <textarea
-                        className="w-full p-2 border border-gray-300 rounded-md bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 resize-none text-sm"
-                        rows={2}
-                        placeholder={system.placeholder}
-                      ></textarea>
-                    </div>
-                  ))}
+                  ].map((system) => {
+                    // Extract the current value from the state based on the system label
+                    const currentEntry =
+                      consultation.systemicExamination.find((item) =>
+                        item.startsWith(`${system.label}:`)
+                      ) || `${system.label}: `;
+                    const currentValue = currentEntry.substring(
+                      system.label.length + 2
+                    ); // Get text after "CNS: "
+
+                    return (
+                      <div key={system.label} className="space-y-1">
+                        <label className="text-xs font-semibold text-[#1a4b7a] block">
+                          {system.label}
+                        </label>
+                        <textarea
+                          className="w-full p-2 border border-gray-300 rounded-md bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 resize-none text-sm"
+                          rows={2}
+                          placeholder={system.placeholder}
+                          value={currentValue}
+                          onChange={(e) =>
+                            handleSystemicExamChange(
+                              system.label,
+                              e.target.value
+                            )
+                          }
+                        ></textarea>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
               <div className="bg-white p-4 rounded-lg border border-gray-200 transition-shadow hover:shadow-md">
@@ -1094,7 +1523,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
               Save Draft
             </button>
 
-            {/* NEW: Add to In-Patient Button */}
+            {/* Add to In-Patient Button */}
             <button
               onClick={handleAddToInPatient}
               className="group flex items-center px-4 py-2 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300 text-sm"
@@ -1106,7 +1535,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
             {activeTab === "assessment" && (
               <button
                 onClick={() => setActiveTab("ai-assist")}
-                className="group flex items-center px-4 py-2 border border-[#012e58] rounded-md  bg-[#012e58] hover:bg-[#012e58e3] text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm font-medium"
+                className="group flex items-center px-4 py-2 border border-[#012e58] rounded-md  bg-[#012e58] hover:bg-[#012e58e3] text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm font-medium"
               >
                 <Bot className="w-4 h-4 mr-1.5 transition-transform duration-300 group-hover:scale-110" />
                 AI Assist
@@ -1121,17 +1550,17 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                 <ChevronRight className="w-4 h-4 ml-1.5" />
               </button>
             )}
-
-            {activeTab === "prescriptions" && (
-              <button
-                onClick={() => onCompleteConsultation(selectedPatient.id)}
-                className="group flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 transition-all duration-300 text-sm"
-              >
-                <span>Complete Consultation</span>
-                <CheckCircle className="w-4 h-4 ml-1.5" />
-              </button>
-            )}
           </div>
+
+          {(activeTab === "prescriptions" || activeTab === "assessment") && (
+            <button
+              onClick={() => onCompleteConsultation(selectedPatient.id)}
+              className="group flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 transition-all duration-300 text-sm"
+            >
+              <span>Complete Consultation</span>
+              <CheckCircle className="w-4 h-4 ml-1.5" />
+            </button>
+          )}
         </div>
       </div>
       <AiSummaryModal
@@ -1141,7 +1570,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
         isLoading={isAiSummaryLoading}
       />
 
-      {/* NEW: In-Patient Admission Modal Renderer */}
+      {/* In-Patient Admission Modal Renderer */}
       {showAdmissionModal && selectedPatient && (
         <InPatientAdmissionModal
           patient={selectedPatient}
@@ -1152,6 +1581,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     </div>
   );
 };
+
 export const DoctorModule: React.FC<DoctorModuleProps> = (props) => {
   return (
     <PrescriptionProvider>
