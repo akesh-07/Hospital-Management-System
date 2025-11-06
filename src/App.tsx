@@ -20,6 +20,7 @@ import SignupPage from "./components/auth/SignupPage";
 import DoctorForm from "./components/auth/DoctorForm";
 import Ai from "./components/doctor/Ai";
 import IPDQueue from "./components/queue/IPDQueue";
+import LabTestQueue from "./components/LabModule/LabTestQueue"; // ⬅️ IMPORTED
 
 function App() {
   return (
@@ -76,9 +77,19 @@ function App() {
                 allowedRoles={["doctor", "staff-nurse", "receptionist"]}
               >
                 <Layout currentSection="ipd-queue">
-                  {" "}
-                  {/* <-- Section ID matches sidebar item ID */}
                   <IPDQueue />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* 🟢 Lab Requests Route for Technician */}
+          <Route
+            path="/lab-requests"
+            element={
+              <ProtectedRoute allowedRoles={["technician"]}>
+                <Layout currentSection="lab-requests">
+                  <LabTestQueue />
                 </Layout>
               </ProtectedRoute>
             }

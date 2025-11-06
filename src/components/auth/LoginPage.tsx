@@ -32,7 +32,7 @@ const userRoles = [
     value: "technician",
     label: "Login as Technician",
     icon: "🔬",
-    route: "/dashboard", // Defaulting to dashboard
+    route: "/lab-requests", // ⬅️ Technician is routed to Lab Requests
   },
   {
     value: "receptionist",
