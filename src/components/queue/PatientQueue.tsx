@@ -303,7 +303,8 @@ const PatientQueue: React.FC = () => {
           <div>
             <h3 className="font-semibold text-[#0B2D4D]">{patient.fullName}</h3>
             <p className="text-xs text-[#1a4b7a]">
-              Token: {patient.token} • ID: {patient.uhid || "N/A"}
+              {/* Token: {patient.token} • ID: {patient.uhid || "N/A"} */}
+              Token: {patient.token}
             </p>
           </div>
         </div>
@@ -493,7 +494,6 @@ const PatientQueue: React.FC = () => {
               <option value="doctorName">Doctor Name</option>
               <option value="token">Token</option>
               <option value="phone">Phone</option>
-              <option value="uhid">UHID</option>
             </select>
 
             {/* Search Input */}
