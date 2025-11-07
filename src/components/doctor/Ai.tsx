@@ -99,8 +99,7 @@ const MedicalDashboard: React.FC<{
   const handleGenerateSuggestions = async () => {
     // 🚨 IMPORTANT: PASTE YOUR GROQ API KEY HERE FOR DIRECT ACCESS.
     // Replace the empty string below with your actual key (e.g., "gsk_...")
-    const GROQ_API_KEY =
-      "";
+    const GROQ_API_KEY = "";
 
     if (!GROQ_API_KEY) {
       alert(

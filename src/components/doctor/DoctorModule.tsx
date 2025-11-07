@@ -78,7 +78,7 @@ interface AdmissionData {
   additionalNotes: string;
 }
 
-// --- AUTOCMPLETE INPUT COMPONENT (Copied from AutocompleteInput.tsx) ---
+// ... existing AutocompleteInput component ...
 const AutocompleteInput: React.FC<{
   symptomId: number;
   value: string;
@@ -762,8 +762,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization:
-              "Bearer ",
+            Authorization: "Bearer ",
           },
           body: JSON.stringify({
             model: "llama-3.1-8b-instant",
