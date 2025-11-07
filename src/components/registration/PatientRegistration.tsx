@@ -13,7 +13,11 @@ import {
   Smartphone,
   Scan,
   ListPlus,
+  Calendar,
   Plus,
+  Package, // Icon for packages
+  Edit, // Icon for editing
+  Trash2, // Icon for removal
 } from "lucide-react";
 import { db } from "../../firebase";
 import {
@@ -84,21 +88,212 @@ const StyledInput: React.FC<any> = ({
   </div>
 );
 
+// -----------------------------------------------------------------------------------------
+// --- PACKAGE MANAGEMENT COMPONENTS & LOGIC ---
+// -----------------------------------------------------------------------------------------
+
+interface PackageItem {
+  id: string; // Unique ID for management
+  name: string;
+  duration: string;
+}
+
+const initialMockPackages: PackageItem[] = [
+  { id: "pkg1", name: "General OPD", duration: "10 mins" },
+  { id: "pkg2", name: "Specialist Consultation", duration: "20 mins" },
+  { id: "pkg3", name: "Comprehensive Health Check", duration: "45 mins" },
+];
+
+// --- ManagePackageForm (Handles both Add and Edit) ---
+const ManagePackageForm: React.FC<{
+  packageToEdit: PackageItem | null; // null for Add, Item for Edit
+  onSave: (pkg: PackageItem) => void;
+  onClose: () => void;
+  disabled: boolean;
+}> = ({ packageToEdit, onSave, onClose, disabled }) => {
+  const isEditing = !!packageToEdit;
+  const [name, setName] = useState(packageToEdit?.name || "");
+  // 🟢 Price state removed entirely
+  const [duration, setDuration] = useState(packageToEdit?.duration || "");
+
+  const handleSave = () => {
+    // 🟢 Validation updated to exclude price
+    if (name && duration) {
+      const finalPackage: PackageItem = {
+        id: isEditing ? packageToEdit.id : Date.now().toString(),
+        name: name.trim(),
+        // Price field excluded from saved object
+        duration: duration.trim(),
+      };
+      onSave(finalPackage);
+    } else {
+      alert("Please fill in all fields for the new package.");
+    }
+  };
+
+  return (
+    <div className="p-4 border border-green-300 rounded-lg bg-green-50 mt-4 space-y-3">
+      <h4 className="text-sm font-bold text-green-800 flex justify-between items-center">
+        {isEditing ? "Edit Package" : "Add New Consultation Package"}
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-1 text-gray-500 hover:text-gray-800 rounded-full hover:bg-gray-200"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </h4>
+      <input
+        type="text"
+        placeholder="Package Name (e.g., Follow-up Basic)"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className={StyledInput({}).props.className}
+        disabled={disabled}
+        required
+      />
+      <div className="grid grid-cols-1 gap-3">
+        {" "}
+        {/* Changed to 1 column since price is removed */}
+        {/* 🟢 Price input removed from here */}
+        <input
+          type="text"
+          placeholder="Duration (e.g., 15 mins)"
+          value={duration}
+          onChange={(e) => setDuration(e.target.value)}
+          className={StyledInput({}).props.className}
+          disabled={disabled}
+          required
+        />
+      </div>
+      <button
+        type="button"
+        // 🟢 Validation updated to exclude price
+        onClick={handleSave}
+        disabled={disabled || !name || !duration}
+        className="w-full flex items-center justify-center space-x-1.5 px-3 py-2 bg-[#012e58] text-white rounded-lg hover:bg-[#1a4b7a] transition-colors text-sm font-medium disabled:opacity-50"
+      >
+        <Save className="w-4 h-4" />
+        <span>{isEditing ? "Update Package" : "Save New Package"}</span>
+      </button>
+    </div>
+  );
+};
+
+// --- ConsultationPackagesSection (Renders List with Actions) ---
+interface ConsultationPackagesProps {
+  packages: PackageItem[];
+  value: string;
+  onChange: (packageName: string) => void;
+  disabled: boolean;
+  onAddClick: () => void;
+  onEditClick: (pkg: PackageItem) => void;
+  onRemoveClick: (id: string) => void;
+}
+
+const ConsultationPackagesSection: React.FC<ConsultationPackagesProps> = ({
+  packages,
+  value,
+  onChange,
+  disabled,
+  onAddClick,
+  onEditClick,
+  onRemoveClick,
+}) => {
+  return (
+    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <SectionHeader icon={Package} title="Consultation Packages" />
+        <button
+          type="button"
+          onClick={onAddClick}
+          className="flex items-center space-x-1.5 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium"
+          disabled={disabled}
+        >
+          <Plus className="w-3 h-3" />
+          <span>New Package</span>
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        {packages.map((pkg) => (
+          <label
+            key={pkg.id}
+            className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-all ${
+              value === pkg.name
+                ? "border-[#012e58] ring-2 ring-[#1a4b7a]/50 bg-[#e0f7fa]"
+                : "border-gray-200 hover:bg-gray-50"
+            } ${disabled ? "opacity-70 cursor-not-allowed" : ""}`}
+          >
+            <div className="flex items-center space-x-3">
+              <input
+                type="radio"
+                name="consultationPackage"
+                value={pkg.name}
+                checked={value === pkg.name}
+                onChange={() => onChange(pkg.name)}
+                className="w-4 h-4 text-[#012e58] border-gray-300 focus:ring-[#1a4b7a]"
+                disabled={disabled}
+              />
+              <div className="text-sm">
+                <p className="font-semibold text-[#0B2D4D]">{pkg.name}</p>
+                <p className="text-xs text-[#1a4b7a]">{pkg.duration}</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              {/* 🟢 Price display removed from here */}
+
+              {/* 🟢 Edit Button */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onEditClick(pkg);
+                }}
+                className="p-1 text-[#1a4b7a] hover:text-[#012e58] rounded-full hover:bg-gray-200"
+                disabled={disabled}
+              >
+                <Edit className="w-4 h-4" />
+              </button>
+
+              {/* 🟢 Remove Button */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onRemoveClick(pkg.id);
+                }}
+                className="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-50"
+                disabled={disabled}
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+};
+// -----------------------------------------------------------------------------------------
+
 // Patient Registration Implementation
 export const PatientRegistration: React.FC = () => {
   const initialFormState = {
-    // CORE FIELDS (LEFT COLUMN)
+    // CORE FIELDS
     salutation: "",
     fullName: "",
     dateOfBirth: "",
-    age: "", // Auto-calculated/editable override
+    age: "",
     gender: "",
     contactNumber: "",
-    registrationType: "", // Optional
+    registrationType: "",
     doctorAssigned: "",
     uhid: "",
 
-    // ADDRESS & OPTIONAL FIELDS (RIGHT COLUMN)
+    // ADDRESS & OPTIONAL FIELDS
     addressLine1: "",
     addressLine2: "",
     area: "",
@@ -125,6 +320,12 @@ export const PatientRegistration: React.FC = () => {
   };
 
   const [formData, setFormData] = useState(initialFormState);
+  const [packages, setPackages] = useState(initialMockPackages);
+  const [showAddPackageModal, setShowAddPackageModal] = useState(false);
+  const [editingPackage, setEditingPackage] = useState<PackageItem | null>(
+    null
+  ); // 🟢 State for editing
+
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMoreFields, setShowMoreFields] = useState(false);
@@ -149,6 +350,44 @@ export const PatientRegistration: React.FC = () => {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePackageChange = (packageName: string) => {
+    setFormData((prev) => ({ ...prev, consultationPackage: packageName }));
+  };
+
+  // 🟢 HANDLER: Add new package OR Update existing one
+  const handleManagePackage = (newOrUpdatedPkg: PackageItem) => {
+    if (packages.some((pkg) => pkg.id === newOrUpdatedPkg.id)) {
+      // Update existing package
+      setPackages((prev) =>
+        prev.map((pkg) =>
+          pkg.id === newOrUpdatedPkg.id ? newOrUpdatedPkg : pkg
+        )
+      );
+    } else {
+      // Add new package
+      setPackages((prev) => [...prev, newOrUpdatedPkg]);
+    }
+    setFormData((prev) => ({
+      ...prev,
+      consultationPackage: newOrUpdatedPkg.name,
+    }));
+    setShowAddPackageModal(false);
+    setEditingPackage(null);
+  };
+
+  // 🟢 HANDLER: Remove Package
+  const handleRemovePackage = (id: string) => {
+    if (window.confirm("Are you sure you want to remove this package?")) {
+      setPackages((prev) => prev.filter((pkg) => pkg.id !== id));
+      // Clear selection if the removed package was selected
+      if (
+        formData.consultationPackage === packages.find((p) => p.id === id)?.name
+      ) {
+        setFormData((prev) => ({ ...prev, consultationPackage: "" }));
+      }
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -186,18 +425,21 @@ export const PatientRegistration: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // MODIFIED: Removed !formData.dateOfBirth from the validation check, making DOB optional.
+    // Simple validation: Added check for consultationPackage
     if (
       !formData.fullName ||
-      !formData.age ||
+      !formData.dateOfBirth ||
       !formData.gender ||
       !formData.contactNumber ||
       !formData.doctorAssigned ||
       !formData.district ||
       !formData.pinCode ||
-      !formData.state
+      !formData.state ||
+      !formData.consultationPackage
     ) {
-      alert("Please fill out all required fields (*).");
+      alert(
+        "Please fill out all required fields (*), including selecting a Consultation Package."
+      );
       setIsSubmitting(false);
       return;
     }
@@ -207,7 +449,7 @@ export const PatientRegistration: React.FC = () => {
         // Core Fields
         salutation: formData.salutation,
         fullName: formData.fullName,
-        dateOfBirth: formData.dateOfBirth, // Optional, can be empty
+        dateOfBirth: formData.dateOfBirth,
         age: formData.age,
         gender: formData.gender,
         contactNumber: formData.contactNumber,
@@ -324,6 +566,20 @@ export const PatientRegistration: React.FC = () => {
     </div>
   );
 
+  // Determine which form to show: Add or Edit
+  const formToShow =
+    editingPackage || showAddPackageModal ? (
+      <ManagePackageForm
+        packageToEdit={editingPackage}
+        onSave={handleManagePackage}
+        onClose={() => {
+          setShowAddPackageModal(false);
+          setEditingPackage(null);
+        }}
+        disabled={isSubmitting}
+      />
+    ) : null;
+
   return (
     <div className="bg-[#F8F9FA] font-sans flex flex-col min-h-screen p-6">
       {/* Outer Container with Pre-OPD style border and shadow */}
@@ -437,9 +693,8 @@ export const PatientRegistration: React.FC = () => {
                   {/* DOB | Age | Sex */}
                   <div className="grid grid-cols-3 gap-3 mt-3">
                     <div>
-                      {/* MODIFIED: Label text changed to reflect optionality */}
                       <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
-                        DOB (Optional)
+                        DOB *
                       </label>
                       <StyledInput
                         type="date"
@@ -447,7 +702,7 @@ export const PatientRegistration: React.FC = () => {
                         className="pr-2"
                         value={formData.dateOfBirth}
                         onChange={handleDOBChange}
-                        // MODIFIED: Removed 'required' attribute
+                        required
                         disabled={isSubmitting}
                       />
                     </div>
@@ -527,21 +782,37 @@ export const PatientRegistration: React.FC = () => {
                       </StyledInput>
                     </div>
                     <div>
-                      {/* MODIFIED: Label for consistency, removed '*' */}
                       <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
-                        Consulting Doctor
+                        Consulting Doctor *
                       </label>
+                      {/* AutocompleteInput handles its own styling, ensures proper functionality */}
                       <AutocompleteInput
                         symptomId={0}
                         value={formData.doctorAssigned}
                         onChange={handleDoctorChange}
                         symptomOptions={doctorOptions}
                         addSymptomOption={() => {}}
-                        placeholder="Doctor Name *" // MODIFIED: Custom placeholder
                       />
                     </div>
                   </div>
                 </div>
+
+                {/* 🟢 Consultation Packages Section */}
+                <ConsultationPackagesSection
+                  packages={packages}
+                  value={formData.consultationPackage}
+                  onChange={handlePackageChange}
+                  disabled={isSubmitting}
+                  onAddClick={() => {
+                    setEditingPackage(null);
+                    setShowAddPackageModal(true);
+                  }}
+                  onEditClick={(pkg) => setEditingPackage(pkg)}
+                  onRemoveClick={handleRemovePackage}
+                />
+
+                {/* 🟢 Add/Edit Package Form Renderer */}
+                {formToShow}
               </div>
 
               {/* --- RIGHT COLUMN: ADDRESS & OPTIONAL FIELDS --- */}
