@@ -21,7 +21,7 @@ import {
   query,
   doc,
   updateDoc,
-  setDoc, // <-- ADDED setDoc
+  setDoc,
   orderBy,
 } from "firebase/firestore";
 import { db } from "../../firebase";
@@ -51,19 +51,41 @@ const getStatusColor = (status: Patient["status"]) => {
   }
 };
 
-// New Status Card Component with Adaptive Styling
+// New Status Card Component
 const StatusCard: React.FC<{
   label: string;
   count: number;
   colorClass: string;
 }> = ({ label, count, colorClass }) => (
   <div
-    className={`p-3 rounded-lg shadow-sm w-full md:w-auto lg:min-w-[150px] ${colorClass}`}
+    // ✅ Use min-w to ensure cards have a minimum width, but can grow
+    className={`p-3 rounded-lg shadow-sm w-full md:w-auto md:min-w-[120px] ${colorClass}`}
   >
     <p className="text-xs font-medium text-gray-700 truncate">{label}</p>
     <p className="text-2xl font-bold mt-0.5">{count}</p>
   </div>
 );
+
+// Type for search field
+type SearchField = "patientName" | "doctorName" | "token" | "phone" | "uhid";
+
+// Helper function for placeholder text
+const getPlaceholderText = (field: SearchField) => {
+  switch (field) {
+    case "patientName":
+      return "Search by patient name...";
+    case "doctorName":
+      return "Search by doctor name...";
+    case "token":
+      return "Search by token (e.g., T001)...";
+    case "phone":
+      return "Search by phone number...";
+    case "uhid":
+      return "Search by UHID...";
+    default:
+      return "Search...";
+  }
+};
 
 const PatientQueue: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -78,6 +100,7 @@ const PatientQueue: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isSearching, setIsSearching] = useState(false);
+  const [searchBy, setSearchBy] = useState<SearchField>("patientName");
 
   const name = Cookies.get("userName");
   const storedRole = Cookies.get("userRole");
@@ -106,14 +129,13 @@ const PatientQueue: React.FC = () => {
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // 1. Fetch Patients from Firestore (only runs on mount)
+  // 1. Fetch Patients from Firestore
   useEffect(() => {
     const patientsQuery = query(
       collection(db, "patients"),
       orderBy("createdAt")
     );
 
-    // Normalize the doctor's name from cookie *once*
     const normalizedDoctorName = normalizeName(name);
 
     const unsubscribe = onSnapshot(
@@ -131,15 +153,12 @@ const PatientQueue: React.FC = () => {
         data = data.filter((patient) => patient.patientType === "OPD");
 
         if (storedRole === "doctor" && name) {
-          // Compare normalized names to fix the "no patients" bug
           data = data.filter(
             (patient) =>
               normalizeName(patient.doctorAssigned) === normalizedDoctorName
           );
         }
-
         setPatients(data);
-        // Note: We no longer setFilteredPatients here, the second useEffect will handle it.
       },
       (error) => {
         console.error("Firebase query error:", error);
@@ -149,22 +168,44 @@ const PatientQueue: React.FC = () => {
     return () => unsubscribe();
   }, [storedRole, name]);
 
-  // 2. Client-Side Filtering and Debouncing (runs when patients or filters change)
+  // 2. Client-Side Filtering
   useEffect(() => {
     setIsSearching(true);
     const filterPatients = () => {
-      // Search term is already debounced, just convert to lower case
-      // No need to check for term.length > 0, an empty string won't match
       const term = debouncedSearchTerm.toLowerCase();
-      const results = patients.filter((patient) => {
-        // Check for search term match (Added contactNumber)
-        const matchesSearch =
-          (patient.fullName ?? "").toLowerCase().includes(term) ||
-          (patient.uhid ?? "").toLowerCase().includes(term) ||
-          (patient.token ?? "").toLowerCase().includes(term.replace("t", "")) ||
-          (patient.contactNumber ?? "").toLowerCase().includes(term); // ✅ ADDED THIS LINE
 
-        // Check for status filter match
+      const results = patients.filter((patient) => {
+        let matchesSearch;
+        const termForToken = term.replace("t", "");
+
+        switch (searchBy) {
+          case "patientName":
+            matchesSearch = (patient.fullName ?? "")
+              .toLowerCase()
+              .includes(term);
+            break;
+          case "doctorName":
+            matchesSearch = normalizeName(patient.doctorAssigned).includes(
+              term
+            );
+            break;
+          case "token":
+            matchesSearch = (patient.token ?? "")
+              .toLowerCase()
+              .includes(termForToken);
+            break;
+          case "phone":
+            matchesSearch = (patient.contactNumber ?? "")
+              .toLowerCase()
+              .includes(term);
+            break;
+          case "uhid":
+            matchesSearch = (patient.uhid ?? "").toLowerCase().includes(term);
+            break;
+          default:
+            matchesSearch = true;
+        }
+
         const matchesStatus =
           statusFilter === "all" ||
           (statusFilter === "Not Visited" && patient.status === "Waiting") ||
@@ -179,9 +220,10 @@ const PatientQueue: React.FC = () => {
     };
 
     filterPatients();
-  }, [patients, debouncedSearchTerm, statusFilter]); // This effect now correctly depends on 'patients'
+  }, [patients, debouncedSearchTerm, statusFilter, searchBy]);
 
   // Status Counts Calculation
+  // ✅ This logic is now based on the *original* unfiltered list
   const statusCounts = patients.reduce(
     (acc, patient) => {
       if (patient.status === "Completed") acc.completed++;
@@ -203,12 +245,9 @@ const PatientQueue: React.FC = () => {
     e.stopPropagation();
     if (patient.status === "Waiting") {
       const patientRef = doc(db, "patients", patient.id);
-
-      // FIX: Use setDoc with { merge: true } instead of updateDoc
       setDoc(patientRef, { status: "In Progress" }, { merge: true }).catch(
         (error) => {
           console.error("Failed to update status with setDoc/merge:", error);
-          // Logging or alert for user if the document write still fails
         }
       );
     }
@@ -228,8 +267,6 @@ const PatientQueue: React.FC = () => {
 
   const handleCompleteConsultation = async (patientId: string) => {
     const patientRef = doc(db, "patients", patientId);
-
-    // FIX: Use setDoc with { merge: true } instead of updateDoc
     await setDoc(
       patientRef,
       {
@@ -237,11 +274,11 @@ const PatientQueue: React.FC = () => {
       },
       { merge: true }
     );
-
     setShowDoctor(false);
     setDoctorPatient(null);
   };
 
+  // PatientCard component
   const PatientCard: React.FC<{
     patient: Patient;
     isOpen: boolean;
@@ -251,7 +288,7 @@ const PatientQueue: React.FC = () => {
       className={`bg-white rounded-xl border p-4 hover:shadow-md transition-all cursor-pointer ${
         isOpen ? "ring-2 ring-[#012e58]" : "border-gray-200"
       }`}
-      onClick={onToggle} // This is safe, no "magic" click logic
+      onClick={onToggle}
     >
       <div className="flex justify-between gap-6 text-sm items-center">
         <div className="col-span-2 rounded-none flex items-center space-x-3">
@@ -266,14 +303,14 @@ const PatientQueue: React.FC = () => {
           <div>
             <h3 className="font-semibold text-[#0B2D4D]">{patient.fullName}</h3>
             <p className="text-xs text-[#1a4b7a]">
-              Token: {patient.token} • ID: {patient.uhid || "N/A"}
+              {/* Token: {patient.token} • ID: {patient.uhid || "N/A"} */}
+              Token: {patient.token}
             </p>
           </div>
         </div>
         <div className="flex flex-col">
           <span className="text-xs font-medium text-gray-500">Doctor</span>
           <span className="text-sm text-[#1a4b7a] font-medium">
-            {/* Display "Dr. " for consistency, but comparison logic is normalized */}
             Dr. {patient.doctorAssigned || "Not Assigned"}
           </span>
         </div>
@@ -353,13 +390,12 @@ const PatientQueue: React.FC = () => {
           {(currentUserRole === "Nurse" ||
             currentUserRole === "Receptionist") && (
             <button
-              onClick={(e) => handleVitalsClick(patient, e)} // This click handler is correct
+              onClick={(e) => handleVitalsClick(patient, e)}
               className="flex-1 px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200"
             >
               Vitals
             </button>
           )}
-
           {currentUserRole === "Doctor" && patient.status !== "Completed" && (
             <button
               onClick={(e) => handleDoctorClick(patient, e)}
@@ -394,8 +430,8 @@ const PatientQueue: React.FC = () => {
 
   return (
     <div className="p-6 bg-[#F8F9FA] min-h-screen">
-      <div className="flex lg:flex-row lg:items-end lg:justify-between mb-6">
-        {/* LEFT SECTION: Status Cards and Title */}
+      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between mb-6">
+        {/* LEFT SECTION: Title and Status Cards */}
         <div className="flex flex-col space-y-4 w-full lg:w-auto">
           {/* Main Title */}
           <div className="flex items-center space-x-3 mt-4">
@@ -407,58 +443,37 @@ const PatientQueue: React.FC = () => {
               </p>
             </div>
           </div>
-        </div>
 
-        {/* Status Cards - Flexbox for adaptive layout */}
-        <div className="flex gap-3 max-w-[220px]">
-          <div className="w-[70px]">
+          {/* ✅ START: STATUS CARDS (MOVED HERE) */}
+          <div className="flex flex-col md:flex-row gap-3">
+            <StatusCard
+              label="Waiting"
+              count={statusCounts.waiting}
+              colorClass="bg-yellow-50 border border-yellow-200"
+            />
+            <StatusCard
+              label="In Progress"
+              count={statusCounts.inProgress}
+              colorClass="bg-blue-50 border border-blue-200"
+            />
             <StatusCard
               label="Completed"
               count={statusCounts.completed}
               colorClass="bg-green-50 border border-green-200"
             />
           </div>
-          <div className="w-[70px]">
-            <StatusCard
-              label="In Progress"
-              count={statusCounts.inProgress}
-              colorClass="bg-blue-50 border border-blue-200"
-            />
-          </div>
-
-          <div className="w-[70px]">
-            <StatusCard
-              label="Waiting"
-              count={statusCounts.waiting}
-              colorClass="bg-yellow-50 border border-yellow-200"
-            />
-          </div>
+          {/* ✅ END: STATUS CARDS */}
         </div>
 
         {/* RIGHT SECTION: Search and Filter */}
         <div className="flex flex-col mt-4 lg:mt-0 md:flex-row items-stretch md:items-center space-y-3 md:space-y-0 md:space-x-4 w-full lg:w-auto">
-          {/* Search Bar Implementation */}
-          <div className="relative w-full md:w-64 order-2 md:order-1">
-            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search by name, ID, or mobile" // ✅ UPDATED PLACEHOLDER
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent w-full"
-            />
-            {debouncedSearchTerm.length > 0 && isSearching && (
-              <Loader className="w-4 h-4 text-[#012e58] absolute right-3 top-1/2 transform -translate-y-1/2 animate-spin" />
-            )}
-          </div>
-
-          {/* Filter Dropdown */}
-          <div className="flex items-center space-x-2 order-1 md:order-2">
+          {/* Status Filter Dropdown */}
+          <div className="flex items-center space-x-2 order-1 md:order-1">
             <Filter className="w-4 h-4 text-gray-400" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent"
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent text-sm"
             >
               <option value="all">All Statuses</option>
               <option value="Not Visited">Waiting</option>
@@ -466,8 +481,40 @@ const PatientQueue: React.FC = () => {
               <option value="Completed">Completed</option>
             </select>
           </div>
+
+          {/* Search Bar Implementation (Selector + Input) */}
+          <div className="flex items-center space-x-2 order-2 md:order-2">
+            {/* Search Type Dropdown */}
+            <select
+              value={searchBy}
+              onChange={(e) => setSearchBy(e.target.value as SearchField)}
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent text-sm"
+            >
+              <option value="patientName">Patient Name</option>
+              <option value="doctorName">Doctor Name</option>
+              <option value="token">Token</option>
+              <option value="phone">Phone</option>
+            </select>
+
+            {/* Search Input */}
+            <div className="relative w-full md:w-56">
+              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder={getPlaceholderText(searchBy)}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent w-full"
+              />
+              {debouncedSearchTerm.length > 0 && isSearching && (
+                <Loader className="w-4 h-4 text-[#012e58] absolute right-3 top-1/2 transform -translate-y-1/2 animate-spin" />
+              )}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Patient Card List */}
       <div className="grid grid-cols-1 gap-6">
         <div className="space-y-4">
           {/* Loading / No Results UI */}
