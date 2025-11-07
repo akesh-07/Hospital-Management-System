@@ -113,16 +113,13 @@ const ManagePackageForm: React.FC<{
 }> = ({ packageToEdit, onSave, onClose, disabled }) => {
   const isEditing = !!packageToEdit;
   const [name, setName] = useState(packageToEdit?.name || "");
-  // 🟢 Price state removed entirely
   const [duration, setDuration] = useState(packageToEdit?.duration || "");
 
   const handleSave = () => {
-    // 🟢 Validation updated to exclude price
     if (name && duration) {
       const finalPackage: PackageItem = {
         id: isEditing ? packageToEdit.id : Date.now().toString(),
         name: name.trim(),
-        // Price field excluded from saved object
         duration: duration.trim(),
       };
       onSave(finalPackage);
@@ -154,8 +151,6 @@ const ManagePackageForm: React.FC<{
       />
       <div className="grid grid-cols-1 gap-3">
         {" "}
-        {/* Changed to 1 column since price is removed */}
-        {/* 🟢 Price input removed from here */}
         <input
           type="text"
           placeholder="Duration (e.g., 15 mins)"
@@ -168,7 +163,6 @@ const ManagePackageForm: React.FC<{
       </div>
       <button
         type="button"
-        // 🟢 Validation updated to exclude price
         onClick={handleSave}
         disabled={disabled || !name || !duration}
         className="w-full flex items-center justify-center space-x-1.5 px-3 py-2 bg-[#012e58] text-white rounded-lg hover:bg-[#1a4b7a] transition-colors text-sm font-medium disabled:opacity-50"
@@ -241,9 +235,6 @@ const ConsultationPackagesSection: React.FC<ConsultationPackagesProps> = ({
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              {/* 🟢 Price display removed from here */}
-
-              {/* 🟢 Edit Button */}
               <button
                 type="button"
                 onClick={(e) => {
@@ -256,8 +247,6 @@ const ConsultationPackagesSection: React.FC<ConsultationPackagesProps> = ({
               >
                 <Edit className="w-4 h-4" />
               </button>
-
-              {/* 🟢 Remove Button */}
               <button
                 type="button"
                 onClick={(e) => {
@@ -324,7 +313,7 @@ export const PatientRegistration: React.FC = () => {
   const [showAddPackageModal, setShowAddPackageModal] = useState(false);
   const [editingPackage, setEditingPackage] = useState<PackageItem | null>(
     null
-  ); // 🟢 State for editing
+  );
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -356,17 +345,14 @@ export const PatientRegistration: React.FC = () => {
     setFormData((prev) => ({ ...prev, consultationPackage: packageName }));
   };
 
-  // 🟢 HANDLER: Add new package OR Update existing one
   const handleManagePackage = (newOrUpdatedPkg: PackageItem) => {
     if (packages.some((pkg) => pkg.id === newOrUpdatedPkg.id)) {
-      // Update existing package
       setPackages((prev) =>
         prev.map((pkg) =>
           pkg.id === newOrUpdatedPkg.id ? newOrUpdatedPkg : pkg
         )
       );
     } else {
-      // Add new package
       setPackages((prev) => [...prev, newOrUpdatedPkg]);
     }
     setFormData((prev) => ({
@@ -377,11 +363,9 @@ export const PatientRegistration: React.FC = () => {
     setEditingPackage(null);
   };
 
-  // 🟢 HANDLER: Remove Package
   const handleRemovePackage = (id: string) => {
     if (window.confirm("Are you sure you want to remove this package?")) {
       setPackages((prev) => prev.filter((pkg) => pkg.id !== id));
-      // Clear selection if the removed package was selected
       if (
         formData.consultationPackage === packages.find((p) => p.id === id)?.name
       ) {
@@ -604,14 +588,6 @@ export const PatientRegistration: React.FC = () => {
                   Patient Registration
                 </h1>
               </div>
-              <button
-                type="button"
-                className="flex items-center space-x-2 px-4 py-2 bg-[#012e58] text-white rounded-lg hover:bg-[#1a4b7a] transition-colors text-sm font-medium"
-                onClick={() => alert("Quick add patient logic here.")}
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add New Patient</span>
-              </button>
             </div>
 
             {/* Main Two Column Layout */}
@@ -785,19 +761,21 @@ export const PatientRegistration: React.FC = () => {
                       <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
                         Consulting Doctor *
                       </label>
-                      {/* AutocompleteInput handles its own styling, ensures proper functionality */}
+                      {/* ✅ START: This is the fix */}
                       <AutocompleteInput
                         symptomId={0}
                         value={formData.doctorAssigned}
                         onChange={handleDoctorChange}
                         symptomOptions={doctorOptions}
                         addSymptomOption={() => {}}
+                        placeholder="Enter Doctor Name *" // ✅ Placeholder updated
                       />
+                      {/* ✅ END: This is the fix */}
                     </div>
                   </div>
                 </div>
 
-                {/* 🟢 Consultation Packages Section */}
+                {/* Consultation Packages Section */}
                 <ConsultationPackagesSection
                   packages={packages}
                   value={formData.consultationPackage}
@@ -807,11 +785,14 @@ export const PatientRegistration: React.FC = () => {
                     setEditingPackage(null);
                     setShowAddPackageModal(true);
                   }}
-                  onEditClick={(pkg) => setEditingPackage(pkg)}
+                  onEditClick={(pkg) => {
+                    setEditingPackage(pkg);
+                    setShowAddPackageModal(true); // Show the same form for editing
+                  }}
                   onRemoveClick={handleRemovePackage}
                 />
 
-                {/* 🟢 Add/Edit Package Form Renderer */}
+                {/* Add/Edit Package Form Renderer */}
                 {formToShow}
               </div>
 
