@@ -36,6 +36,7 @@ import {
   orderBy,
   doc,
   updateDoc,
+  setDoc,
 } from "firebase/firestore";
 import { Vitals } from "../../types";
 import PatientQueue from "../queue/PatientQueue";
@@ -43,8 +44,14 @@ import { Patient } from "../../types";
 import PrescriptionModule from "../prescription/PrescriptionModule";
 import * as pdfjsLib from "pdfjs-dist";
 import mammoth from "mammoth";
-import { PrescriptionProvider } from "../../contexts/PrescriptionContext";
+import {
+  PrescriptionProvider,
+  usePrescription,
+} from "../../contexts/PrescriptionContext";
 import Ai from "./Ai";
+
+// 🚨 NEW IMPORT
+import ConsultationSummaryModal from "./ConsultationSummaryModal";
 
 // --- GLOBAL UTILITY SETUP ---
 // NOTE: PDF.js configuration setup (required for document upload in this component)
@@ -591,9 +598,16 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
   onBack,
   onCompleteConsultation,
 }) => {
+  // 1. Get prescription data from context
+  const { medications } = usePrescription();
+
   // --- Original state initialization from DoctorModule.tsx ---
   const [vitals, setVitals] = useState<Vitals | null>(null);
   const [showAdmissionModal, setShowAdmissionModal] = useState(false);
+
+  // 🚨 NEW STATE for the summary modal
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+
   const [consultation, setConsultation] = useState({
     symptoms: [{ id: 1, symptom: "", duration: "", factors: "" }],
     duration: "",
@@ -748,7 +762,8 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: "Bearer ",
+            Authorization:
+              "Bearer ",
           },
           body: JSON.stringify({
             model: "llama-3.1-8b-instant",
@@ -971,6 +986,50 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     setShowAdmissionModal(false);
   };
   // --- END ADMISSION LOGIC ---
+
+  // 🚨 NEW FUNCTION: Final status update and navigation after modal confirmation
+  const handleFinalComplete = async () => {
+    if (!selectedPatient) return;
+
+    try {
+      // NOTE: In a real app, you would also save the final consultation record
+      // (Diagnosis, Notes, Final Prescriptions) here before updating status.
+
+      // Update Patient Status to 'Completed'
+      const patientId = selectedPatient.id;
+      const patientRef = doc(db, "patients", patientId);
+
+      // Update status to Completed in Firestore
+      await setDoc(
+        patientRef,
+        {
+          status: "Completed",
+        },
+        { merge: true }
+      );
+
+      // Close the modal and navigate back (via prop)
+      setShowSummaryModal(false);
+      onCompleteConsultation(patientId);
+    } catch (error) {
+      console.error("Error completing consultation:", error);
+      alert(
+        "Failed to mark consultation as complete. Check console for details."
+      );
+      setShowSummaryModal(false);
+    }
+  };
+
+  // 🚨 UPDATED FUNCTION: Opens the summary modal for review
+  const handleReviewAndComplete = () => {
+    if (!selectedPatient) {
+      alert("No patient selected to complete consultation.");
+      return;
+    }
+    // Assuming all necessary consultation data (diagnosis, notes, etc.) has been captured
+    // in the `consultation` state object up to this point.
+    setShowSummaryModal(true);
+  };
 
   if (!selectedPatient) {
     // Fallback if no patient is selected
@@ -1318,7 +1377,27 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
               <textarea
                 rows={4}
                 placeholder="Enter final notes, diagnosis, or impression here before running AI analysis..."
+                // Bind to local state for future persistence
+                value={consultation.notes}
+                onChange={(e) =>
+                  setConsultation((prev) => ({
+                    ...prev,
+                    notes: e.target.value,
+                  }))
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent text-sm resize-none"
+              />
+              <input
+                type="text"
+                placeholder="Final Diagnosis (e.g., J02.9 Acute pharyngitis)"
+                value={consultation.diagnosis}
+                onChange={(e) =>
+                  setConsultation((prev) => ({
+                    ...prev,
+                    diagnosis: e.target.value,
+                  }))
+                }
+                className="mt-3 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent text-sm"
               />
             </div>
           </div>
@@ -1369,11 +1448,12 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
             </button>
           </div>
 
+          {/* UPDATED BUTTON: Calls the review modal handler */}
           <button
-            onClick={() => onCompleteConsultation(selectedPatient.id)}
+            onClick={handleReviewAndComplete}
             className="group flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 transition-all duration-300 text-sm"
           >
-            <span>Complete Consultation & Submit</span>
+            <span>Complete Consultation & Review</span>
             <CheckCircle className="w-4 h-4 ml-1.5" />
           </button>
         </div>
@@ -1391,6 +1471,19 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
           patient={selectedPatient}
           onClose={() => setShowAdmissionModal(false)}
           onConfirm={handleConfirmAdmission}
+        />
+      )}
+
+      {/* 🚨 NEW MODAL RENDER */}
+      {selectedPatient && (
+        <ConsultationSummaryModal
+          isOpen={showSummaryModal}
+          onClose={() => setShowSummaryModal(false)}
+          onFinalComplete={handleFinalComplete} // Handles final status update
+          patient={selectedPatient}
+          medications={medications}
+          // Pass consultation state to the modal for summary content
+          consultation={consultation}
         />
       )}
     </div>
