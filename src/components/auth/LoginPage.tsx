@@ -89,6 +89,10 @@ const LoginPage: React.FC = () => {
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginForm> = {};
 
+    if (!formData.role) {
+      newErrors.role = "Please select your role";
+    }
+
     if (!formData.email) {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -99,10 +103,6 @@ const LoginPage: React.FC = () => {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
-    }
-
-    if (!formData.role) {
-      newErrors.role = "Please select your role";
     }
 
     setErrors(newErrors);
@@ -133,15 +133,13 @@ const LoginPage: React.FC = () => {
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
           const doctorData = querySnapshot.docs[0].data();
-          userName = doctorData.doc_name;
+          userName = (doctorData as any).doc_name;
         }
       }
 
-      // Store user info in a cookie
       Cookies.set("userRole", formData.role, { expires: 7 });
       Cookies.set("userName", userName, { expires: 7 });
 
-      // Update AuthContext state directly
       setUser({
         id: userCredential.user.uid,
         email: formData.email,
@@ -149,7 +147,6 @@ const LoginPage: React.FC = () => {
         name: userName,
       });
 
-      // Find the correct route based on the selected role
       const selectedRole = userRoles.find(
         (role) => role.value === formData.role
       );
@@ -157,7 +154,6 @@ const LoginPage: React.FC = () => {
       if (selectedRole) {
         navigate(selectedRole.route);
       } else {
-        // Fallback for roles not in the list
         navigate("/dashboard");
       }
     } catch (error: any) {
@@ -197,75 +193,7 @@ const LoginPage: React.FC = () => {
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-[#0B2D4D]"
-              >
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
-                    errors.email
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-300"
-                  }`}
-                  placeholder="Enter your email"
-                />
-              </div>
-              {errors.email && (
-                <p className="text-sm text-red-600 animate-fade-in">
-                  {errors.email}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-[#0B2D4D]"
-              >
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className={`w-full pl-11 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
-                    errors.password
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-300"
-                  }`}
-                  placeholder="Enter your password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-sm text-red-600 animate-fade-in">
-                  {errors.password}
-                </p>
-              )}
-            </div>
+            {/* ROLE FIRST */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-[#0B2D4D]">
                 Select Your Role
@@ -317,6 +245,80 @@ const LoginPage: React.FC = () => {
                 </p>
               )}
             </div>
+
+            {/* THEN EMAIL */}
+            <div className="space-y-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-[#0B2D4D]"
+              >
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
+                    errors.email
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-300"
+                  }`}
+                  placeholder="Enter your email"
+                />
+              </div>
+              {errors.email && (
+                <p className="text-sm text-red-600 animate-fade-in">
+                  {errors.email}
+                </p>
+              )}
+            </div>
+
+            {/* THEN PASSWORD */}
+            <div className="space-y-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-[#0B2D4D]"
+              >
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className={`w-full pl-11 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
+                    errors.password
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-300"
+                  }`}
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-sm text-red-600 animate-fade-in">
+                  {errors.password}
+                </p>
+              )}
+            </div>
+
             <div className="flex items-center justify-between">
               <label className="flex items-center">
                 <input
