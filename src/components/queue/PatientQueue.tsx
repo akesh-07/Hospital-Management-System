@@ -1,6 +1,6 @@
 // PatientQueue.tsx
 import Cookies from "js-cookie";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Users,
   Clock,
@@ -12,24 +12,129 @@ import {
   Search,
   Filter,
   Loader,
-  ChevronUp as ChevronUpIcon, // Renamed to avoid clash
-  ChevronDown as ChevronDownIcon, // Renamed to avoid clash
+  ChevronUp as ChevronUpIcon,
+  ChevronDown as ChevronDownIcon,
+  ChevronLeft,
+  ChevronRight,
+  CalendarDays,
 } from "lucide-react";
 import {
   collection,
   onSnapshot,
   query,
   doc,
-  updateDoc,
   setDoc,
   orderBy,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "../../firebase";
 import { PreOPDIntake } from "../vitals/PreOPDIntake";
 import { DoctorModule } from "../doctor/DoctorModule";
 import { Patient } from "../../types";
 
-// Helper function to normalize names (e.g., "Dr. John Doe" -> "john doe")
+// --- Date & Time Helper Functions ---
+
+/**
+ * Normalizes a Date or string to the start of its day (UTC)
+ * This is crucial for comparing dates accurately without timezone issues.
+ */
+const getStartOfDay = (date: Date | string): number => {
+  const d = new Date(date);
+  // Using UTC methods to avoid local timezone offsets
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+};
+
+/**
+ * Checks if a Firestore timestamp is within the specified time filter.
+ */
+const isDateInFilter = (
+  createdAt: Timestamp,
+  filter: TimeFilter,
+  specificDate: string,
+  dateRange: { start: string; end: string },
+  monthYear: string
+): boolean => {
+  const date = createdAt.toDate();
+  const now = new Date();
+
+  const today = getStartOfDay(now);
+
+  const yesterday = new Date(today);
+  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+  const yesterdayStart = yesterday.getTime();
+
+  const dateToCompare = getStartOfDay(date);
+
+  switch (filter) {
+    case "today":
+      return dateToCompare === today;
+    case "yesterday":
+      return dateToCompare === yesterdayStart;
+    case "week":
+      const last7Days = new Date(today);
+      last7Days.setUTCDate(last7Days.getUTCDate() - 6);
+      return dateToCompare >= last7Days.getTime();
+    case "month":
+      const last30Days = new Date(today);
+      last30Days.setUTCDate(last30Days.getUTCDate() - 29);
+      return dateToCompare >= last30Days.getTime();
+    case "specific":
+      if (!specificDate) return true; // No date selected
+      return dateToCompare === getStartOfDay(specificDate);
+    case "range":
+      if (!dateRange.start || !dateRange.end) return true; // No range selected
+      const rangeStart = getStartOfDay(dateRange.start);
+      const rangeEnd = getStartOfDay(dateRange.end);
+      return dateToCompare >= rangeStart && dateToCompare <= rangeEnd;
+    case "monthYear":
+      if (!monthYear) return true; // No month selected
+      const [year, month] = monthYear.split("-").map(Number);
+      return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1;
+    case "all":
+    default:
+      return true;
+  }
+};
+
+/**
+ * Formats a Firestore timestamp into a readable string like "Today, 10:30 AM"
+ */
+const formatTimeAdded = (createdAt: Timestamp): string => {
+  const date = createdAt.toDate();
+  const now = new Date();
+
+  const time = date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dateToCompare = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
+  );
+
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  if (dateToCompare.getTime() === today.getTime()) {
+    return `Today, ${time}`;
+  }
+  if (dateToCompare.getTime() === yesterday.getTime()) {
+    return `Yesterday, ${time}`;
+  }
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+// --- End Time Helper Functions ---
+
+// Helper function to normalize names
 const normalizeName = (name: string | undefined | null) => {
   if (!name) return "";
   return name
@@ -51,14 +156,13 @@ const getStatusColor = (status: Patient["status"]) => {
   }
 };
 
-// New Status Card Component
+// Status Card Component
 const StatusCard: React.FC<{
   label: string;
   count: number;
   colorClass: string;
 }> = ({ label, count, colorClass }) => (
   <div
-    // ✅ Use min-w to ensure cards have a minimum width, but can grow
     className={`p-3 rounded-lg shadow-sm w-full md:w-auto md:min-w-[120px] ${colorClass}`}
   >
     <p className="text-xs font-medium text-gray-700 truncate">{label}</p>
@@ -68,6 +172,16 @@ const StatusCard: React.FC<{
 
 // Type for search field
 type SearchField = "patientName" | "doctorName" | "token" | "phone" | "uhid";
+// ✅ UPDATED: Type for time filter
+type TimeFilter =
+  | "today"
+  | "yesterday"
+  | "week"
+  | "month"
+  | "specific"
+  | "range"
+  | "monthYear"
+  | "all";
 
 // Helper function for placeholder text
 const getPlaceholderText = (field: SearchField) => {
@@ -87,9 +201,126 @@ const getPlaceholderText = (field: SearchField) => {
   }
 };
 
+// --- Pagination Component (Updated) ---
+const PATIENTS_PER_PAGE = 10;
+
+const PaginationControls: React.FC<{
+  currentPage: number;
+  totalPatients: number;
+  onPageChange: (page: number) => void;
+}> = ({ currentPage, totalPatients, onPageChange }) => {
+  const totalPages = Math.ceil(totalPatients / PATIENTS_PER_PAGE);
+  if (totalPages <= 1) return null;
+
+  const startItem = (currentPage - 1) * PATIENTS_PER_PAGE + 1;
+  const endItem = Math.min(currentPage * PATIENTS_PER_PAGE, totalPatients);
+
+  // ✅ NEW: Logic to generate page numbers with ellipsis
+  const getPaginationItems = () => {
+    const pageItems: (number | string)[] = [];
+    const siblingCount = 1;
+    const totalPageNumbers = siblingCount + 5; // 1 start, 1 end, 1 current, 2 siblings, 2 ellipsis
+
+    if (totalPages <= totalPageNumbers) {
+      // No ellipsis needed
+      for (let i = 1; i <= totalPages; i++) {
+        pageItems.push(i);
+      }
+    } else {
+      const leftSiblingIndex = Math.max(currentPage - siblingCount, 1);
+      const rightSiblingIndex = Math.min(
+        currentPage + siblingCount,
+        totalPages
+      );
+
+      const shouldShowLeftDots = leftSiblingIndex > 2;
+      const shouldShowRightDots = rightSiblingIndex < totalPages - 1;
+
+      // Add first page
+      pageItems.push(1);
+
+      // Add left ellipsis
+      if (shouldShowLeftDots) {
+        pageItems.push("...");
+      }
+
+      // Add pages around current
+      for (
+        let i = shouldShowLeftDots ? leftSiblingIndex : 2;
+        i <= (shouldShowRightDots ? rightSiblingIndex : totalPages - 1);
+        i++
+      ) {
+        pageItems.push(i);
+      }
+
+      // Add right ellipsis
+      if (shouldShowRightDots) {
+        pageItems.push("...");
+      }
+
+      // Add last page
+      pageItems.push(totalPages);
+    }
+    return pageItems;
+  };
+
+  const pageItems = getPaginationItems();
+
+  return (
+    <div className="flex items-center justify-between mt-6">
+      <span className="text-sm text-gray-600">
+        Showing {startItem} to {endItem} of {totalPatients} patients
+      </span>
+      <div className="flex items-center space-x-1">
+        <button
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="p-2 rounded-md border bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
+        {/* ✅ NEW: Page number buttons */}
+        {pageItems.map((item, index) =>
+          typeof item === "number" ? (
+            <button
+              key={index}
+              onClick={() => onPageChange(item)}
+              disabled={currentPage === item}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium ${
+                currentPage === item
+                  ? "bg-[#012e58] text-white"
+                  : "bg-white border hover:bg-gray-50"
+              }`}
+            >
+              {item}
+            </button>
+          ) : (
+            <span key={index} className="px-3 py-1.5 text-sm text-gray-500">
+              ...
+            </span>
+          )
+        )}
+
+        <button
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="p-2 rounded-md border bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+};
+// --- End Pagination Component ---
+
 const PatientQueue: React.FC = () => {
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]); // Raw data
+  const [paginatedPatients, setPaginatedPatients] = useState<Patient[]>([]);
+  const [filteredAndSortedPatients, setFilteredAndSortedPatients] = useState<
+    Patient[]
+  >([]);
   const [openPatientId, setOpenPatientId] = useState<string | null>(null);
   const [showVitals, setShowVitals] = useState(false);
   const [vitalsPatient, setVitalsPatient] = useState<Patient | null>(null);
@@ -101,6 +332,13 @@ const PatientQueue: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isSearching, setIsSearching] = useState(false);
   const [searchBy, setSearchBy] = useState<SearchField>("patientName");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // ✅ NEW: Date filter states
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>("today");
+  const [specificDate, setSpecificDate] = useState("");
+  const [dateRange, setDateRange] = useState({ start: "", end: "" });
+  const [monthYear, setMonthYear] = useState("");
 
   const name = Cookies.get("userName");
   const storedRole = Cookies.get("userRole");
@@ -113,7 +351,7 @@ const PatientQueue: React.FC = () => {
       ? "Receptionist"
       : "";
 
-  // Debounce hook for search input
+  // Debounce hook
   const useDebounce = (value: string, delay: number) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
     useEffect(() => {
@@ -133,7 +371,7 @@ const PatientQueue: React.FC = () => {
   useEffect(() => {
     const patientsQuery = query(
       collection(db, "patients"),
-      orderBy("createdAt")
+      orderBy("createdAt", "desc") // Sort by newest first
     );
 
     const normalizedDoctorName = normalizeName(name);
@@ -146,6 +384,7 @@ const PatientQueue: React.FC = () => {
             ({
               id: doc.id,
               ...doc.data(),
+              // Token logic is less reliable with date filtering, but we keep it
               token: `T${String(index + 1).padStart(3, "0")}`,
             } as Patient)
         );
@@ -168,62 +407,85 @@ const PatientQueue: React.FC = () => {
     return () => unsubscribe();
   }, [storedRole, name]);
 
-  // 2. Client-Side Filtering
+  // 2. Client-Side Filtering (All filters combined)
   useEffect(() => {
     setIsSearching(true);
-    const filterPatients = () => {
-      const term = debouncedSearchTerm.toLowerCase();
+    const term = debouncedSearchTerm.toLowerCase();
 
-      const results = patients.filter((patient) => {
-        let matchesSearch;
-        const termForToken = term.replace("t", "");
+    const results = patients.filter((patient) => {
+      // 1. Time Filter
+      if (!patient.createdAt || !(patient.createdAt instanceof Timestamp)) {
+        return false;
+      }
+      const matchesTime = isDateInFilter(
+        patient.createdAt,
+        timeFilter,
+        specificDate,
+        dateRange,
+        monthYear
+      );
+      if (!matchesTime) return false;
 
-        switch (searchBy) {
-          case "patientName":
-            matchesSearch = (patient.fullName ?? "")
-              .toLowerCase()
-              .includes(term);
-            break;
-          case "doctorName":
-            matchesSearch = normalizeName(patient.doctorAssigned).includes(
-              term
-            );
-            break;
-          case "token":
-            matchesSearch = (patient.token ?? "")
-              .toLowerCase()
-              .includes(termForToken);
-            break;
-          case "phone":
-            matchesSearch = (patient.contactNumber ?? "")
-              .toLowerCase()
-              .includes(term);
-            break;
-          case "uhid":
-            matchesSearch = (patient.uhid ?? "").toLowerCase().includes(term);
-            break;
-          default:
-            matchesSearch = true;
-        }
+      // 2. Status Filter
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "Not Visited" && patient.status === "Waiting") ||
+        (statusFilter === "Pending" && patient.status === "In Progress") ||
+        (statusFilter === "Completed" && patient.status === "Completed");
+      if (!matchesStatus) return false;
 
-        const matchesStatus =
-          statusFilter === "all" ||
-          (statusFilter === "Not Visited" && patient.status === "Waiting") ||
-          (statusFilter === "Pending" && patient.status === "In Progress") ||
-          (statusFilter === "Completed" && patient.status === "Completed");
+      // 3. Search Filter
+      let matchesSearch;
+      const termForToken = term.replace("t", "");
 
-        return matchesSearch && matchesStatus;
-      });
+      switch (searchBy) {
+        case "patientName":
+          matchesSearch = (patient.fullName ?? "").toLowerCase().includes(term);
+          break;
+        case "doctorName":
+          matchesSearch = normalizeName(patient.doctorAssigned).includes(term);
+          break;
+        case "token":
+          matchesSearch = (patient.token ?? "")
+            .toLowerCase()
+            .includes(termForToken);
+          break;
+        case "phone":
+          matchesSearch = (patient.contactNumber ?? "")
+            .toLowerCase()
+            .includes(term);
+          break;
+        case "uhid":
+          matchesSearch = (patient.uhid ?? "").toLowerCase().includes(term);
+          break;
+        default:
+          matchesSearch = true;
+      }
+      return matchesSearch;
+    });
 
-      setFilteredPatients(results);
-      setIsSearching(false);
-    };
+    setFilteredAndSortedPatients(results);
+    setCurrentPage(1); // Reset to page 1 whenever filters change
+    setIsSearching(false);
+  }, [
+    patients,
+    debouncedSearchTerm,
+    statusFilter,
+    searchBy,
+    timeFilter,
+    specificDate,
+    dateRange,
+    monthYear,
+  ]);
 
-    filterPatients();
-  }, [patients, debouncedSearchTerm, statusFilter, searchBy]);
+  // 3. Client-Side Pagination Effect
+  useEffect(() => {
+    const startIndex = (currentPage - 1) * PATIENTS_PER_PAGE;
+    const endIndex = startIndex + PATIENTS_PER_PAGE;
+    setPaginatedPatients(filteredAndSortedPatients.slice(startIndex, endIndex));
+  }, [currentPage, filteredAndSortedPatients]);
 
-  // Status Counts Calculation
-  // ✅ This logic is now based on the *original* unfiltered list
+  // Status Counts (based on the full 'patients' list, not filtered)
   const statusCounts = patients.reduce(
     (acc, patient) => {
       if (patient.status === "Completed") acc.completed++;
@@ -234,7 +496,7 @@ const PatientQueue: React.FC = () => {
     { completed: 0, inProgress: 0, waiting: 0 }
   );
 
-  // Handlers
+  // Handlers (no changes)
   const handleVitalsClick = (patient: Patient, e: React.MouseEvent) => {
     e.stopPropagation();
     setVitalsPatient(patient);
@@ -278,7 +540,7 @@ const PatientQueue: React.FC = () => {
     setDoctorPatient(null);
   };
 
-  // PatientCard component
+  // PatientCard component (Updated to show time)
   const PatientCard: React.FC<{
     patient: Patient;
     isOpen: boolean;
@@ -303,8 +565,7 @@ const PatientQueue: React.FC = () => {
           <div>
             <h3 className="font-semibold text-[#0B2D4D]">{patient.fullName}</h3>
             <p className="text-xs text-[#1a4b7a]">
-              {/* Token: {patient.token} • ID: {patient.uhid || "N/A"} */}
-              Token: {patient.token}
+              Token: {patient.token} • ID: {patient.uhid || "N/A"}
             </p>
           </div>
         </div>
@@ -314,15 +575,18 @@ const PatientQueue: React.FC = () => {
             Dr. {patient.doctorAssigned || "Not Assigned"}
           </span>
         </div>
+
+        {/* ✅ UPDATED: Time Added Display */}
         <div className="flex flex-col">
-          <span className="text-xs font-medium text-gray-500">Wait Time</span>
+          <span className="text-xs font-medium text-gray-500">Time Added</span>
           <div className="flex items-center space-x-1">
             <Clock className="w-4 h-4 text-gray-400" />
             <span className="text-sm text-[#1a4b7a] font-medium">
-              {patient.waitTime || 0} min
+              {patient.createdAt ? formatTimeAdded(patient.createdAt) : "N/A"}
             </span>
           </div>
         </div>
+
         <div className="flex justify-between items-center mb-2">
           <span
             className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(
@@ -444,7 +708,7 @@ const PatientQueue: React.FC = () => {
             </div>
           </div>
 
-          {/* ✅ START: STATUS CARDS (MOVED HERE) */}
+          {/* STATUS CARDS */}
           <div className="flex flex-col md:flex-row gap-3">
             <StatusCard
               label="Waiting"
@@ -462,13 +726,33 @@ const PatientQueue: React.FC = () => {
               colorClass="bg-green-50 border border-green-200"
             />
           </div>
-          {/* ✅ END: STATUS CARDS */}
         </div>
 
         {/* RIGHT SECTION: Search and Filter */}
         <div className="flex flex-col mt-4 lg:mt-0 md:flex-row items-stretch md:items-center space-y-3 md:space-y-0 md:space-x-4 w-full lg:w-auto">
-          {/* Status Filter Dropdown */}
+          {/* ✅ START: UPDATED FILTER SECTION */}
+
+          {/* Time Filter Dropdown */}
           <div className="flex items-center space-x-2 order-1 md:order-1">
+            <CalendarDays className="w-4 h-4 text-gray-400" />
+            <select
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(e.target.value as TimeFilter)}
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent text-sm"
+            >
+              <option value="today">Today</option>
+              <option value="yesterday">Yesterday</option>
+              <option value="week">Last 7 Days</option>
+              <option value="month">Last 30 Days</option>
+              <option value="specific">Specific Date</option>
+              <option value="range">Date Range</option>
+              <option value="monthYear">Month/Year</option>
+              <option value="all">All Time</option>
+            </select>
+          </div>
+
+          {/* Status Filter Dropdown */}
+          <div className="flex items-center space-x-2 order-2 md:order-2">
             <Filter className="w-4 h-4 text-gray-400" />
             <select
               value={statusFilter}
@@ -483,7 +767,7 @@ const PatientQueue: React.FC = () => {
           </div>
 
           {/* Search Bar Implementation (Selector + Input) */}
-          <div className="flex items-center space-x-2 order-2 md:order-2">
+          <div className="flex items-center space-x-2 order-3 md:order-3">
             {/* Search Type Dropdown */}
             <select
               value={searchBy}
@@ -494,6 +778,7 @@ const PatientQueue: React.FC = () => {
               <option value="doctorName">Doctor Name</option>
               <option value="token">Token</option>
               <option value="phone">Phone</option>
+              <option value="uhid">UHID</option>
             </select>
 
             {/* Search Input */}
@@ -511,34 +796,96 @@ const PatientQueue: React.FC = () => {
               )}
             </div>
           </div>
+          {/* ✅ END: UPDATED FILTER SECTION */}
         </div>
       </div>
+
+      {/* ✅ START: CONDITIONAL DATE PICKERS */}
+      <div className="mb-4">
+        {timeFilter === "specific" && (
+          <div className="flex items-center space-x-2">
+            <label htmlFor="specificDate" className="text-sm font-medium">
+              Select Date:
+            </label>
+            <input
+              type="date"
+              id="specificDate"
+              value={specificDate}
+              onChange={(e) => setSpecificDate(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+        )}
+        {timeFilter === "range" && (
+          <div className="flex items-center space-x-2">
+            <label htmlFor="startDate" className="text-sm font-medium">
+              From:
+            </label>
+            <input
+              type="date"
+              id="startDate"
+              value={dateRange.start}
+              onChange={(e) =>
+                setDateRange((prev) => ({ ...prev, start: e.target.value }))
+              }
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            />
+            <label htmlFor="endDate" className="text-sm font-medium">
+              To:
+            </label>
+            <input
+              type="date"
+              id="endDate"
+              value={dateRange.end}
+              onChange={(e) =>
+                setDateRange((prev) => ({ ...prev, end: e.target.value }))
+              }
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+        )}
+        {timeFilter === "monthYear" && (
+          <div className="flex items-center space-x-2">
+            <label htmlFor="monthYear" className="text-sm font-medium">
+              Select Month:
+            </label>
+            <input
+              type="month"
+              id="monthYear"
+              value={monthYear}
+              onChange={(e) => setMonthYear(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+        )}
+      </div>
+      {/* ✅ END: CONDITIONAL DATE PICKERS */}
 
       {/* Patient Card List */}
       <div className="grid grid-cols-1 gap-6">
         <div className="space-y-4">
           {/* Loading / No Results UI */}
-          {isSearching && filteredPatients.length === 0 && (
+          {isSearching && paginatedPatients.length === 0 && (
             <div className="text-center p-10 text-gray-500">
               <Loader className="w-6 h-6 mx-auto animate-spin" />
               <p>Searching...</p>
             </div>
           )}
 
-          {!isSearching && filteredPatients.length === 0 && (
+          {!isSearching && paginatedPatients.length === 0 && (
             <div className="text-center p-10 text-gray-500">
               {searchTerm.length > 0 ? (
                 <span>No patients found matching "{searchTerm}".</span>
               ) : (
-                <span>No patients currently in the queue.</span>
+                <span>No patients found for the selected filters.</span>
               )}
             </div>
           )}
 
           {/* Patient List */}
           {!isSearching &&
-            filteredPatients.length > 0 &&
-            filteredPatients.map((patient) => (
+            paginatedPatients.length > 0 &&
+            paginatedPatients.map((patient) => (
               <PatientCard
                 key={patient.id}
                 patient={patient}
@@ -552,6 +899,13 @@ const PatientQueue: React.FC = () => {
             ))}
         </div>
       </div>
+
+      {/* ✅ NEW: Pagination Controls */}
+      <PaginationControls
+        currentPage={currentPage}
+        totalPatients={filteredAndSortedPatients.length}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 };
