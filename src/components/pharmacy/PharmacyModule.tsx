@@ -65,13 +65,14 @@ export const PharmacyModule: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Pill className="w-8 h-8 text-[#012e58]" />
+            {/* 🟢 NEW: Main Dashboard Title is now here, removed subtitle */}
             <div>
               <h1 className="text-2xl font-bold text-[#0B2D4D]">
-                Pharmacy Management
+                Pharmacy Dashboard
               </h1>
-              <p className="text-[#1a4b7a]">
+              {/* <p className="text-[#1a4b7a]">
                 Complete pharmacy operations and inventory control
-              </p>
+              </p> */}
             </div>
           </div>
           <div className="flex space-x-2">
