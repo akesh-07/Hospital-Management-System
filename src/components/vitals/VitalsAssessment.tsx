@@ -639,8 +639,7 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization:
-              "Bearer ", // Add your API key here
+            Authorization: "Bearer ", // Add your API key here
           },
           body: JSON.stringify({
             model: "llama-3.1-8b-instant",

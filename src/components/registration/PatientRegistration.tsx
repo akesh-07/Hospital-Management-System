@@ -670,7 +670,7 @@ export const PatientRegistration: React.FC = () => {
                   <div className="grid grid-cols-3 gap-3 mt-3">
                     <div>
                       <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
-                        DOB *
+                        DOB
                       </label>
                       <StyledInput
                         type="date"
@@ -678,7 +678,6 @@ export const PatientRegistration: React.FC = () => {
                         className="pr-2"
                         value={formData.dateOfBirth}
                         onChange={handleDOBChange}
-                        required
                         disabled={isSubmitting}
                       />
                     </div>

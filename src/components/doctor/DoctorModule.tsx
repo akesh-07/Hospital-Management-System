@@ -350,13 +350,7 @@ const InPatientAdmissionModal: React.FC<{
     setIsSubmitting(true);
 
     try {
-      // --- STEP 1: MOCK DATABASE UPDATE (Replace with actual Firestore/API call) ---
-      // For this implementation, we will mock the admission logic
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // In a real app, you would perform a Firestore update here:
-      // await updateDoc(doc(db, "patients", patient.id), { patientType: "IPD", status: "Admitted", ipdDetails: formData });
-
       setSuccessMessage(
         `Patient ${patient.fullName} successfully admitted to Ward ${formData.wardNumber}, Room ${formData.roomNumber}.`
       );
@@ -605,6 +599,9 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
   const [vitals, setVitals] = useState<Vitals | null>(null);
   const [showAdmissionModal, setShowAdmissionModal] = useState(false);
 
+  // 🚨 LIFTED STATE: Stores the final diagnosis entered in the Ai tab.
+  const [finalDiagnosis, setFinalDiagnosis] = useState("");
+
   // 🚨 NEW STATE for the summary modal
   const [showSummaryModal, setShowSummaryModal] = useState(false);
 
@@ -615,7 +612,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     generalExamination: [] as string[],
     systemicExamination: [] as string[],
     investigations: [] as string[],
-    diagnosis: "",
+    diagnosis: "", // Keeping this field as a placeholder in the consultation state
     notes: "",
   });
 
@@ -650,7 +647,12 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
   };
   // --- End original state initialization ---
 
-  // --- Utility functions: File Handling and Text Extraction (Copied from DoctorModule.tsx) ---
+  // 🚨 NEW HANDLER: Receives diagnosis from Ai.tsx child component
+  const handleDiagnosisUpdate = useCallback((diagnosis: string) => {
+    setFinalDiagnosis(diagnosis);
+  }, []);
+
+  // --- Utility functions: File Handling and Text Extraction ---
   const extractTextFromFile = async (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -756,16 +758,18 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     `;
 
     try {
+      // 🔁 Replaced GROQ with OpenAI
+      const OPENAI_API_KEY = ""; // ⚠️ move to backend/.env in production
       const response = await fetch(
-        "https://api.groq.com/openai/v1/chat/completions",
+        "https://api.openai.com/v1/chat/completions",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: "Bearer ",
+            Authorization: `Bearer ${OPENAI_API_KEY}`,
           },
           body: JSON.stringify({
-            model: "llama-3.1-8b-instant",
+            model: "gpt-5-nano", // low-cost; deterministic; no temperature control
             messages: [
               {
                 role: "system",
@@ -777,9 +781,16 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                 content: combinedData,
               },
             ],
+            // no temperature (unsupported on some nano/instant models)
           }),
         }
       );
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`OpenAI error ${response.status}: ${errText}`);
+      }
+
       const data = await response.json();
       const summary =
         data?.choices?.[0]?.message?.content?.trim() ||
@@ -991,14 +1002,9 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     if (!selectedPatient) return;
 
     try {
-      // NOTE: In a real app, you would also save the final consultation record
-      // (Diagnosis, Notes, Final Prescriptions) here before updating status.
-
-      // Update Patient Status to 'Completed'
       const patientId = selectedPatient.id;
       const patientRef = doc(db, "patients", patientId);
 
-      // Update status to Completed in Firestore
       await setDoc(
         patientRef,
         {
@@ -1007,7 +1013,6 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
         { merge: true }
       );
 
-      // Close the modal and navigate back (via prop)
       setShowSummaryModal(false);
       onCompleteConsultation(patientId);
     } catch (error) {
@@ -1025,8 +1030,13 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
       alert("No patient selected to complete consultation.");
       return;
     }
-    // Assuming all necessary consultation data (diagnosis, notes, etc.) has been captured
-    // in the `consultation` state object up to this point.
+    if (!finalDiagnosis) {
+      alert(
+        "Please enter a Final Diagnosis in the AI Assist section before completing the consultation."
+      );
+      return;
+    }
+
     setShowSummaryModal(true);
   };
 
@@ -1386,23 +1396,12 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent text-sm resize-none"
               />
-              <input
-                type="text"
-                placeholder="Final Diagnosis (e.g., J02.9 Acute pharyngitis)"
-                value={consultation.diagnosis}
-                onChange={(e) =>
-                  setConsultation((prev) => ({
-                    ...prev,
-                    diagnosis: e.target.value,
-                  }))
-                }
-                className="mt-3 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent text-sm"
-              />
+              {/* REMOVED: Final Diagnosis Input Field as requested */}
             </div>
           </div>
         </div>
 
-        {/* --- AI ASSIST SECTION (PREVIOUSLY A TAB) --- */}
+        {/* --- AI ASSIST SECTION --- */}
         <div className="space-y-4 pt-6 pb-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-[#0B2D4D] tracking-tight flex items-center space-x-2">
             <Brain className="w-6 h-6" />
@@ -1413,6 +1412,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
             consultation={consultation}
             selectedPatient={selectedPatient}
             vitals={vitals}
+            onDiagnosisUpdate={handleDiagnosisUpdate}
           />
         </div>
 
@@ -1473,7 +1473,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
         />
       )}
 
-      {/* 🚨 NEW MODAL RENDER */}
+      {/* 🚨 UPDATED MODAL: Passes the lifted finalDiagnosis state to the summary modal */}
       {selectedPatient && (
         <ConsultationSummaryModal
           isOpen={showSummaryModal}
@@ -1481,8 +1481,8 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
           onFinalComplete={handleFinalComplete} // Handles final status update
           patient={selectedPatient}
           medications={medications}
-          // Pass consultation state to the modal for summary content
-          consultation={consultation}
+          // Pass consultation state, but overwrite the diagnosis with the final one from Ai.tsx
+          consultation={{ ...consultation, diagnosis: finalDiagnosis }}
         />
       )}
     </div>

@@ -1,3 +1,4 @@
+// src/components/doctor/Ai.tsx
 import React, { useState } from "react";
 import {
   Copy,
@@ -66,10 +67,19 @@ interface MedicationRow {
   doctorInstructions: string;
 }
 
-const MedicalDashboard: React.FC<{
+interface MedicalDashboardProps {
   consultation: ConsultationData; // Using the explicit type
   selectedPatient: Patient;
-}> = ({ consultation, selectedPatient }) => {
+  vitals: any;
+  onDiagnosisUpdate: (diagnosis: string) => void; // 🚨 NEW PROP
+}
+
+const MedicalDashboard: React.FC<MedicalDashboardProps> = ({
+  consultation,
+  selectedPatient,
+  vitals,
+  onDiagnosisUpdate, // 🚨 DESTUCTURE PROP
+}) => {
   const { addMedications } = usePrescription();
 
   // --- Mock Current User ID (Replace with actual context/auth data) ---
@@ -97,13 +107,12 @@ const MedicalDashboard: React.FC<{
   const labResults = ["ECG", "X-RAY", "TCA-troraric", "In-xity coavortiatric"];
 
   const handleGenerateSuggestions = async () => {
-    // 🚨 IMPORTANT: PASTE YOUR GROQ API KEY HERE FOR DIRECT ACCESS.
-    // Replace the empty string below with your actual key (e.g., "gsk_...")
-    const GROQ_API_KEY = "";
+    // ⚠️ Prefer storing your key on the server; this inline usage is only for local testing.
+    const OPENAI_API_KEY = "";
 
-    if (!GROQ_API_KEY) {
+    if (!OPENAI_API_KEY) {
       alert(
-        "Please paste your Groq API Key directly into the 'GROQ_API_KEY' variable inside the handleGenerateSuggestions function to enable AI."
+        "Please set your OpenAI API Key in the OPENAI_API_KEY variable (or proxy it via a backend)."
       );
       return;
     }
@@ -120,7 +129,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
 
     // 🟢 FIXED: Map symptoms array to a readable string format
     const formattedSymptoms = consultation.symptoms
-      .filter((s) => s.symptom.trim() !== "") // filter out empty rows
+      .filter((s) => s.symptom.trim() !== "")
       .map(
         (s) =>
           `Symptom: ${s.symptom}, Duration: ${s.duration || "N/A"}, Factors: ${
@@ -148,24 +157,22 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
       }
     `;
 
-    console.log("Sending prompt to AI...");
-
     try {
       const response = await fetch(
-        "https://api.groq.com/openai/v1/chat/completions",
+        "https://api.openai.com/v1/chat/completions",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${GROQ_API_KEY}`, // ⬅️ API Key used directly here
+            Authorization: `Bearer ${OPENAI_API_KEY}`,
           },
           body: JSON.stringify({
-            model: "llama-3.1-8b-instant",
+            model: "gpt-5-nano",
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: userPrompt },
             ],
-            temperature: 0.7,
+            //
             response_format: { type: "json_object" },
           }),
         }
@@ -240,7 +247,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
         }
       }
     } catch (err) {
-      console.error("Error calling Groq API:", err);
+      console.error("Error calling OpenAI API:", err);
       alert(
         "Failed to connect to the AI service. Check network or API key setup."
       );
@@ -269,6 +276,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
   ) => {
     if (field === "diagnosis") {
       setDiagnosis((prev) => ({ ...prev, doctorEntry: aiValue }));
+      onDiagnosisUpdate(aiValue); // 🚨 CALL PROP HERE
     } else if (field === "labInvestigation") {
       setLabInvestigation((prev) => ({ ...prev, doctorEntry: aiValue }));
     }
@@ -323,7 +331,6 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
     // 3. PARSE DOCTOR'S MANUAL INPUT
     let manualTests: string[] = [];
     if (labInvestigation.doctorEntry) {
-      // Split by comma (,) OR the word " and " (case-insensitive)
       manualTests = labInvestigation.doctorEntry
         .split(/,\s*|\s+and\s+/i)
         .map((item) => item.trim())
@@ -331,7 +338,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
     }
 
     // 4. Construct the final tests array: specific test codes + parsed manual text
-    const finalTestsArray = [...new Set([...specificTests, ...manualTests])]; // Use Set to de-duplicate
+    const finalTestsArray = [...new Set([...specificTests, ...manualTests])];
 
     if (finalTestsArray.length === 0) {
       alert(
@@ -346,8 +353,8 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
       // 5. Prepare the data payload
       const labRequestPayload = {
         patId: patientIdentifier,
-        tests: finalTestsArray, // This array is now fully parsed into individual elements
-        assignDoctorId: currentUser.staffId, // Doctor placing the order
+        tests: finalTestsArray,
+        assignDoctorId: currentUser.staffId,
         requestedAt: new Date(),
       };
 
@@ -372,6 +379,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
   // Handlers
   const handleDiagnosisChange = (value: string) => {
     setDiagnosis((prev) => ({ ...prev, doctorEntry: value }));
+    onDiagnosisUpdate(value); // 🚨 CALL PROP HERE to update DoctorModule state
   };
 
   const handleLabInvestigationChange = (value: string) => {
@@ -401,7 +409,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
     setMedicationRows((prev) => [
       ...prev,
       {
-        id: String(Date.now()), // Unique ID for the new row
+        id: String(Date.now()),
         sno: prev.length + 1,
         aiMedication: "",
         aiDosage: "",
