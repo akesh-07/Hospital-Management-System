@@ -327,15 +327,15 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
 
     try {
       const response = await fetch(
-        "https://api.groq.com/openai/v1/chat/completions",
+        "https://api.openai.com/v1/chat/completions",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: "Bearer ",
+            Authorization: `Bearer `,
           },
           body: JSON.stringify({
-            model: "llama-3.1-8b-instant",
+            model: "gpt-5-nano",
             messages: [
               {
                 role: "system",
@@ -347,6 +347,7 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
                 content: combinedData,
               },
             ],
+            //temperature: 0.2,
           }),
         }
       );
@@ -425,15 +426,15 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
 
     try {
       const response = await fetch(
-        "https://api.groq.com/openai/v1/chat/completions",
+        "https://api.openai.com/v1/chat/completions",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: "Bearer ",
+            Authorization: `Bearer `,
           },
           body: JSON.stringify({
-            model: "llama-3.1-8b-instant",
+            model: "gpt-5-nano",
             messages: [
               {
                 role: "system",
@@ -445,6 +446,7 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
                 content: combinedData,
               },
             ],
+            // temperature: 0.2,
           }),
         }
       );

@@ -593,7 +593,7 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
   };
 
   const handleAiAssist = async () => {
-    // ... AI Assist logic remains the same (uses Groq API for summary)
+    // ... AI Assist logic remains the same (now uses OpenAI API for summary)
     if (!selectedPatient) {
       setAiSummary("Please select a patient first.");
       setIsModalOpen(true);
@@ -634,15 +634,17 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
 
     try {
       const response = await fetch(
-        "https://api.groq.com/openai/v1/chat/completions",
+        "https://api.openai.com/v1/chat/completions",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: "Bearer ", // Add your API key here
+            // Replace with your actual key management (env var, server proxy, etc.)
+            Authorization: `Bearer `,
           },
           body: JSON.stringify({
-            model: "llama-3.1-8b-instant",
+            // Choose your preferred OpenAI chat model
+            model: "gpt-5-nano",
             messages: [
               {
                 role: "system",
@@ -654,6 +656,7 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
                 content: prompt,
               },
             ],
+            //temperature: 0.2,
           }),
         }
       );
@@ -664,7 +667,7 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
         "Unable to generate summary. Please try again.";
       setAiSummary(content);
     } catch (err) {
-      console.error("Error calling Groq:", err);
+      console.error("Error calling OpenAI:", err);
       setAiSummary(
         "Error connecting to AI service. Please check your connection and try again."
       );

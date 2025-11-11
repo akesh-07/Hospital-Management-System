@@ -2,30 +2,24 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Stethoscope,
-  FileText,
   Pill,
   User,
   Clock,
-  Upload,
-  Bot,
   Activity,
   ArrowLeft,
-  Loader,
   Brain,
-  AlertCircle,
   CheckCircle,
   Save,
-  Heart,
-  FileDown,
-  Search,
-  ClipboardList,
   Eye,
   BookOpen,
   X,
   Plus,
   Trash2,
   Hospital,
-  ChevronRight,
+  Loader,
+  ClipboardList,
+  Copy, // For copying AI suggestions
+  FlaskConical, // For Lab icon
 } from "lucide-react";
 import { db } from "../../firebase";
 import {
@@ -37,13 +31,12 @@ import {
   doc,
   updateDoc,
   setDoc,
+  limit, // ADDED: for fetching latest Pre-OPD summary
 } from "firebase/firestore";
 import { Vitals } from "../../types";
 import PatientQueue from "../queue/PatientQueue";
 import { Patient } from "../../types";
 import PrescriptionModule from "../prescription/PrescriptionModule";
-import * as pdfjsLib from "pdfjs-dist";
-import mammoth from "mammoth";
 import {
   PrescriptionProvider,
   usePrescription,
@@ -52,13 +45,6 @@ import Ai from "./Ai";
 
 // 🚨 NEW IMPORT
 import ConsultationSummaryModal from "./ConsultationSummaryModal";
-
-// --- GLOBAL UTILITY SETUP ---
-// NOTE: PDF.js configuration setup (required for document upload in this component)
-(
-  pdfjsLib as any
-).GlobalWorkerOptions.standardFontDataUrl = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/standard_fonts/`;
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`;
 
 // --- INTERFACES ---
 interface DoctorModuleProps {
@@ -229,69 +215,52 @@ const FormattedAiSummary: React.FC<{ summary: string }> = ({ summary }) => {
   );
 };
 
-// AI Summary Modal Component (for Document History)
-const AiSummaryModal: React.FC<{
-  isOpen: boolean;
-  onClose: () => void;
+// --- NEW HELPER: Summary Card to display fetched Pre-OPD AI results ---
+const SummaryCard: React.FC<{
+  title: string;
   summary: string;
   isLoading: boolean;
-}> = ({ isOpen, onClose, summary, isLoading }) => {
-  if (!isOpen) return null;
+}> = ({ title, summary, isLoading }) => {
+  const isAvailable =
+    summary &&
+    summary.toLowerCase().indexOf("n/a - not generated") === -1 &&
+    summary.toLowerCase().indexOf("no pre-opd intake") === -1 &&
+    summary.toLowerCase().indexOf("error fetching") === -1;
+  const color = title.toLowerCase().includes("clinical") ? "blue" : "purple";
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 bg-[#F8F9FA] rounded-t-xl">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-[#e0f7fa] rounded-full">
-              <Bot className="w-6 h-6 text-[#012e58]" />
-            </div>
-            <h2 className="text-xl font-bold text-[#0B2D4D]">
-              AI-Generated Summary (Document History)
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+    <div
+      className={`p-4 rounded-lg border shadow-sm ${
+        isAvailable
+          ? `border-${color}-300 bg-${color}-50`
+          : "border-gray-200 bg-gray-50"
+      }`}
+    >
+      <h4 className="text-md font-semibold text-[#0B2D4D] border-b pb-2 mb-2">
+        {title}
+      </h4>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-4">
+          <Loader className="w-5 h-5 animate-spin text-[#012e58] mr-3" />
+          <span className="text-sm text-gray-600">
+            Fetching latest summary...
+          </span>
         </div>
-
-        {/* Modal Body */}
-        <div className="p-6 overflow-y-auto flex-grow">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center h-full min-h-[250px] text-center">
-              <Loader className="w-12 h-12 text-[#012e58] animate-spin mb-4" />
-              <p className="text-lg font-semibold text-[#0B2D4D]">
-                Analyzing Documents...
-              </p>
-              <p className="text-lg text-[#1a4b7a]">
-                Please wait while our AI processes the historical information.
-              </p>
-            </div>
-          ) : (
-            <FormattedAiSummary summary={summary} />
-          )}
+      ) : isAvailable ? (
+        <div className="overflow-y-auto max-h-60 text-sm">
+          <FormattedAiSummary summary={summary} />
         </div>
-
-        {/* Modal Footer */}
-        <div className="flex items-center justify-end p-4 border-t border-gray-200 bg-[#F8F9FA] rounded-b-xl">
-          <button
-            onClick={onClose}
-            className="px-5 py-2 text-lg font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1a4b7a] transition-colors"
-          >
-            Close
-          </button>
-        </div>
-      </div>
+      ) : (
+        <p className="text-sm text-gray-500 py-4 text-center">{summary}</p>
+      )}
     </div>
   );
 };
 
 // --- IN-PATIENT ADMISSION MODAL ---
 const InPatientAdmissionModal: React.FC<{
+  // ... (omitted InPatientAdmissionModal implementation for brevity)
+  // ... (original content from lines 163-366)
   patient: Patient;
   onClose: () => void;
   onConfirm: (data: AdmissionData) => void;
@@ -602,6 +571,11 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
   // 🚨 LIFTED STATE: Stores the final diagnosis entered in the Ai tab.
   const [finalDiagnosis, setFinalDiagnosis] = useState("");
 
+  // --- NEW STATE: Fetched Pre-OPD Intake Summaries ---
+  const [preOpdClinicalSummary, setPreOpdClinicalSummary] = useState("");
+  const [preOpdHistorySummary, setPreOpdHistorySummary] = useState("");
+  const [isPreOpdLoading, setIsPreOpdLoading] = useState(true);
+
   // 🚨 NEW STATE for the summary modal
   const [showSummaryModal, setShowSummaryModal] = useState(false);
 
@@ -633,178 +607,16 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     }
   };
 
-  const [uploadedFilesData, setUploadedFilesData] = useState<
-    Record<string, string>
-  >({});
-  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
-  const [aiSummary, setAiSummary] = useState("");
-  const [isAiSummaryLoading, setIsAiSummaryLoading] = useState(false);
-  const fileInputRefs = {
-    "Discharge Summary": useRef<HTMLInputElement>(null),
-    "X-Ray (PDF)": useRef<HTMLInputElement>(null),
-    "USG (PDF)": useRef<HTMLInputElement>(null),
-    "Investigation ROP": useRef<HTMLInputElement>(null),
-  };
-  // --- End original state initialization ---
+  // REMOVED: All state related to file/document handling (uploadedFilesData, fileInputRefs, aiSummary, isAiSummaryLoading, isSummaryModalOpen)
 
   // 🚨 NEW HANDLER: Receives diagnosis from Ai.tsx child component
   const handleDiagnosisUpdate = useCallback((diagnosis: string) => {
     setFinalDiagnosis(diagnosis);
   }, []);
 
-  // --- Utility functions: File Handling and Text Extraction ---
-  const extractTextFromFile = async (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        try {
-          if (file.type === "application/pdf") {
-            const loadingTask = pdfjsLib.getDocument(
-              event.target?.result as ArrayBuffer
-            );
-            const pdf = await loadingTask.promise;
-            let text = "";
-            for (let i = 1; i <= pdf.numPages; i++) {
-              const page = await pdf.getPage(i);
-              const content = await page.getTextContent();
-              text += content.items.map((item: any) => item.str).join(" ");
-            }
-            resolve(text);
-          } else if (
-            file.type ===
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-          ) {
-            const arrayBuffer = event.target?.result as ArrayBuffer;
-            const result = await mammoth.extractRawText({ arrayBuffer });
-            resolve(result.value);
-          } else if (file.type === "text/plain") {
-            resolve(event.target?.result as string);
-          } else {
-            reject(new Error("Unsupported file type"));
-          }
-        } catch (error) {
-          reject(error);
-        }
-      };
-      reader.onerror = (error) => {
-        reject(error);
-      };
-
-      if (
-        file.type === "application/pdf" ||
-        file.type ===
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      ) {
-        reader.readAsArrayBuffer(file);
-      } else {
-        reader.readAsText(file);
-      }
-    });
-  };
-
-  const handleFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-    fileType: string
-  ) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      try {
-        const text = await extractTextFromFile(file);
-        setUploadedFilesData((prev) => ({ ...prev, [fileType]: text }));
-      } catch (error) {
-        console.error("Error extracting text from file:", error);
-        alert(`Failed to extract text from ${fileType}.`);
-      }
-      event.target.value = "";
-    }
-  };
-
-  const handleAiSummary = async () => {
-    setIsSummaryModalOpen(true);
-    setIsAiSummaryLoading(true);
-    setAiSummary("");
-
-    const fileContentArray = Object.entries(uploadedFilesData)
-      .filter(([_, text]) => text && text.trim().length > 0)
-      .map(
-        ([fileType, text]) => `**--- ${fileType.toUpperCase()} ---**\n${text}`
-      );
-
-    if (fileContentArray.length === 0) {
-      setIsAiSummaryLoading(false);
-      setAiSummary(
-        "No uploaded or successfully processed medical history documents found to generate a summary from."
-      );
-      return;
-    }
-
-    const combinedData = `
-        DOCUMENT-ONLY MEDICAL HISTORY SUMMARY REQUEST:
-        
-        The following documents were uploaded for Patient ${
-          selectedPatient?.uhid || "N/A"
-        }:
-        
-        ${fileContentArray.join("\n\n")}
-        
-        TASK: You are a medical records specialist. Your task is to generate a comprehensive and objective summary based *strictly* on the text provided in the documents above. Do not include any external information. Structure the summary with clear markdown headers and bullet points covering:
-        1. **Patient Demographics (if present in documents)**
-        2. **Key Past Diagnoses/Procedures**
-        3. **Medications (if listed)**
-        4. **Date and Reason for Document Creation**
-        5. **Overall Summary/Conclusion of the Documents**
-        
-        If a section's information is not present in the documents, state 'N/A' for that section.
-    `;
-
-    try {
-      // 🔁 Replaced GROQ with OpenAI
-      const OPENAI_API_KEY = ""; // ⚠️ move to backend/.env in production
-      const response = await fetch(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
-          },
-          body: JSON.stringify({
-            model: "gpt-5-nano", // low-cost; deterministic; no temperature control
-            messages: [
-              {
-                role: "system",
-                content:
-                  "You are a medical records specialist. Generate the summary ONLY from the provided text using clear markdown. Do not hallucinate or include outside information.",
-              },
-              {
-                role: "user",
-                content: combinedData,
-              },
-            ],
-            // no temperature (unsupported on some nano/instant models)
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`OpenAI error ${response.status}: ${errText}`);
-      }
-
-      const data = await response.json();
-      const summary =
-        data?.choices?.[0]?.message?.content?.trim() ||
-        "Could not generate summary from documents.";
-      setAiSummary(summary);
-    } catch (error) {
-      console.error("Error generating AI summary:", error);
-      setAiSummary(
-        "An error occurred while connecting to the AI service. Check console for details."
-      );
-    } finally {
-      setIsAiSummaryLoading(false);
-    }
-  };
+  // --- REMOVED: extractTextFromFile function ---
+  // --- REMOVED: handleFileUpload function ---
+  // --- REMOVED: handleAiSummary function ---
 
   const handleSymptomChange = (
     id: number,
@@ -937,14 +749,13 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     "p-2 border border-gray-300 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-lg";
 
   // *****************************************************************
-  // ** START FIX: Client-Side Sorting to avoid Composite Index Error **
+  // ** Vitals Fetching Logic (Unchanged) **
   // *****************************************************************
   useEffect(() => {
     if (!selectedPatient?.uhid) {
       setVitals(null);
       return;
     }
-    // 1. Query only by filter to avoid composite index requirement
     const vitalsQuery = query(
       collection(db, "vitals"),
       where("patientUhid", "==", selectedPatient.uhid)
@@ -952,10 +763,8 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
 
     const unsubscribe = onSnapshot(vitalsQuery, (snapshot) => {
       if (snapshot.docs.length > 0) {
-        // 2. Map all documents and prepare for JavaScript sorting
         const allVitals = snapshot.docs.map((doc) => {
           const data = doc.data() as Vitals;
-          // Safely convert Timestamp to Date object
           const recordedAtDate =
             data.recordedAt && (data.recordedAt as any).toDate
               ? (data.recordedAt as any).toDate()
@@ -963,12 +772,10 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
           return { ...data, recordedAt: recordedAtDate };
         });
 
-        // 3. Sort the array client-side by recordedAt descending
         allVitals.sort(
           (a, b) => b.recordedAt.getTime() - a.recordedAt.getTime()
         );
 
-        // 4. Set the state to the first (latest) element
         setVitals(allVitals[0]);
       } else {
         setVitals(null);
@@ -977,11 +784,62 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
 
     return () => unsubscribe();
   }, [selectedPatient]);
-  // *****************************************************************
-  // ** END FIX **
-  // *****************************************************************
 
-  // --- ADMISSION LOGIC ---
+  // ------------------------------------------------------------------------------------------------
+  // --- NEW LOGIC: Fetch Pre-OPD Intake Summaries from Firestore ---
+  // ------------------------------------------------------------------------------------------------
+  useEffect(() => {
+    if (!selectedPatient?.uhid) {
+      setPreOpdClinicalSummary("No patient selected.");
+      setPreOpdHistorySummary("No patient selected.");
+      setIsPreOpdLoading(false);
+      return;
+    }
+
+    setIsPreOpdLoading(true);
+
+    // Query the 'preOPDIntake' collection for the latest record for this patient
+    const intakeQuery = query(
+      collection(db, "preOPDIntake"),
+      where("patientUhid", "==", selectedPatient.uhid),
+      orderBy("recordedAt", "desc"),
+      limit(1) // Only fetch the latest one
+    );
+
+    const unsubscribe = onSnapshot(
+      intakeQuery,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const data = snapshot.docs[0].data();
+          setPreOpdClinicalSummary(
+            data.aiClinicalSummary || "N/A - Not generated in Pre-OPD."
+          );
+          setPreOpdHistorySummary(
+            data.aiHistorySummary || "N/A - Not generated in Pre-OPD."
+          );
+        } else {
+          setPreOpdClinicalSummary(
+            "No Pre-OPD intake record found for this patient."
+          );
+          setPreOpdHistorySummary(
+            "No Pre-OPD intake record found for this patient."
+          );
+        }
+        setIsPreOpdLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching Pre-OPD Intake:", error);
+        setPreOpdClinicalSummary("Error fetching summary data.");
+        setPreOpdHistorySummary("Error fetching summary data.");
+        setIsPreOpdLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [selectedPatient]);
+  // ------------------------------------------------------------------------------------------------
+
+  // --- ADMISSION LOGIC (Unchanged) ---
   const handleAddToInPatient = () => {
     if (selectedPatient) {
       setShowAdmissionModal(true);
@@ -1090,9 +948,9 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
             <span>Clinical Assessment</span>
           </h2>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Vitals & File Upload - Top Left & Right */}
-            <div className="lg:col-span-2 bg-white p-4 rounded-lg border border-gray-200 shadow-md">
+          <div className="grid grid-cols-1 gap-4">
+            {/* Vitals Snapshot - NOW 3 columns wide */}
+            <div className="lg:col-span-3 bg-white p-4 rounded-lg border border-gray-200 shadow-md">
               <SectionHeader icon={Activity} title="Current Vitals Snapshot" />
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 {getVitalsDisplay().map((vital) => (
@@ -1126,57 +984,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
               )}
             </div>
 
-            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-md">
-              <SectionHeader
-                icon={FileDown}
-                title="Upload/Review Past Records"
-              />
-              <div className="space-y-2">
-                {Object.keys(fileInputRefs).map((name) => (
-                  <div key={name}>
-                    <input
-                      type="file"
-                      accept=".pdf,.docx,.txt"
-                      ref={fileInputRefs[name as keyof typeof fileInputRefs]}
-                      onChange={(e) => handleFileUpload(e, name)}
-                      style={{ display: "none" }}
-                    />
-                    <button
-                      onClick={() =>
-                        fileInputRefs[
-                          name as keyof typeof fileInputRefs
-                        ].current?.click()
-                      }
-                      className="flex items-center space-x-2 w-full px-3 py-2 text-md bg-gradient-to-r from-[#012e58]/5 to-[#012e58]/10 hover:from-[#012e58]/10 hover:to-[#012e58]/15 rounded-md border border-gray-200 transition-all duration-200 group"
-                    >
-                      <Upload className="w-3 h-3 text-[#012e58] group-hover:scale-110 transition-transform" />
-                      <span className="font-medium text-[#0B2D4D]">{name}</span>
-                      {uploadedFilesData[name] && (
-                        <CheckCircle className="w-3 h-3 text-green-500 ml-auto" />
-                      )}
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-3 pt-3 border-t border-gray-200">
-                <button
-                  onClick={handleAiSummary}
-                  disabled={isAiSummaryLoading}
-                  className="w-full flex items-center justify-center space-x-1.5 text-[#012e58] hover:bg-gray-100 p-2 rounded-md transition-colors"
-                >
-                  {isAiSummaryLoading ? (
-                    <Loader className="w-3 h-3 animate-spin" />
-                  ) : (
-                    <Brain className="w-3 h-3" />
-                  )}
-                  <span className="text-md font-semibold">
-                    {isAiSummaryLoading
-                      ? "Generating Document Summary..."
-                      : "AI Assisted Document Summary"}
-                  </span>
-                </button>
-              </div>
-            </div>
+            {/* REMOVED: File Upload/Review Past Records section */}
           </div>
 
           {/* Chief Complaints / HPI */}
@@ -1401,6 +1209,28 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
           </div>
         </div>
 
+        {/* --- NEW SECTION: PRE-OPD SUMMARIES (AI-FETCHED) --- */}
+        <div className="space-y-4 pt-6 pb-6 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-[#0B2D4D] tracking-tight flex items-center space-x-2">
+            <Brain className="w-6 h-6 text-purple-600" />
+            <span>Pre-OPD AI Summary & History</span>
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Clinical Summary */}
+            <SummaryCard
+              title="Clinical Status (Vitals + Complaints)"
+              summary={preOpdClinicalSummary}
+              isLoading={isPreOpdLoading}
+            />
+            {/* History Summary */}
+            <SummaryCard
+              title="Medical History (Records + Checklist)"
+              summary={preOpdHistorySummary}
+              isLoading={isPreOpdLoading}
+            />
+          </div>
+        </div>
+
         {/* --- AI ASSIST SECTION --- */}
         <div className="space-y-4 pt-6 pb-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-[#0B2D4D] tracking-tight flex items-center space-x-2">
@@ -1457,12 +1287,8 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
           </button>
         </div>
       </div>
-      <AiSummaryModal
-        isOpen={isSummaryModalOpen}
-        onClose={() => setIsSummaryModalOpen(false)}
-        summary={aiSummary}
-        isLoading={isAiSummaryLoading}
-      />
+
+      {/* REMOVED: AiSummaryModal component render */}
 
       {/* In-Patient Admission Modal Renderer */}
       {showAdmissionModal && selectedPatient && (
