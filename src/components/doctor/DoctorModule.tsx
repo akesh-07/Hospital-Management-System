@@ -749,7 +749,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     "p-2 border border-gray-300 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-lg";
 
   // *****************************************************************
-  // ** Vitals Fetching Logic (Unchanged) **
+  // ** Vitals Fetching Logic (Unchanged - uses patientUhid) **
   // *****************************************************************
   useEffect(() => {
     if (!selectedPatient?.uhid) {
@@ -786,8 +786,9 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
   }, [selectedPatient]);
 
   // ------------------------------------------------------------------------------------------------
-  // --- NEW LOGIC: Fetch Pre-OPD Intake Summaries from Firestore ---
+  // --- UPDATED LOGIC: Fetch Pre-OPD Intake Summaries from Firestore using patientUhid and ordering ---
   // ------------------------------------------------------------------------------------------------
+  // This logic is correct but requires the composite index you were prompted to create.
   useEffect(() => {
     if (!selectedPatient?.uhid) {
       setPreOpdClinicalSummary("No patient selected.");
@@ -828,6 +829,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
         setIsPreOpdLoading(false);
       },
       (error) => {
+        // Log the error but provide a user-friendly message
         console.error("Error fetching Pre-OPD Intake:", error);
         setPreOpdClinicalSummary("Error fetching summary data.");
         setPreOpdHistorySummary("Error fetching summary data.");

@@ -251,12 +251,13 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
   // Helper to fetch latest saved vitals for the AI Clinical Summary
   const fetchLatestVitals =
     useCallback(async (): Promise<VitalsSnapshot | null> => {
-      if (!selectedPatient?.id) return null;
+      // 🚨 CHANGED: Use patientUhid for the query filter
+      if (!selectedPatient?.uhid) return null;
 
       try {
         const q = query(
           collection(db, "vitals"),
-          where("patientId", "==", selectedPatient.id),
+          where("patientUhid", "==", selectedPatient.uhid), // 🚨 CHANGED: Filter by patientUhid
           orderBy("recordedAt", "desc"),
           limit(1)
         );
@@ -286,6 +287,7 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
 
     const latestVitals = await fetchLatestVitals();
 
+    // The logic to include Vitals is here.
     const vitalsText = latestVitals
       ? `
         --- LATEST VITALS ---
@@ -665,7 +667,6 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              {/* ✅ START: This is the conditional fix */}
               {(intakeData.complaints.length > 0 ||
                 intakeData.chronicConditions.length > 0) && (
                 <span className="text-lg text-gray-600">
@@ -673,7 +674,6 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
                   {intakeData.chronicConditions.length}** conditions recorded
                 </span>
               )}
-              {/* ✅ END: This is the conditional fix */}
 
               {intakeData.complaints.some((c) => c.redFlagTriggered) && (
                 <span className="flex items-center text-red-600 bg-red-100 px-2 py-1 rounded-full text-md font-semibold">

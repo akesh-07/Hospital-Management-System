@@ -69,7 +69,7 @@ const LabTestQueue: React.FC = () => {
   const [allPatients, setAllPatients] = useState<{ [key: string]: Patient }>(
     {} as { [key: string]: Patient }
   );
-  // 🟢 STATE: Map Doctor ID (UID/StaffID) to Name
+  // 泙 STATE: Map Doctor ID (UID/StaffID) to Name
   const [doctorNames, setDoctorNames] = useState<Record<string, string>>({});
 
   const [openRequestId, setOpenRequestId] = useState<string | null>(null);
@@ -121,13 +121,13 @@ const LabTestQueue: React.FC = () => {
             data.requestedAt instanceof Timestamp
               ? data.requestedAt.toDate()
               : new Date();
-              
+
           return {
             id: doc.id,
             patId: (data.patId as string) || doc.id,
             tests: (data.tests as string[] | undefined) || [],
-            assignDoctorId: (data.assignDoctorId as string) || 'N/A',
-            status: (data.status as LabRequest['status']) || 'Pending',
+            assignDoctorId: (data.assignDoctorId as string) || "N/A",
+            status: (data.status as LabRequest["status"]) || "Pending",
             requestedAt: requestedAt,
           } as LabRequest;
         });
@@ -139,7 +139,7 @@ const LabTestQueue: React.FC = () => {
     );
 
     return () => unsubscribe();
-  }, []); 
+  }, []);
 
   // 3. Fetch all Patient names/contacts
   useEffect(() => {
@@ -152,9 +152,9 @@ const LabTestQueue: React.FC = () => {
         snapshot.docs.forEach((doc) => {
           const data = doc.data();
           patientsMap[doc.id] = {
-              id: doc.id,
-              fullName: (data.fullName as string) || 'Unknown Patient',
-              contactNumber: (data.contactNumber as string) || 'N/A'
+            id: doc.id,
+            fullName: (data.fullName as string) || "Unknown Patient",
+            contactNumber: (data.contactNumber as string) || "N/A",
           };
         });
         setAllPatients(patientsMap);
@@ -165,7 +165,7 @@ const LabTestQueue: React.FC = () => {
     );
 
     return () => unsubscribe();
-  }, []); 
+  }, []);
 
   // 4. Combine Requests and Patient Data (Resolving Doctor Name)
   useEffect(() => {
@@ -175,10 +175,11 @@ const LabTestQueue: React.FC = () => {
           fullName: "Unknown Patient",
           contactNumber: "N/A",
         };
-        
-        // 🟢 FIX: Resolve Doctor Name using the mapped doctorNames state
-        const resolvedDoctorName = doctorNames[req.assignDoctorId] || req.assignDoctorId;
-        
+
+        // 泙 FIX: Resolve Doctor Name using the mapped doctorNames state
+        const resolvedDoctorName =
+          doctorNames[req.assignDoctorId] || req.assignDoctorId;
+
         return {
           ...req,
           fullName: patient.fullName,
@@ -191,8 +192,8 @@ const LabTestQueue: React.FC = () => {
       });
 
     setQueueItems(combinedData);
-  }, [rawRequests, allPatients, doctorNames]); 
-  
+  }, [rawRequests, allPatients, doctorNames]);
+
   // --- Handlers for Status Updates (Logic Unchanged) ---
 
   const handleStartTest = async (requestId: string) => {
@@ -210,7 +211,7 @@ const LabTestQueue: React.FC = () => {
       completedAt: new Date(),
     });
   };
-  
+
   const handleUploadClick = (e: React.MouseEvent, item: LabQueueItem) => {
     e.stopPropagation();
     const details = {
@@ -229,7 +230,7 @@ const LabTestQueue: React.FC = () => {
   const handleToggle = (id: string) => {
     setOpenRequestId(openRequestId === id ? null : id);
   };
-  
+
   const handleBackToQueue = () => {
     setDetailsToView(null);
   };
@@ -249,7 +250,7 @@ const LabTestQueue: React.FC = () => {
       (statusFilter === "completed" && item.status === "Completed");
 
     return matchesSearch && matchesStatus;
-  }); 
+  });
 
   // --- Component for an individual Lab Request Card ---
 
@@ -260,11 +261,14 @@ const LabTestQueue: React.FC = () => {
   }> = ({ item, isOpen, onToggle }) => {
     const isPending = item.status === "Pending";
     const isInProgress = item.status === "In Progress";
-    
+
     // Heuristic: Check if the resolved name contains spaces (likely a full name) or is the fallback ID
-    const isResolvedName = item.assignDoctorId.includes(' ') && !item.assignDoctorId.includes('_');
-    const displayDoctorName = isResolvedName ? `Dr. ${item.assignDoctorId}` : item.assignDoctorId;
-    
+    const isResolvedName =
+      item.assignDoctorId.includes(" ") && !item.assignDoctorId.includes("_");
+    const displayDoctorName = isResolvedName
+      ? `Dr. ${item.assignDoctorId}`
+      : item.assignDoctorId;
+
     return (
       <div
         className={`bg-white rounded-xl border p-4 hover:shadow-md transition-all cursor-pointer ${
@@ -284,18 +288,22 @@ const LabTestQueue: React.FC = () => {
               </span>
             </div>
             <div className="flex flex-col justify-center truncate">
-              <h3 className="font-semibold text-[#0B2D4D] text-sm truncate">{item.fullName}</h3>
-              <p className="text-xs text-[#1a4b7a] truncate">Patient ID: {item.patId}</p>
+              <h3 className="font-semibold text-[#0B2D4D] text-sm truncate">
+                {item.fullName}
+              </h3>
+              <p className="text-xs text-[#1a4b7a] truncate">
+                Patient ID: {item.patId}
+              </p>
             </div>
           </div>
-          
-          {/* 🟢 ALIGNED: Request Time (Col 2 - Fixed Width) */}
+
+          {/* 泙 ALIGNED: Request Time (Col 2 - Fixed Width) */}
           <div className="flex flex-col min-w-[120px] items-start">
             <span className="text-xs font-medium text-gray-500">
               Request Time
             </span>
             <div className="flex items-center space-x-1 mt-0.5">
-              <Clock className="w-3 h-3 text-gray-400" /> 
+              <Clock className="w-3 h-3 text-gray-400" />
               <span className="text-sm text-[#1a4b7a] font-medium">
                 {item.requestedAt.toLocaleTimeString("en-US", {
                   hour: "2-digit",
@@ -304,8 +312,8 @@ const LabTestQueue: React.FC = () => {
               </span>
             </div>
           </div>
-          
-          {/* 🟢 ALIGNED: Ordering Doctor (Col 3 - Fixed Width) */}
+
+          {/* 泙 ALIGNED: Ordering Doctor (Col 3 - Fixed Width) */}
           <div className="flex flex-col min-w-[150px] items-start">
             <span className="text-xs font-medium text-gray-500">
               Ordering Doctor
@@ -313,12 +321,12 @@ const LabTestQueue: React.FC = () => {
             <div className="flex items-center space-x-1 mt-0.5">
               <UserCheck className="w-3 h-3 text-gray-400" />
               <span className="text-sm text-[#1a4b7a] font-medium">
-                {/* 🟢 Displaying the correctly resolved name/alias */}
+                {/* 泙 Displaying the correctly resolved name/alias */}
                 {displayDoctorName}
               </span>
             </div>
           </div>
-          
+
           {/* Status (Col 4 - Fixed Width) */}
           <div className="min-w-[80px] text-right">
             <span
@@ -329,7 +337,7 @@ const LabTestQueue: React.FC = () => {
               {item.status || "Pending"}
             </span>
           </div>
-          
+
           {/* Collapse Icon (Col 5 - Fixed Width) */}
           <div className="flex items-center justify-end w-10">
             {isOpen ? (
@@ -339,7 +347,7 @@ const LabTestQueue: React.FC = () => {
             )}
           </div>
         </div>
-        
+
         {/* --- Expanded Details --- */}
         <div
           className={`grid grid-cols-1 gap-4 text-sm overflow-hidden transition-all duration-300 ease-in-out ${
@@ -363,17 +371,17 @@ const LabTestQueue: React.FC = () => {
               ))}
             </div>
           </div>
-          
+
           {/* Action Buttons & Contact */}
           <div className="col-span-1 flex gap-3 pt-2 border-t border-gray-100">
-            {/* 🟢 UPLOAD TEST BUTTON */}
+            {/* 泙 UPLOAD TEST BUTTON */}
             <button
               onClick={(e) => handleUploadClick(e, item)}
               className="px-3 py-1 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md"
             >
               Upload Test Results
             </button>
-            
+
             {/* START BUTTON (Visible only when Pending) */}
             {isPending && (
               <button
@@ -386,7 +394,7 @@ const LabTestQueue: React.FC = () => {
                 Start Processing
               </button>
             )}
-            
+
             {/* Secondary Action: Mark as Completed (Only visible if In Progress) */}
             {isInProgress && (
               <button
@@ -399,7 +407,7 @@ const LabTestQueue: React.FC = () => {
                 Mark as Completed
               </button>
             )}
-            
+
             {/* Contact Info (Always visible for context) */}
             <div className="flex items-center space-x-2 text-gray-500 ml-auto">
               <Phone className="w-4 h-4" />
@@ -410,14 +418,14 @@ const LabTestQueue: React.FC = () => {
       </div>
     );
   };
-  
+
   const PatientTestDetails: React.FC<{
     details: typeof detailsToView;
     onBack: () => void;
   }> = ({ details, onBack }) => {
     if (!details) return null;
     const [results, setResults] = useState<{ [key: string]: string }>({});
-    
+
     const handleResultChange = (testName: string, value: string) => {
       setResults((prev) => ({
         ...prev,
@@ -444,13 +452,13 @@ const LabTestQueue: React.FC = () => {
         >
           <ArrowLeft className="w-4 h-4" /> <span>Back to Lab Queue</span>
         </button>
-        
+
         <h1 className="text-3xl font-bold text-[#0B2D4D] mb-4">
           Upload Results for {details.patientName}
         </h1>
-        
+
         <p className="text-[#1a4b7a] mb-8">Request ID: {details.requestId}</p>
-        
+
         <div className="space-y-6">
           {/* Patient Context Block */}
           <div className="grid grid-cols-3 gap-4">
@@ -460,14 +468,14 @@ const LabTestQueue: React.FC = () => {
                 {details.patientName}
               </h2>
             </div>
-            
+
             <div className="p-3 border rounded-lg bg-yellow-50/50">
               <p className="text-xs text-gray-600">Ordering Doctor</p>
               <h2 className="text-xl font-semibold text-yellow-900">
                 Dr. {details.assignDoctor}
               </h2>
             </div>
-            
+
             <div className="p-3 border rounded-lg bg-gray-50/50">
               <p className="text-xs text-gray-600">Contact Number</p>
               <h2 className="text-xl font-semibold text-gray-900">
@@ -475,13 +483,13 @@ const LabTestQueue: React.FC = () => {
               </h2>
             </div>
           </div>
-          
-          {/* 🟢 ITERATE AND CREATE SEPARATE UPLOAD SECTIONS PER TEST */}
+
+          {/* 泙 ITERATE AND CREATE SEPARATE UPLOAD SECTIONS PER TEST */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-[#0B2D4D] border-b pb-2">
               Test Result Entry
             </h2>
-            
+
             {details.tests.map((test, index) => (
               <div
                 key={index}
@@ -491,18 +499,18 @@ const LabTestQueue: React.FC = () => {
                   <span className="px-3 py-1 text-sm font-medium bg-green-100 text-green-800 rounded-full border border-green-300">
                     {test}
                   </span>
-                  
+
                   <span className="text-xs text-gray-500">
                     Test {index + 1} of {details.tests.length}
                   </span>
                 </div>
-                
+
                 <div className="space-y-2">
                   {/* Placeholder for Result Input */}
                   <label className="block text-sm font-medium text-gray-700">
                     Numeric Result / Finding:
                   </label>
-                  
+
                   <input
                     type="text"
                     placeholder={`Enter result for ${test}`}
@@ -510,12 +518,12 @@ const LabTestQueue: React.FC = () => {
                     onChange={(e) => handleResultChange(test, e.target.value)}
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                   />
-                  
+
                   {/* Optional: File Upload Placeholder */}
                   <label className="block text-sm font-medium text-gray-700 pt-2">
                     Upload Report (PDF/Image):
                   </label>
-                  
+
                   <div className="p-3 border-2 border-dashed border-gray-200 rounded-lg text-center text-gray-500 text-sm">
                     [File Upload Component]
                   </div>
@@ -523,7 +531,7 @@ const LabTestQueue: React.FC = () => {
               </div>
             ))}
           </div>
-          
+
           {/* Final Save Button */}
           <div className="pt-4 border-t">
             <button
@@ -541,7 +549,10 @@ const LabTestQueue: React.FC = () => {
   return (
     <div className="p-6 bg-[#F8F9FA] min-h-screen">
       {detailsToView && (
-        <PatientTestDetails details={detailsToView} onBack={handleBackToQueue} />
+        <PatientTestDetails
+          details={detailsToView}
+          onBack={handleBackToQueue}
+        />
       )}
       {!detailsToView && (
         <>
@@ -555,7 +566,7 @@ const LabTestQueue: React.FC = () => {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
@@ -567,7 +578,7 @@ const LabTestQueue: React.FC = () => {
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent"
                 />
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <Filter className="w-4 h-4 text-gray-400" />
                 <select
@@ -584,7 +595,7 @@ const LabTestQueue: React.FC = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 gap-6">
             <div className="space-y-4">
               {filteredItems.length === 0 ? (
