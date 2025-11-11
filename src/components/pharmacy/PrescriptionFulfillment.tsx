@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FileText,
   User,
@@ -11,11 +11,20 @@ import {
   Filter,
   X, // Import X for the modal
 } from "lucide-react";
-import { mockPharmacyPrescriptions } from "../../data/pharmacyData";
+// REMOVED: import { mockPharmacyPrescriptions } from "../../data/pharmacyData";
 import {
   PharmacyPrescription,
   PrescriptionMedication,
 } from "../../types/pharmacy";
+
+import { db } from "../../firebase"; // ADDED IMPORT
+import {
+  collection,
+  query,
+  onSnapshot,
+  orderBy,
+  Timestamp,
+} from "firebase/firestore";
 
 // --- Paste the PrescriptionDetailModal component code here if not in a separate file ---
 // OR
@@ -23,7 +32,7 @@ import { PrescriptionDetailModal } from "./PrescriptionDetailModal";
 
 export const PrescriptionFulfillment: React.FC = () => {
   const [prescriptions, setPrescriptions] = useState<PharmacyPrescription[]>(
-    mockPharmacyPrescriptions
+    [] // Initialized with empty array
   );
   const [selectedPrescription, setSelectedPrescription] =
     useState<PharmacyPrescription | null>(null);
@@ -31,6 +40,67 @@ export const PrescriptionFulfillment: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<
     "all" | "pending" | "partial" | "completed"
   >("all");
+
+  // NEW: Fetch Prescriptions from Firebase
+  useEffect(() => {
+    // Query the 'prescriptions' collection, ordered by most recent date
+    const prescriptionsQuery = query(
+      collection(db, "prescriptions"),
+      orderBy("prescriptionDate", "desc") // Order by newest first
+    );
+
+    const unsubscribe = onSnapshot(
+      prescriptionsQuery,
+      (snapshot) => {
+        const fetchedPrescriptions: PharmacyPrescription[] = snapshot.docs.map(
+          (doc) => {
+            const data = doc.data();
+
+            // Safely map data and convert Firestore Timestamp to string
+            const date = (data.prescriptionDate as Timestamp)?.toDate();
+
+            return {
+              id: doc.id,
+              patientId: data.patientId as string,
+              uhid: data.uhid as string,
+              patientName: data.patientName as string,
+              doctorName: data.doctorName as string,
+              doctorId: data.doctorId as string,
+
+              prescriptionDate: date ? date.toISOString() : "", // Use ISO string for consistency
+
+              medications: data.medications as PrescriptionMedication[],
+
+              status:
+                (data.status as
+                  | "Pending"
+                  | "Partially Dispensed"
+                  | "Completed") || "Pending",
+              patientType: (data.patientType as "OPD" | "IPD") || "OPD",
+
+              consultationNotes: data.consultationNotes as string,
+              finalDiagnosis: data.finalDiagnosis as string,
+
+              // Using default mock values if not available in DB yet
+              totalAmount: (data.totalAmount as number) || 0,
+
+              dispensedBy: data.dispensedBy as string,
+              dispensedAt: (data.dispensedAt as Timestamp)
+                ?.toDate()
+                ?.toLocaleDateString(),
+            } as PharmacyPrescription;
+          }
+        );
+
+        setPrescriptions(fetchedPrescriptions);
+      },
+      (error) => {
+        console.error("Error fetching prescriptions:", error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   const filteredPrescriptions = prescriptions.filter((prescription) => {
     // ... filtering logic remains the same
@@ -152,7 +222,9 @@ export const PrescriptionFulfillment: React.FC = () => {
             Total Amount: ${prescription.totalAmount.toFixed(2)}
           </span>
           <span className="text-[#1a4b7a]">
-            {new Date(prescription.prescriptionDate).toLocaleDateString()}
+            {prescription.prescriptionDate.length < 20
+              ? prescription.prescriptionDate
+              : new Date(prescription.prescriptionDate).toLocaleDateString()}
           </span>
         </div>
       </div>

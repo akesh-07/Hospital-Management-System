@@ -4,7 +4,7 @@ export interface Drug {
   genericName: string;
   brandName: string;
   strength: string;
-  dosageForm: 'Tablet' | 'Capsule' | 'Syrup' | 'Injection' | 'Cream' | 'Drops';
+  dosageForm: "Tablet" | "Capsule" | "Syrup" | "Injection" | "Cream" | "Drops";
   expiryDate: string;
   stockQuantity: number;
   unitPrice: number;
@@ -16,20 +16,6 @@ export interface Drug {
   createdAt: string;
 }
 
-export interface PharmacyPrescription {
-  id: string;
-  patientName: string;
-  uhid: string;
-  doctorName: string;
-  prescriptionDate: string;
-  medications: PrescriptionMedication[];
-  status: 'Pending' | 'Partially Dispensed' | 'Completed';
-  patientType: 'OPD' | 'IPD';
-  totalAmount: number;
-  dispensedBy?: string;
-  dispensedAt?: string;
-}
-
 export interface PrescriptionMedication {
   id: string;
   drugName: string;
@@ -37,10 +23,30 @@ export interface PrescriptionMedication {
   frequency: string;
   duration: string;
   instructions: string;
+  // Fields included for Pharmacy tracking
   quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  // Existing fields
   dispensed: boolean;
   substituteUsed?: string;
-  unitPrice: number;
+}
+
+export interface PharmacyPrescription {
+  id: string;
+  patientName: string;
+  uhid: string;
+  doctorName: string;
+  doctorId: string; // NEW: Store doctor's ID
+  prescriptionDate: string;
+  medications: PrescriptionMedication[];
+  status: "Pending" | "Partially Dispensed" | "Completed";
+  patientType: "OPD" | "IPD";
+  consultationNotes?: string; // NEW: Doctor's final notes
+  finalDiagnosis?: string; // NEW: Doctor's final diagnosis
+  totalAmount: number;
+  dispensedBy?: string;
+  dispensedAt?: string;
 }
 
 export interface PharmacySale {
@@ -52,7 +58,7 @@ export interface PharmacySale {
   totalAmount: number;
   discount: number;
   finalAmount: number;
-  paymentMethod: 'Cash' | 'Card' | 'Insurance' | 'Online';
+  paymentMethod: "Cash" | "Card" | "Insurance" | "Online";
   saleDate: string;
   dispensedBy: string;
 }

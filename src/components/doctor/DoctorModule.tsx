@@ -1,4 +1,3 @@
-// src/components/doctor/DoctorModule.tsx
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Stethoscope,
@@ -25,6 +24,9 @@ import {
   onSnapshot,
   doc,
   setDoc,
+  // ADDED: Imports for saving the prescription
+  addDoc,
+  Timestamp,
 } from "firebase/firestore";
 import { Vitals } from "../../types";
 import PatientQueue from "../queue/PatientQueue";
@@ -35,6 +37,7 @@ import {
   usePrescription,
 } from "../../contexts/PrescriptionContext";
 import Ai from "./Ai";
+import { useAuth } from "../../contexts/AuthContext"; // ADDED IMPORT
 
 // 🚨 NEW IMPORT
 import ConsultationSummaryModal from "./ConsultationSummaryModal";
@@ -555,6 +558,13 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
   // 1. Get prescription data from context
   const { medications } = usePrescription();
 
+  // ADDED: Get Doctor Name/ID from context
+  const { user } = useAuth();
+  const doctorId = user?.id || "UnknownDoctorId";
+  const doctorName =
+    user?.name || selectedPatient?.doctorAssigned || "Unknown Doctor";
+  const patientType = selectedPatient?.patientType || "OPD";
+
   // --- Original state initialization from DoctorModule.tsx ---
   const [vitals, setVitals] = useState<Vitals | null>(null);
   const [showAdmissionModal, setShowAdmissionModal] = useState(false);
@@ -850,14 +860,45 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
   };
   // --- END ADMISSION LOGIC ---
 
-  // 🚨 NEW FUNCTION: Final status update and navigation after modal confirmation
+  // 🚨 UPDATED FUNCTION: Saves Prescription & Completes Consultation
   const handleFinalComplete = async () => {
-    if (!selectedPatient) return;
+    if (!selectedPatient || !selectedPatient.uhid) return;
+
+    // 1. Prepare Prescription Data for Pharmacy
+    const prescriptionData = {
+      patientId: selectedPatient.id,
+      uhid: selectedPatient.uhid,
+      patientName: selectedPatient.fullName,
+      doctorName: doctorName,
+      doctorId: doctorId,
+      prescriptionDate: Timestamp.now(), // Use Timestamp for consistent sorting/storage
+      medications: medications.map((med) => ({
+        id: med.id,
+        drugName: med.name, // Mapping from context type to Pharmacy type
+        dosage: med.dosage,
+        frequency: med.frequency,
+        duration: med.duration,
+        instructions: med.instructions,
+        // Default values for Pharmacy
+        quantity: 0,
+        unitPrice: 0.0,
+        totalPrice: 0.0,
+        dispensed: false,
+      })),
+      status: "Pending", // Always Pending initially
+      patientType: patientType,
+      consultationNotes: consultation.notes,
+      finalDiagnosis: finalDiagnosis,
+      totalAmount: 0, // Calculated by Pharmacy on dispense
+    };
 
     try {
-      const patientId = selectedPatient.id;
-      const patientRef = doc(db, "patients", patientId);
+      // 2. Save Prescription to Firebase 'prescriptions' collection
+      const prescriptionsRef = collection(db, "prescriptions");
+      await addDoc(prescriptionsRef, prescriptionData);
 
+      // 3. Update Patient Status to "Completed"
+      const patientRef = doc(db, "patients", selectedPatient.id);
       await setDoc(
         patientRef,
         {
@@ -866,12 +907,16 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
         { merge: true }
       );
 
+      // 4. Close Modal and Notify Parent
       setShowSummaryModal(false);
-      onCompleteConsultation(patientId);
+      onCompleteConsultation(selectedPatient.id);
     } catch (error) {
-      console.error("Error completing consultation:", error);
+      console.error(
+        "Error completing consultation & saving prescription:",
+        error
+      );
       alert(
-        "Failed to mark consultation as complete. Check console for details."
+        "Failed to save prescription or mark consultation complete. Check console for details."
       );
       setShowSummaryModal(false);
     }
