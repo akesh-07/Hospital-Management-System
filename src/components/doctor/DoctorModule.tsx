@@ -3,9 +3,6 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Stethoscope,
   Pill,
-  User,
-  Clock,
-  Activity,
   ArrowLeft,
   Brain,
   CheckCircle,
@@ -18,8 +15,7 @@ import {
   Hospital,
   Loader,
   ClipboardList,
-  Copy, // For copying AI suggestions
-  FlaskConical, // For Lab icon
+  Activity,
 } from "lucide-react";
 import { db } from "../../firebase";
 import {
@@ -27,11 +23,8 @@ import {
   query,
   where,
   onSnapshot,
-  orderBy,
   doc,
-  updateDoc,
   setDoc,
-  limit, // ADDED: for fetching latest Pre-OPD summary
 } from "firebase/firestore";
 import { Vitals } from "../../types";
 import PatientQueue from "../queue/PatientQueue";
@@ -259,8 +252,6 @@ const SummaryCard: React.FC<{
 
 // --- IN-PATIENT ADMISSION MODAL ---
 const InPatientAdmissionModal: React.FC<{
-  // ... (omitted InPatientAdmissionModal implementation for brevity)
-  // ... (original content from lines 163-366)
   patient: Patient;
   onClose: () => void;
   onConfirm: (data: AdmissionData) => void;
@@ -607,16 +598,10 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     }
   };
 
-  // REMOVED: All state related to file/document handling (uploadedFilesData, fileInputRefs, aiSummary, isAiSummaryLoading, isSummaryModalOpen)
-
   // 🚨 NEW HANDLER: Receives diagnosis from Ai.tsx child component
   const handleDiagnosisUpdate = useCallback((diagnosis: string) => {
     setFinalDiagnosis(diagnosis);
   }, []);
-
-  // --- REMOVED: extractTextFromFile function ---
-  // --- REMOVED: handleFileUpload function ---
-  // --- REMOVED: handleAiSummary function ---
 
   const handleSymptomChange = (
     id: number,
@@ -786,9 +771,8 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
   }, [selectedPatient]);
 
   // ------------------------------------------------------------------------------------------------
-  // --- UPDATED LOGIC: Fetch Pre-OPD Intake Summaries from Firestore using patientUhid and ordering ---
+  // --- UPDATED LOGIC: Fetch Pre-OPD Intake Summaries without composite index (client-side sort) ---
   // ------------------------------------------------------------------------------------------------
-  // This logic is correct but requires the composite index you were prompted to create.
   useEffect(() => {
     if (!selectedPatient?.uhid) {
       setPreOpdClinicalSummary("No patient selected.");
@@ -799,24 +783,34 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
 
     setIsPreOpdLoading(true);
 
-    // Query the 'preOPDIntake' collection for the latest record for this patient
+    // Equality filter only (no orderBy, no limit) -> no composite index required
     const intakeQuery = query(
       collection(db, "preOPDIntake"),
-      where("patientUhid", "==", selectedPatient.uhid),
-      orderBy("recordedAt", "desc"),
-      limit(1) // Only fetch the latest one
+      where("patientUhid", "==", selectedPatient.uhid)
     );
 
     const unsubscribe = onSnapshot(
       intakeQuery,
       (snapshot) => {
         if (!snapshot.empty) {
-          const data = snapshot.docs[0].data();
+          const docs = snapshot.docs
+            .map((d) => d.data() as any)
+            .map((d) => ({
+              ...d,
+              recordedAt:
+                d.recordedAt?.toDate?.() ??
+                (typeof d.recordedAt === "string"
+                  ? new Date(d.recordedAt)
+                  : new Date(0)),
+            }))
+            .sort((a, b) => b.recordedAt.getTime() - a.recordedAt.getTime());
+
+          const latest = docs[0];
           setPreOpdClinicalSummary(
-            data.aiClinicalSummary || "N/A - Not generated in Pre-OPD."
+            latest?.aiClinicalSummary || "N/A - Not generated in Pre-OPD."
           );
           setPreOpdHistorySummary(
-            data.aiHistorySummary || "N/A - Not generated in Pre-OPD."
+            latest?.aiHistorySummary || "N/A - Not generated in Pre-OPD."
           );
         } else {
           setPreOpdClinicalSummary(
@@ -829,7 +823,6 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
         setIsPreOpdLoading(false);
       },
       (error) => {
-        // Log the error but provide a user-friendly message
         console.error("Error fetching Pre-OPD Intake:", error);
         setPreOpdClinicalSummary("Error fetching summary data.");
         setPreOpdHistorySummary("Error fetching summary data.");
@@ -1289,8 +1282,6 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
           </button>
         </div>
       </div>
-
-      {/* REMOVED: AiSummaryModal component render */}
 
       {/* In-Patient Admission Modal Renderer */}
       {showAdmissionModal && selectedPatient && (
