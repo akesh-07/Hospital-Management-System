@@ -165,7 +165,7 @@ const StatusCard: React.FC<{
   <div
     className={`p-3 rounded-lg shadow-sm w-full md:w-auto md:min-w-[120px] ${colorClass}`}
   >
-    <p className="text-xs font-medium text-gray-700 truncate">{label}</p>
+    <p className="text-md font-medium text-gray-700 truncate">{label}</p>
     <p className="text-2xl font-bold mt-0.5">{count}</p>
   </div>
 );
@@ -564,13 +564,13 @@ const PatientQueue: React.FC = () => {
           </div>
           <div>
             <h3 className="font-semibold text-[#0B2D4D]">{patient.fullName}</h3>
-            <p className="text-xs text-[#1a4b7a]">
+            <p className="text-md text-[#1a4b7a]">
               Token: {patient.token} • ID: {patient.uhid || "N/A"}
             </p>
           </div>
         </div>
         <div className="flex flex-col">
-          <span className="text-xs font-medium text-gray-500">Doctor</span>
+          <span className="text-md font-medium text-gray-500">Doctor</span>
           <span className="text-sm text-[#1a4b7a] font-medium">
             Dr. {patient.doctorAssigned || "Not Assigned"}
           </span>
@@ -578,7 +578,7 @@ const PatientQueue: React.FC = () => {
 
         {/* ✅ UPDATED: Time Added Display */}
         <div className="flex flex-col">
-          <span className="text-xs font-medium text-gray-500">Time Added</span>
+          <span className="text-md font-medium text-gray-500">Time Added</span>
           <div className="flex items-center space-x-1">
             <Clock className="w-4 h-4 text-gray-400" />
             <span className="text-sm text-[#1a4b7a] font-medium">
@@ -589,7 +589,7 @@ const PatientQueue: React.FC = () => {
 
         <div className="flex justify-between items-center mb-2">
           <span
-            className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(
+            className={`px-2 py-1 text-md font-medium rounded-full border ${getStatusColor(
               patient.status
             )}`}
           >
@@ -622,7 +622,7 @@ const PatientQueue: React.FC = () => {
         <div className="flex items-center space-x-2">
           <IdCard className="w-4 h-4 text-gray-400" />
           <span
-            className={`text-xs px-2 py-1 rounded ${
+            className={`text-md px-2 py-1 rounded ${
               patient.abhaId
                 ? "bg-green-100 text-green-700"
                 : "bg-gray-100 text-gray-600"
@@ -639,7 +639,7 @@ const PatientQueue: React.FC = () => {
             {patient.chronicConditions?.map((condition, index) => (
               <span
                 key={index}
-                className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full"
+                className="px-2 py-1 bg-orange-100 text-orange-700 text-md rounded-full"
               >
                 {condition}
               </span>

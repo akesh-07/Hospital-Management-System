@@ -147,7 +147,7 @@ export const Dashboard: React.FC = () => {
       }`}
     >
       <Icon className="w-3.5 h-3.5" />
-      <span className="text-xs font-medium">{label}</span>
+      <span className="text-md font-medium">{label}</span>
     </button>
   );
 
@@ -229,7 +229,7 @@ export const Dashboard: React.FC = () => {
                   className="flex items-center space-x-1 px-2 py-1 rounded-md bg-gray-200 text-[#1a4b7a] hover:bg-gray-300 transition-colors"
                 >
                   <X className="w-3.5 h-3.5" />
-                  <span className="text-xs">Back</span>
+                  <span className="text-md">Back</span>
                 </button>
               </div>
 
@@ -288,7 +288,7 @@ export const Dashboard: React.FC = () => {
 
         {/* Footer Info */}
         <div className="pt-2 border-t border-gray-200 text-center flex-shrink-0">
-          <p className="text-xs text-[#1a4b7a]">
+          <p className="text-md text-[#1a4b7a]">
             Last updated:{" "}
             {new Date().toLocaleDateString("en-US", {
               weekday: "long",

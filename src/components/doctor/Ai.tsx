@@ -430,7 +430,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
   };
 
   return (
-    <div className="space-y-3 p-2 bg-gray-100 font-sans text-xs">
+    <div className="space-y-3 p-2 bg-gray-100 font-sans text-md">
       <div className="bg-white p-2 rounded shadow border border-gray-200">
         <button
           onClick={handleGenerateSuggestions}
@@ -440,14 +440,14 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
           {isLoading ? (
             <>
               <Loader className="w-5 h-5 animate-spin" />
-              <span className="text-sm font-semibold">
+              <span className="text-lg font-semibold">
                 Generating AI Suggestions...
               </span>
             </>
           ) : (
             <>
               <Brain className="w-5 h-5" />
-              <span className="text-sm font-semibold">
+              <span className="text-lg font-semibold">
                 Generate AI Suggestions from Assessment
               </span>
             </>
@@ -458,7 +458,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         <div className="w-full bg-white p-2 rounded shadow border border-gray-200">
           <div className="p-2 border-b border-gray-200">
-            <h3 className="text-sm font-bold text-[#0B2D4D] tracking-tight">
+            <h3 className="text-lg font-bold text-[#0B2D4D] tracking-tight">
               Diagnosis (ICD-10)
             </h3>
           </div>
@@ -472,14 +472,14 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                 placeholder="Enter diagnosis"
                 value={diagnosis.doctorEntry}
                 onChange={(e) => handleDiagnosisChange(e.target.value)}
-                className="flex-1 p-1.5 border border-gray-300 rounded bg-gray-50 focus:ring-1 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-xs"
+                className="flex-1 p-1.5 border border-gray-300 rounded bg-gray-50 focus:ring-1 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-md"
               />
             </div>
           </div>
         </div>
         <div className="w-full bg-white p-2 rounded shadow border border-gray-200">
           <div className="p-2 border-b border-gray-200">
-            <h3 className="text-sm font-bold text-[#0B2D4D] tracking-tight">
+            <h3 className="text-lg font-bold text-[#0B2D4D] tracking-tight">
               AI-Suggested Diagnosis
             </h3>
           </div>
@@ -492,7 +492,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                 type="text"
                 value={diagnosis.aiSuggested}
                 readOnly
-                className="flex-1 p-1.5 border border-gray-300 rounded bg-gray-50 text-[#0B2D4D] text-xs"
+                className="flex-1 p-1.5 border border-gray-300 rounded bg-gray-50 text-[#0B2D4D] text-md"
               />
               <button
                 onClick={() => copyToField(diagnosis.aiSuggested, "diagnosis")}
@@ -508,7 +508,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         <div className="w-full bg-white p-2 rounded shadow border border-gray-200">
           <div className="p-2 border-b border-gray-200">
-            <h3 className="text-sm font-bold text-[#0B2D4D] tracking-tight">
+            <h3 className="text-lg font-bold text-[#0B2D4D] tracking-tight">
               Lab Investigation
             </h3>
           </div>
@@ -518,7 +518,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
               placeholder="Enter lab investigation (e.g., Blood Culture, Liver scan)"
               value={labInvestigation.doctorEntry}
               onChange={(e) => handleLabInvestigationChange(e.target.value)}
-              className="w-full p-1.5 border border-gray-300 rounded bg-gray-50 focus:ring-1 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-xs"
+              className="w-full p-1.5 border border-gray-300 rounded bg-gray-50 focus:ring-1 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-md"
             />
             {/* 🟢 Lab Test Tags Display (based on doctor selection) */}
             <div className="flex flex-wrap gap-1">
@@ -527,7 +527,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                   labInvestigation.doctorTests[test] && (
                     <span
                       key={`tag-${test}`}
-                      className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full border border-blue-300"
+                      className="px-2 py-0.5 bg-blue-100 text-blue-800 text-md rounded-full border border-blue-300"
                     >
                       {test.toUpperCase()}
                     </span>
@@ -544,7 +544,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                     key={test}
                     onClick={() => handleTestChange(test)}
                     className={`
-                      cursor-pointer px-3 py-1 text-xs font-semibold rounded-full border transition-all duration-200 
+                      cursor-pointer px-3 py-1 text-md font-semibold rounded-full border transition-all duration-200 
                       ${
                         labInvestigation.doctorTests[test]
                           ? "bg-[#012e58] text-white border-[#012e58]"
@@ -559,7 +559,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={copyAiTests}
-                  className="flex items-center gap-1 px-2 py-1 text-xs border border-[#012e58] rounded text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-1 focus:ring-[#012e58] transition-all duration-300"
+                  className="flex items-center gap-1 px-2 py-1 text-md border border-[#012e58] rounded text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-1 focus:ring-[#012e58] transition-all duration-300"
                   disabled={isSendingLab}
                 >
                   <Copy size={10} />
@@ -568,7 +568,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                 {/* Send to Lab Button */}
                 <button
                   onClick={handleSendLabOrder}
-                  className="flex items-center gap-1 px-2 py-1 text-xs border border-green-600 rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-1 focus:ring-green-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1 px-2 py-1 text-md border border-green-600 rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-1 focus:ring-green-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isSendingLab}
                 >
                   {isSendingLab ? (
@@ -584,14 +584,14 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
         </div>
         <div className="w-full bg-white p-2 rounded shadow border border-gray-200">
           <div className="p-2 border-b border-gray-200">
-            <h3 className="text-sm font-bold text-[#0B2D4D] tracking-tight">
+            <h3 className="text-lg font-bold text-[#0B2D4D] tracking-tight">
               AI Auto Suggestion Lab
             </h3>
           </div>
           <div className="p-2 space-y-1">
             {/* 🟢 AI Suggested Text as a Single Tag */}
             <div className="flex flex-wrap gap-2">
-              <span className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full font-medium">
+              <span className="px-3 py-1 text-md bg-green-100 text-green-700 rounded-full font-medium">
                 {labInvestigation.aiSuggestion || "No suggestions yet."}
               </span>
             </div>
@@ -608,7 +608,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
 
             {/* 🟢 AI Suggested Individual Test Tags */}
             <div className="flex flex-wrap gap-1 pt-2">
-              <span className="text-gray-500 text-xs font-semibold mr-1">
+              <span className="text-gray-500 text-md font-semibold mr-1">
                 Suggested Tests:
               </span>
               {(["cbc", "lft", "rft"] as const).map(
@@ -616,7 +616,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                   labInvestigation.aiTests[test] && (
                     <span
                       key={`ai-tag-${test}`}
-                      className="px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded-full border border-purple-300"
+                      className="px-2 py-0.5 bg-purple-100 text-purple-800 text-md rounded-full border border-purple-300"
                     >
                       {test.toUpperCase()}
                     </span>
@@ -630,7 +630,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
       {/* Lab Results */}
       <div className="w-full bg-white p-2 rounded shadow border border-gray-200">
         <div className="p-2 border-b border-gray-200">
-          <h3 className="text-sm font-bold text-[#0B2D4D] tracking-tight">
+          <h3 className="text-lg font-bold text-[#0B2D4D] tracking-tight">
             Lab Results (Auto uploaded by lab technician)
           </h3>
         </div>
@@ -638,7 +638,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
           {labResults.map((result, idx) => (
             <span
               key={idx}
-              className="px-2 py-0.5 bg-gradient-to-r from-[#012e58]/5 to-[#012e58]/10 text-[#0B2D4D] text-xs rounded border border-gray-200"
+              className="px-2 py-0.5 bg-gradient-to-r from-[#012e58]/5 to-[#012e58]/10 text-[#0B2D4D] text-md rounded border border-gray-200"
             >
               {result}
             </span>
@@ -648,41 +648,41 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
       {/* AI-Suggested Medication Table */}
       <div className="w-full bg-white p-2 rounded shadow border border-gray-200">
         <div className="p-2 border-b border-gray-200 flex justify-between items-center">
-          <h3 className="text-sm font-bold text-[#0B2D4D] tracking-tight">
+          <h3 className="text-lg font-bold text-[#0B2D4D] tracking-tight">
             AI-Suggested Medication Table
           </h3>
           <button
             onClick={handleCopyPrescription}
             disabled={medicationRows.length === 0}
-            className="flex items-center space-x-2 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs disabled:opacity-50"
+            className="flex items-center space-x-2 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-md disabled:opacity-50"
           >
             <Copy className="w-3 h-3" />
             <span>Copy All Suggestions</span>
           </button>
         </div>
         <div className="p-2 overflow-x-auto">
-          <table className="w-full text-xs border-collapse border border-gray-300">
+          <table className="w-full text-md border-collapse border border-gray-300">
             <thead className="bg-gradient-to-r from-[#012e58] to-[#1a4b7a] text-white">
               <tr>
-                <th className="p-1 border border-gray-300 font-semibold text-xs min-w-[100px]">
+                <th className="p-1 border border-gray-300 font-semibold text-md min-w-[100px]">
                   Name (AI)
                 </th>
-                <th className="p-1 border border-gray-300 font-semibold text-xs min-w-[70px]">
+                <th className="p-1 border border-gray-300 font-semibold text-md min-w-[70px]">
                   Dosage (AI)
                 </th>
-                <th className="p-1 border border-gray-300 font-semibold text-xs min-w-[70px]">
+                <th className="p-1 border border-gray-300 font-semibold text-md min-w-[70px]">
                   Freq (AI)
                 </th>
-                <th className="p-1 border border-gray-300 font-semibold text-xs min-w-[70px]">
+                <th className="p-1 border border-gray-300 font-semibold text-md min-w-[70px]">
                   Duration (AI)
                 </th>
-                <th className="p-1 border border-gray-300 font-semibold text-xs min-w-[120px]">
+                <th className="p-1 border border-gray-300 font-semibold text-md min-w-[120px]">
                   Instructions (AI)
                 </th>
-                <th className="p-1 border border-gray-300 font-semibold text-xs min-w-[100px]">
+                <th className="p-1 border border-gray-300 font-semibold text-md min-w-[100px]">
                   Name (Dr. Entry)
                 </th>
-                <th className="p-1 border border-gray-300 font-semibold text-xs text-center min-w-[30px]">
+                <th className="p-1 border border-gray-300 font-semibold text-md text-center min-w-[30px]">
                   Action
                 </th>
               </tr>
@@ -695,7 +695,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                 >
                   <td className="p-1 border border-gray-300">
                     <div className="flex gap-1 items-center">
-                      <span className="flex-1 text-[#0B2D4D] font-medium text-xs">
+                      <span className="flex-1 text-[#0B2D4D] font-medium text-md">
                         {row.aiMedication}
                       </span>
                       <button
@@ -714,7 +714,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                   </td>
                   <td className="p-1 border border-gray-300">
                     <div className="flex gap-1 items-center">
-                      <span className="flex-1 text-[#0B2D4D] font-medium text-xs">
+                      <span className="flex-1 text-[#0B2D4D] font-medium text-md">
                         {row.aiDosage}
                       </span>
                       <button
@@ -729,7 +729,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                   </td>
                   <td className="p-1 border border-gray-300">
                     <div className="flex gap-1 items-center">
-                      <span className="flex-1 text-[#0B2D4D] font-medium text-xs">
+                      <span className="flex-1 text-[#0B2D4D] font-medium text-md">
                         {row.aiFrequency}
                       </span>
                       <button
@@ -748,7 +748,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                   </td>
                   <td className="p-1 border border-gray-300">
                     <div className="flex gap-1 items-center">
-                      <span className="flex-1 text-[#0B2D4D] font-medium text-xs">
+                      <span className="flex-1 text-[#0B2D4D] font-medium text-md">
                         {row.aiDuration}
                       </span>
                       <button
@@ -767,7 +767,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                   </td>
                   <td className="p-1 border border-gray-300">
                     <div className="flex gap-1 items-center">
-                      <span className="flex-1 text-[#0B2D4D] font-medium text-xs">
+                      <span className="flex-1 text-[#0B2D4D] font-medium text-md">
                         {row.aiInstructions}
                       </span>
                       <button
@@ -796,7 +796,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
                           e.target.value
                         )
                       }
-                      className="w-full p-1 border border-gray-200 rounded text-xs focus:ring-1 focus:ring-blue-300"
+                      className="w-full p-1 border border-gray-200 rounded text-md focus:ring-1 focus:ring-blue-300"
                       placeholder="Dr. Name"
                     />
                   </td>
@@ -815,7 +815,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
           </table>
           <button
             onClick={addManualMedicationRow}
-            className="mt-2 flex items-center gap-1 px-3 py-1 text-xs bg-gray-200 text-[#0B2D4D] rounded hover:bg-gray-300 transition-colors"
+            className="mt-2 flex items-center gap-1 px-3 py-1 text-md bg-gray-200 text-[#0B2D4D] rounded hover:bg-gray-300 transition-colors"
           >
             <Plus size={12} />
             Add Manual Row

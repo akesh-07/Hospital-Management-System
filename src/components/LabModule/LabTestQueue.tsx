@@ -220,13 +220,13 @@ const LabTestQueue: React.FC = () => {
         onClick={onToggle}
       >
                                    
-        <div className="flex justify-between gap-6 text-sm items-center">
+        <div className="flex justify-between gap-6 text-lg items-center">
                                              
           <div className="flex items-center space-x-3 min-w-[200px]">
                                                        
             <div className="w-10 h-10 bg-[#fce4ec] rounded-full flex items-center justify-center">
                                                                  
-              <span className="text-[#a1005a] font-medium text-sm">
+              <span className="text-[#a1005a] font-medium text-lg">
                                                                        
                 {item.fullName
                   ?.split(" ")
@@ -241,7 +241,7 @@ const LabTestQueue: React.FC = () => {
                                                                  
               <h3 className="font-semibold text-[#0B2D4D]">{item.fullName}</h3> 
                                                                
-              <p className="text-xs text-[#1a4b7a]">Patient ID: {item.patId}</p>
+              <p className="text-md text-[#1a4b7a]">Patient ID: {item.patId}</p>
                                                            
             </div>
                                                  
@@ -249,7 +249,7 @@ const LabTestQueue: React.FC = () => {
                                                              
           <div className="flex flex-col min-w-[150px]">
                                                        
-            <span className="text-xs font-medium text-gray-500">
+            <span className="text-md font-medium text-gray-500">
                             Request Time            
             </span>
                                                        
@@ -257,7 +257,7 @@ const LabTestQueue: React.FC = () => {
                                                                  
               <Clock className="w-4 h-4 text-gray-400" />                       
                            
-              <span className="text-sm text-[#1a4b7a] font-medium">
+              <span className="text-lg text-[#1a4b7a] font-medium">
                                                                        
                 {item.requestedAt.toLocaleTimeString("en-US", {
                   hour: "2-digit",
@@ -272,7 +272,7 @@ const LabTestQueue: React.FC = () => {
                                              
           <div className="flex flex-col min-w-[150px]">
                                                        
-            <span className="text-xs font-medium text-gray-500">
+            <span className="text-md font-medium text-gray-500">
                             Ordering Doctor            
             </span>
                                                        
@@ -280,7 +280,7 @@ const LabTestQueue: React.FC = () => {
                                                                  
               <UserCheck className="w-4 h-4 text-gray-400" />                   
                                              
-              <span className="text-sm text-[#1a4b7a] font-medium">
+              <span className="text-lg text-[#1a4b7a] font-medium">
                                                         Dr.
                 {item.assignDoctorId}                                           
                          
@@ -293,7 +293,7 @@ const LabTestQueue: React.FC = () => {
           <div className="min-w-[100px]">
                                                        
             <span
-              className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(
+              className={`px-3 py-1 text-md font-medium rounded-full border ${getStatusColor(
                 item.status
               )}`}
             >
@@ -317,7 +317,7 @@ const LabTestQueue: React.FC = () => {
                                         {/* --- Expanded Details --- */}       
                    
         <div
-          className={`grid grid-cols-1 gap-4 text-sm overflow-hidden transition-all duration-300 ease-in-out ${
+          className={`grid grid-cols-1 gap-4 text-lg overflow-hidden transition-all duration-300 ease-in-out ${
             isOpen
               ? "max-h-96 opacity-100 pt-4 mt-3 border-t border-gray-200"
               : "max-h-0 opacity-0"
@@ -333,7 +333,7 @@ const LabTestQueue: React.FC = () => {
               {item.tests.map((test, index) => (
                 <span
                   key={index}
-                  className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full border border-purple-300"
+                  className="px-2 py-1 bg-purple-100 text-purple-700 text-md rounded-full border border-purple-300"
                 >
                                                                     {test}     
                                                                          
@@ -350,7 +350,7 @@ const LabTestQueue: React.FC = () => {
                      
             <button
               onClick={(e) => handleUploadClick(e, item)}
-              className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md"
+              className="px-3 py-1 text-lg bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md"
             >
                                                     Upload Test Results        
                                      
@@ -364,7 +364,7 @@ const LabTestQueue: React.FC = () => {
                   e.stopPropagation();
                   handleStartTest(item.id);
                 }}
-                className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                className="px-3 py-1 text-lg bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
               >
                                                             Start Processing    
                                                                  
@@ -379,7 +379,7 @@ const LabTestQueue: React.FC = () => {
                   e.stopPropagation();
                   handleCompleteTest(item.id);
                 }}
-                className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                className="px-3 py-1 text-lg bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
               >
                                                             Mark as Completed  
                                                                    
@@ -391,7 +391,7 @@ const LabTestQueue: React.FC = () => {
             <div className="flex items-center space-x-2 text-gray-500 ml-auto">
                                                    
               <Phone className="w-4 h-4" />                                     
-              <span className="text-sm">{item.contactNumber}</span>             
+              <span className="text-lg">{item.contactNumber}</span>             
                                              
             </div>
                                                  
@@ -431,10 +431,10 @@ const LabTestQueue: React.FC = () => {
                                      
         <button
           onClick={onBack}
-          className="mb-6 flex items-center space-x-2 px-4 py-2 text-sm bg-gray-100 text-[#0B2D4D] rounded-lg hover:bg-gray-200 transition-colors"
+          className="mb-6 flex items-center space-x-2 px-4 py-2 text-lg bg-gray-100 text-[#0B2D4D] rounded-lg hover:bg-gray-200 transition-colors"
         >
-                                      <ArrowLeft className="w-4 h-4" /> <span>Back to Lab Queue</span>                  
-             
+                                      <ArrowLeft className="w-4 h-4" />{" "}
+          <span>Back to Lab Queue</span>                      
         </button>
                                                    
         <h1 className="text-3xl font-bold text-[#0B2D4D] mb-4">
@@ -450,7 +450,7 @@ const LabTestQueue: React.FC = () => {
                                                          
             <div className="p-3 border rounded-lg bg-indigo-50/50">
                                                                    
-              <p className="text-xs text-gray-600">Patient</p>                 
+              <p className="text-md text-gray-600">Patient</p>                 
                                                  
               <h2 className="text-xl font-semibold text-indigo-900">
                                 {details.patientName}             
@@ -460,7 +460,7 @@ const LabTestQueue: React.FC = () => {
                                                          
             <div className="p-3 border rounded-lg bg-yellow-50/50">
                                                                    
-              <p className="text-xs text-gray-600">Ordering Doctor</p>         
+              <p className="text-md text-gray-600">Ordering Doctor</p>         
                                                          
               <h2 className="text-xl font-semibold text-yellow-900">
                                 Dr. {details.assignDoctor}             
@@ -470,7 +470,7 @@ const LabTestQueue: React.FC = () => {
                                                          
             <div className="p-3 border rounded-lg bg-gray-50/50">
                                                                    
-              <p className="text-xs text-gray-600">Contact Number</p>           
+              <p className="text-md text-gray-600">Contact Number</p>           
                                                        
               <h2 className="text-xl font-semibold text-gray-900">
                                 {details.contactNumber}             
@@ -497,14 +497,14 @@ const LabTestQueue: React.FC = () => {
                 <div className="flex items-center justify-between mb-3">
                                                                                
                          
-                  <span className="px-3 py-1 text-sm font-medium bg-green-100 text-green-800 rounded-full border border-green-300">
+                  <span className="px-3 py-1 text-lg font-medium bg-green-100 text-green-800 rounded-full border border-green-300">
                                                                              
                     {test}                                                     
                                      
                   </span>
                                                                                
                          
-                  <span className="text-xs text-gray-500">
+                  <span className="text-md text-gray-500">
                                         Test {index + 1} of
                     {details.tests.length}                 
                   </span>
@@ -517,7 +517,7 @@ const LabTestQueue: React.FC = () => {
                                                                                
                           {/* Placeholder for Result Input */}                 
                                                                      
-                  <label className="block text-xs font-medium text-gray-700">
+                  <label className="block text-md font-medium text-gray-700">
                                         Numeric Result / Finding:              
                        
                   </label>
@@ -533,13 +533,13 @@ const LabTestQueue: React.FC = () => {
                                                                                
                           {/* Optional: File Upload Placeholder */}             
                                                                          
-                  <label className="block text-xs font-medium text-gray-700 pt-2">
+                  <label className="block text-md font-medium text-gray-700 pt-2">
                                         Upload Report (PDF/Image):              
                        
                   </label>
                                                                                
                          
-                  <div className="p-3 border-2 border-dashed border-gray-200 rounded-lg text-center text-gray-500 text-sm">
+                  <div className="p-3 border-2 border-dashed border-gray-200 rounded-lg text-center text-gray-500 text-lg">
                                                                              
                     [File Upload                     Component]                
                                                        

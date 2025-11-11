@@ -16,7 +16,7 @@ import Layout from "../components/layout/Layout";
 
 // Styled input for consistency
 const inputStyle =
-  "p-2.5 border border-blue-300 rounded-lg w-full bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out text-sm text-gray-800 placeholder:text-gray-500 shadow-sm";
+  "p-2.5 border border-blue-300 rounded-lg w-full bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out text-lg text-gray-800 placeholder:text-gray-500 shadow-sm";
 
 // Helper component for mandatory fields
 const FormLabel: React.FC<{
@@ -26,7 +26,7 @@ const FormLabel: React.FC<{
 }> = ({ htmlFor, label, isRequired = false }) => (
   <label
     htmlFor={htmlFor}
-    className="block text-sm font-medium text-gray-700 mb-1"
+    className="block text-lg font-medium text-gray-700 mb-1"
   >
     {label}
     {isRequired && <span className="text-red-500 ml-1">*</span>}
@@ -255,10 +255,10 @@ const AdminFieldConfig: React.FC = () => {
                 .sort((a, b) => a.order - b.order)
                 .map((field) => (
                   <tr key={field.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-lg font-medium text-gray-900">
                       {field.label}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 capitalize">
+                    <td className="px-6 py-4 whitespace-nowrap text-lg text-center text-gray-500 capitalize">
                       {field.type}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -274,7 +274,7 @@ const AdminFieldConfig: React.FC = () => {
                         disabled={!field.include} // Cannot be mandatory if not included
                       />
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-lg font-medium">
                       <button
                         onClick={() => handleDelete(field.id)}
                         className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-50"
@@ -398,7 +398,7 @@ const ToggleSwitch: React.FC<{
         checked ? "bg-blue-600" : "bg-red-600"
       }`}
     ></div>
-    <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">
+    <span className="ml-3 text-lg font-medium text-gray-900 dark:text-gray-300">
       {checked ? (
         <Check className="w-4 h-4 text-white p-0.5 bg-green-500 rounded-full" />
       ) : (

@@ -72,7 +72,7 @@ export const MOCK_MASTERS = {
 };
 
 export const InputStyle =
-  "p-2 border border-gray-300 rounded-md w-full bg-white focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-sm";
+  "p-2 border border-gray-300 rounded-md w-full bg-white focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-lg";
 
 // Helper component for section headers to maintain consistency
 export const SectionHeader: React.FC<{
@@ -127,7 +127,7 @@ const FormattedAiSummary: React.FC<{ summary: string }> = ({ summary }) => {
           );
         }
         return (
-          <p key={index} className="text-sm text-gray-800">
+          <p key={index} className="text-lg text-gray-800">
             {trimmed}
           </p>
         );
@@ -199,7 +199,7 @@ export const PresentingComplaintsSection: React.FC<
           <button
             onClick={addComplaint}
             disabled={data.length >= 5}
-            className="flex items-center space-x-1 px-3 py-1 bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors text-sm disabled:bg-gray-400"
+            className="flex items-center space-x-1 px-3 py-1 bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors text-lg disabled:bg-gray-400"
           >
             <Plus className="w-4 h-4" />
             <span>Add Complaint</span>
@@ -212,7 +212,7 @@ export const PresentingComplaintsSection: React.FC<
           <div className="text-center py-8 text-gray-500">
             <List className="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <p>No complaints recorded yet</p>
-            <p className="text-sm">Click "Add Complaint" to start</p>
+            <p className="text-lg">Click "Add Complaint" to start</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -224,7 +224,7 @@ export const PresentingComplaintsSection: React.FC<
                 <div className="grid grid-cols-12 gap-3 items-end">
                   {/* Complaint */}
                   <div className="col-span-4">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <label className="block text-md font-medium text-gray-600 mb-1">
                       Chief Complaint
                     </label>
                     <input
@@ -250,7 +250,7 @@ export const PresentingComplaintsSection: React.FC<
 
                   {/* Severity */}
                   <div className="col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <label className="block text-md font-medium text-gray-600 mb-1">
                       Severity
                     </label>
                     <select
@@ -275,7 +275,7 @@ export const PresentingComplaintsSection: React.FC<
 
                   {/* Duration */}
                   <div className="col-span-3">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <label className="block text-md font-medium text-gray-600 mb-1">
                       Duration
                     </label>
                     <div className="flex space-x-1">
@@ -315,10 +315,10 @@ export const PresentingComplaintsSection: React.FC<
 
                   {/* Specialty (Auto-derived) */}
                   <div className="col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <label className="block text-md font-medium text-gray-600 mb-1">
                       Specialty
                     </label>
-                    <div className="p-2 bg-gray-100 border border-gray-200 rounded-md text-sm text-gray-700">
+                    <div className="p-2 bg-gray-100 border border-gray-200 rounded-md text-lg text-gray-700">
                       {complaint.specialty || "Auto-derived"}
                     </div>
                   </div>
@@ -336,7 +336,7 @@ export const PresentingComplaintsSection: React.FC<
                   {/* Red Flag Alert */}
                   {complaint.redFlagTriggered && (
                     <div className="col-span-12 mt-2">
-                      <div className="flex items-center bg-red-100 text-red-800 p-2 rounded-md text-sm font-semibold">
+                      <div className="flex items-center bg-red-100 text-red-800 p-2 rounded-md text-lg font-semibold">
                         <AlertTriangle className="w-4 h-4 mr-2 flex-shrink-0" />
                         🚨 RED FLAG: Severe {complaint.complaint.toLowerCase()}{" "}
                         requires immediate attention!
@@ -459,7 +459,7 @@ export const ChronicConditionsSection: React.FC<
           </div>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="flex items-center space-x-1 px-3 py-1 bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors text-sm"
+            className="flex items-center space-x-1 px-3 py-1 bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors text-lg"
           >
             <Plus className="w-4 h-4" />
             <span>Add Condition</span>
@@ -481,7 +481,7 @@ export const ChronicConditionsSection: React.FC<
                   <button
                     key={condition}
                     onClick={() => addCondition(condition)}
-                    className="px-3 py-1 text-sm bg-white text-blue-800 rounded-full border border-blue-300 hover:bg-blue-100 transition-colors"
+                    className="px-3 py-1 text-lg bg-white text-blue-800 rounded-full border border-blue-300 hover:bg-blue-100 transition-colors"
                   >
                     {condition}
                   </button>
@@ -491,7 +491,7 @@ export const ChronicConditionsSection: React.FC<
               <input
                 type="text"
                 placeholder="Or type custom condition..."
-                className="flex-1 p-2 border border-gray-300 rounded-md text-sm"
+                className="flex-1 p-2 border border-gray-300 rounded-md text-lg"
                 onKeyPress={(e) => {
                   if (e.key === "Enter" && e.currentTarget.value.trim()) {
                     addCondition(e.currentTarget.value.trim());
@@ -501,7 +501,7 @@ export const ChronicConditionsSection: React.FC<
               />
               <button
                 onClick={() => setShowAddForm(false)}
-                className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100"
+                className="px-3 py-1 text-lg text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100"
               >
                 Cancel
               </button>
@@ -514,7 +514,7 @@ export const ChronicConditionsSection: React.FC<
           <div className="text-center py-8 text-gray-500">
             <HeartPulse className="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <p>No chronic conditions recorded</p>
-            <p className="text-sm">Click "Add Condition" to start</p>
+            <p className="text-lg">Click "Add Condition" to start</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -544,13 +544,13 @@ export const ChronicConditionsSection: React.FC<
                           <h4 className="font-semibold text-[#0B2D4D]">
                             {condition.name}
                           </h4>
-                          <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full border border-blue-200">
+                          <span className="px-2 py-0.5 text-md bg-blue-100 text-blue-700 rounded-full border border-blue-200">
                             {condition.medications.length} med
                             {condition.medications.length !== 1 ? "s" : ""}
                           </span>
                         </div>
                         {uncontrolledWarning && (
-                          <span className="text-xs text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full border border-orange-200">
+                          <span className="text-md text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full border border-orange-200">
                             May be uncontrolled
                           </span>
                         )}
@@ -582,7 +582,7 @@ export const ChronicConditionsSection: React.FC<
                       {/* Condition Details */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-lg font-medium text-gray-700 mb-1">
                             Duration
                           </label>
                           <select
@@ -615,7 +615,7 @@ export const ChronicConditionsSection: React.FC<
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-lg font-medium text-gray-700 mb-1">
                             On Medication
                           </label>
                           <select
@@ -637,7 +637,7 @@ export const ChronicConditionsSection: React.FC<
                             onClick={() =>
                               addMedicationToCondition(condition.id)
                             }
-                            className="flex items-center space-x-1 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
+                            className="flex items-center space-x-1 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-lg"
                           >
                             <Plus className="w-4 h-4" />
                             <span>Add Medication</span>
@@ -648,7 +648,7 @@ export const ChronicConditionsSection: React.FC<
                       {/* Uncontrolled Warning */}
                       {uncontrolledWarning && (
                         <div className="mb-4 p-3 bg-orange-100 border border-orange-200 rounded-md">
-                          <p className="text-sm text-orange-800">
+                          <p className="text-lg text-orange-800">
                             {uncontrolledWarning}
                           </p>
                         </div>
@@ -668,7 +668,7 @@ export const ChronicConditionsSection: React.FC<
                           <div className="overflow-x-auto">
                             <table className="w-full">
                               <thead className="bg-gray-100">
-                                <tr className="text-xs text-gray-600">
+                                <tr className="text-md text-gray-600">
                                   <th className="text-left p-2 w-1/4">
                                     Medication
                                   </th>
@@ -705,7 +705,7 @@ export const ChronicConditionsSection: React.FC<
                                             }
                                           )
                                         }
-                                        className="w-full p-1 border border-gray-300 rounded text-sm"
+                                        className="w-full p-1 border border-gray-300 rounded text-lg"
                                         placeholder="Medication name"
                                       />
                                       <datalist id="medication-list">
@@ -727,7 +727,7 @@ export const ChronicConditionsSection: React.FC<
                                             }
                                           )
                                         }
-                                        className="w-full p-1 border border-gray-300 rounded text-sm"
+                                        className="w-full p-1 border border-gray-300 rounded text-lg"
                                         placeholder="e.g., 500mg"
                                       />
                                     </td>
@@ -743,7 +743,7 @@ export const ChronicConditionsSection: React.FC<
                                             }
                                           )
                                         }
-                                        className="w-full p-1 border border-gray-300 rounded text-sm"
+                                        className="w-full p-1 border border-gray-300 rounded text-lg"
                                       >
                                         {MOCK_MASTERS.frequencies.map(
                                           (freq) => (
@@ -766,7 +766,7 @@ export const ChronicConditionsSection: React.FC<
                                             }
                                           )
                                         }
-                                        className="w-full p-1 border border-gray-300 rounded text-sm"
+                                        className="w-full p-1 border border-gray-300 rounded text-lg"
                                       >
                                         {MOCK_MASTERS.routes.map((route) => (
                                           <option key={route} value={route}>
@@ -787,7 +787,7 @@ export const ChronicConditionsSection: React.FC<
                                             }
                                           )
                                         }
-                                        className="w-full p-1 border border-gray-300 rounded text-sm"
+                                        className="w-full p-1 border border-gray-300 rounded text-lg"
                                       >
                                         {MOCK_MASTERS.compliance.map((comp) => (
                                           <option key={comp} value={comp}>
@@ -881,7 +881,7 @@ export const AllergiesSection: React.FC<AllergiesSectionProps> = ({
           </div>
           <div className="flex items-center space-x-3">
             <span
-              className={`px-3 py-1 text-xs font-semibold rounded-full ${
+              className={`px-3 py-1 text-md font-semibold rounded-full ${
                 data.hasAllergies
                   ? "bg-red-100 text-red-700 border border-red-200"
                   : "bg-green-100 text-green-700 border border-green-200"
@@ -908,7 +908,7 @@ export const AllergiesSection: React.FC<AllergiesSectionProps> = ({
             onChange={(e) => toggleAllergies(e.target.checked)}
             className="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500"
           />
-          <span className="text-sm font-medium text-[#0B2D4D]">
+          <span className="text-lg font-medium text-[#0B2D4D]">
             Patient has known allergies
           </span>
         </label>
@@ -920,10 +920,10 @@ export const AllergiesSection: React.FC<AllergiesSectionProps> = ({
               <div className="flex items-start bg-red-100 text-red-800 p-3 rounded-md border border-red-200">
                 <AlertTriangle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold text-sm">
+                  <p className="font-semibold text-lg">
                     Drug Conflict Detected!
                   </p>
-                  <p className="text-sm">
+                  <p className="text-lg">
                     Patient is allergic to **"{data.substance}"** but is
                     currently prescribed: **
                     {drugConflicts.map((med) => med.name).join(", ")}**
@@ -935,7 +935,7 @@ export const AllergiesSection: React.FC<AllergiesSectionProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Allergy Types */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-lg font-medium text-gray-700 mb-2">
                   Allergy Type(s)
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -944,7 +944,7 @@ export const AllergiesSection: React.FC<AllergiesSectionProps> = ({
                       key={type}
                       type="button"
                       onClick={() => updateAllergyType(type)}
-                      className={`px-3 py-1 text-sm rounded-full border transition-colors ${
+                      className={`px-3 py-1 text-lg rounded-full border transition-colors ${
                         data.type.includes(type)
                           ? "bg-red-500 text-white border-red-600"
                           : "bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200"
@@ -958,7 +958,7 @@ export const AllergiesSection: React.FC<AllergiesSectionProps> = ({
 
               {/* Substance */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-lg font-medium text-gray-700 mb-2">
                   Substance/Allergen
                 </label>
                 <input
@@ -976,7 +976,7 @@ export const AllergiesSection: React.FC<AllergiesSectionProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Reaction */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-lg font-medium text-gray-700 mb-2">
                   Reaction Description
                 </label>
                 <input
@@ -989,14 +989,14 @@ export const AllergiesSection: React.FC<AllergiesSectionProps> = ({
                   placeholder="e.g., Hives, Swelling, Difficulty breathing"
                   maxLength={160}
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-md text-gray-500 mt-1">
                   {data.reaction.length}/160 characters
                 </p>
               </div>
 
               {/* Severity */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-lg font-medium text-gray-700 mb-2">
                   Severity Level
                 </label>
                 <div className="flex space-x-2">
@@ -1005,7 +1005,7 @@ export const AllergiesSection: React.FC<AllergiesSectionProps> = ({
                       key={severity}
                       type="button"
                       onClick={() => onChange({ ...data, severity })}
-                      className={`px-3 py-1 text-sm rounded-full border transition-colors ${
+                      className={`px-3 py-1 text-lg rounded-full border transition-colors ${
                         data.severity === severity
                           ? severity === "Severe"
                             ? "bg-red-500 text-white border-red-600"
@@ -1130,14 +1130,14 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
         {/* Past History Items as Chips */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-lg font-medium text-gray-700 mb-2">
               Past Illnesses (Max 5)
             </label>
             <div className="flex flex-wrap gap-1 mb-2 min-h-[28px]">
               {data.illnesses.map((illness, index) => (
                 <span
                   key={index}
-                  className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full border border-blue-200"
+                  className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-md rounded-full border border-blue-200"
                 >
                   {illness}
                   <button
@@ -1165,14 +1165,14 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-lg font-medium text-gray-700 mb-2">
               Past Surgeries
             </label>
             <div className="flex flex-wrap gap-1 mb-2 min-h-[28px]">
               {data.surgeries.map((surgery, index) => (
                 <span
                   key={index}
-                  className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full border border-purple-200"
+                  className="px-2 py-1 bg-purple-100 text-purple-800 text-md rounded-full border border-purple-200"
                 >
                   {surgery.name} ({surgery.year})
                 </span>
@@ -1186,14 +1186,14 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-lg font-medium text-gray-700 mb-2">
               Past Hospitalizations
             </label>
             <div className="flex flex-wrap gap-1 mb-2 min-h-[28px]">
               {data.hospitalizations.map((hosp, index) => (
                 <span
                   key={index}
-                  className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full border border-orange-200"
+                  className="px-2 py-1 bg-orange-100 text-orange-800 text-md rounded-full border border-orange-200"
                 >
                   {hosp.reason} ({hosp.year})
                 </span>
@@ -1219,7 +1219,7 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
             {chronicMeds.length > 0 && (
               <button
                 onClick={copyFromChronic}
-                className="flex items-center space-x-1 px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
+                className="flex items-center space-x-1 px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-lg"
               >
                 <Copy className="w-4 h-4" />
                 <span>Copy from Chronic ({chronicMeds.length})</span>
@@ -1237,7 +1237,7 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full min-w-[700px]">
                 <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr className="text-xs text-gray-600">
+                  <tr className="text-md text-gray-600">
                     <th className="text-left p-2 w-[25%]">Medication</th>
                     <th className="text-left p-2 w-[15%]">Dose</th>
                     <th className="text-left p-2 w-[15%]">Frequency</th>
@@ -1268,7 +1268,7 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
                                 e.target.value
                               )
                             }
-                            className={`${InputStyle} text-xs`}
+                            className={`${InputStyle} text-md`}
                             placeholder="Medication name"
                           />
                         </td>
@@ -1283,7 +1283,7 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
                                 e.target.value
                               )
                             }
-                            className={`${InputStyle} text-xs`}
+                            className={`${InputStyle} text-md`}
                             placeholder="e.g., 500mg"
                           />
                         </td>
@@ -1297,7 +1297,7 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
                                 e.target.value
                               )
                             }
-                            className={`${InputStyle} text-xs`}
+                            className={`${InputStyle} text-md`}
                           >
                             {MOCK_MASTERS.frequencies.map((freq) => (
                               <option key={freq} value={freq}>
@@ -1316,7 +1316,7 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
                                 e.target.value
                               )
                             }
-                            className={`${InputStyle} text-xs`}
+                            className={`${InputStyle} text-md`}
                           >
                             {MOCK_MASTERS.routes.map((route) => (
                               <option key={route} value={route}>
@@ -1335,7 +1335,7 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
                                 e.target.value
                               )
                             }
-                            className={`${InputStyle} text-xs`}
+                            className={`${InputStyle} text-md`}
                           >
                             {MOCK_MASTERS.compliance.map((comp) => (
                               <option key={comp} value={comp}>
@@ -1362,7 +1362,7 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
             </div>
             <button
               onClick={handleAddMedicationRow}
-              className="w-full mt-2 flex items-center justify-center space-x-1.5 p-2 text-xs font-medium text-[#012e58] bg-gray-50 hover:bg-gray-100 border-t border-gray-200"
+              className="w-full mt-2 flex items-center justify-center space-x-1.5 p-2 text-md font-medium text-[#012e58] bg-gray-50 hover:bg-gray-100 border-t border-gray-200"
             >
               <Plus className="w-3 h-3" />
               <span>Add Medication Row</span>
@@ -1373,7 +1373,7 @@ export const PastHistorySection: React.FC<PastHistorySectionProps> = ({
 
         {/* Overall Compliance */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-lg font-medium text-gray-700 mb-2">
             Overall Medication Compliance
           </label>
           <select
@@ -1542,7 +1542,7 @@ export const RecordsUploadSection: React.FC<RecordsUploadSectionProps> = ({
               <button
                 key={category.id}
                 onClick={() => setActiveTab(category.id)}
-                className={`flex items-center space-x-2 px-3 py-2 text-sm rounded-t-md border-b-2 transition-colors ${
+                className={`flex items-center space-x-2 px-3 py-2 text-lg rounded-t-md border-b-2 transition-colors ${
                   activeTab === category.id
                     ? "border-[#012e58] text-[#012e58] bg-blue-50"
                     : "border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50"
@@ -1551,7 +1551,7 @@ export const RecordsUploadSection: React.FC<RecordsUploadSectionProps> = ({
                 <span>{category.icon}</span>
                 <span>{category.label}</span>
                 {fileCount > 0 && (
-                  <span className="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">
+                  <span className="px-1.5 py-0.5 text-md bg-blue-100 text-blue-700 rounded-full">
                     {fileCount}
                   </span>
                 )}
@@ -1571,24 +1571,24 @@ export const RecordsUploadSection: React.FC<RecordsUploadSectionProps> = ({
             {isProcessing ? (
               <div className="flex flex-col items-center">
                 <Loader className="w-8 h-8 text-[#012e58] mx-auto mb-2 animate-spin" />
-                <p className="text-sm text-[#012e58] mb-1 font-medium">
+                <p className="text-lg text-[#012e58] mb-1 font-medium">
                   Processing File...
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-md text-gray-500">
                   Extracting text content (OCR/Embedded)
                 </p>
               </div>
             ) : (
               <div className="flex flex-col items-center">
                 <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600 mb-2 font-medium">
+                <p className="text-lg text-gray-600 mb-2 font-medium">
                   Upload {categories.find((c) => c.id === activeTab)?.label}{" "}
                   files
                 </p>
-                <p className="text-xs text-gray-500 mb-3">
+                <p className="text-md text-gray-500 mb-3">
                   Drag and drop or **click to browse** • PDF, DOCX, JPG, PNG
                 </p>
-                <div className="px-4 py-2 bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors text-sm inline-block">
+                <div className="px-4 py-2 bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors text-lg inline-block">
                   Browse Files
                 </div>
               </div>
@@ -1610,10 +1610,10 @@ export const RecordsUploadSection: React.FC<RecordsUploadSectionProps> = ({
                 <div className="flex items-center space-x-3">
                   <div className="text-2xl">📄</div>
                   <div>
-                    <p className="text-sm font-medium text-[#0B2D4D]">
+                    <p className="text-lg font-medium text-[#0B2D4D]">
                       {file.name}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-md text-gray-500">
                       {(file.size / 1024 / 1024).toFixed(2)} MB
                     </p>
                   </div>
@@ -1631,10 +1631,10 @@ export const RecordsUploadSection: React.FC<RecordsUploadSectionProps> = ({
 
             {/* Text Preview Box (New addition for feedback) */}
             <div className="mt-4 p-3 bg-gray-100 border border-gray-200 rounded-lg">
-              <h5 className="text-xs font-semibold text-[#0B2D4D] mb-2">
+              <h5 className="text-md font-semibold text-[#0B2D4D] mb-2">
                 Extracted Content Preview (Last Upload)
               </h5>
-              <p className="text-xs text-gray-600 whitespace-pre-wrap max-h-40 overflow-y-auto">
+              <p className="text-md text-gray-600 whitespace-pre-wrap max-h-40 overflow-y-auto">
                 {extractedContents[activeTab]
                   ?.split("\n\n")
                   .pop()
@@ -1681,7 +1681,7 @@ export const AiClinicalSummarySection: React.FC<
               <>
                 <button
                   onClick={copyToClipboard}
-                  className="flex items-center space-x-1 px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                  className="flex items-center space-x-1 px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-lg"
                 >
                   <ClipboardCopy className="w-4 h-4" />
                   <span>Copy to EMR</span>
@@ -1701,7 +1701,7 @@ export const AiClinicalSummarySection: React.FC<
             <button
               onClick={onGenerate}
               disabled={isLoading}
-              className="flex items-center space-x-1 px-3 py-1 bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors text-sm disabled:bg-gray-400"
+              className="flex items-center space-x-1 px-3 py-1 bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors text-lg disabled:bg-gray-400"
             >
               {isLoading ? (
                 <Loader className="w-4 h-4 animate-spin" />
@@ -1721,7 +1721,7 @@ export const AiClinicalSummarySection: React.FC<
           <div className="text-center py-8 text-gray-500">
             <Bot className="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <p>No AI clinical summary generated yet</p>
-            <p className="text-sm">
+            <p className="text-lg">
               Click "Generate Clinical Summary" to analyze current vitals and
               complaints.
             </p>
@@ -1745,7 +1745,7 @@ export const AiClinicalSummarySection: React.FC<
 
         {summary && !isExpanded && (
           <div className="p-3 bg-gray-100 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 truncate">
+            <p className="text-lg text-gray-600 truncate">
               {summary.substring(0, 150)}...
             </p>
           </div>
@@ -1789,7 +1789,7 @@ export const PreviousMedicalHistorySummarySection: React.FC<
               <>
                 <button
                   onClick={copyToClipboard}
-                  className="flex items-center space-x-1 px-3 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm"
+                  className="flex items-center space-x-1 px-3 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-lg"
                 >
                   <ClipboardCopy className="w-4 h-4" />
                   <span>Copy to EMR</span>
@@ -1809,7 +1809,7 @@ export const PreviousMedicalHistorySummarySection: React.FC<
             <button
               onClick={onGenerate}
               disabled={isLoading}
-              className="flex items-center space-x-1 px-3 py-1 bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors text-sm disabled:bg-gray-400"
+              className="flex items-center space-x-1 px-3 py-1 bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors text-lg disabled:bg-gray-400"
             >
               {isLoading ? (
                 <Loader className="w-4 h-4 animate-spin" />
@@ -1829,7 +1829,7 @@ export const PreviousMedicalHistorySummarySection: React.FC<
           <div className="text-center py-8 text-gray-500">
             <Bot className="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <p>No AI history summary generated yet</p>
-            <p className="text-sm">
+            <p className="text-lg">
               Click "Generate History Summary" to summarize uploaded documents
               and structured history.
             </p>
@@ -1853,7 +1853,7 @@ export const PreviousMedicalHistorySummarySection: React.FC<
 
         {summary && !isExpanded && (
           <div className="p-3 bg-gray-100 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 truncate">
+            <p className="text-lg text-gray-600 truncate">
               {summary.substring(0, 150)}...
             </p>
           </div>

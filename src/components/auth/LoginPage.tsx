@@ -189,13 +189,13 @@ const LoginPage: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-2xl p-8 backdrop-blur-sm border border-gray-100">
           {loginError && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{loginError}</p>
+              <p className="text-lg text-red-600">{loginError}</p>
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* ROLE FIRST */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-[#0B2D4D]">
+              <label className="block text-lg font-medium text-[#0B2D4D]">
                 Select Your Role
               </label>
               <div className="relative">
@@ -240,7 +240,7 @@ const LoginPage: React.FC = () => {
                 )}
               </div>
               {errors.role && (
-                <p className="text-sm text-red-600 animate-fade-in">
+                <p className="text-lg text-red-600 animate-fade-in">
                   {errors.role}
                 </p>
               )}
@@ -250,7 +250,7 @@ const LoginPage: React.FC = () => {
             <div className="space-y-2">
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-[#0B2D4D]"
+                className="block text-lg font-medium text-[#0B2D4D]"
               >
                 Email Address
               </label>
@@ -271,7 +271,7 @@ const LoginPage: React.FC = () => {
                 />
               </div>
               {errors.email && (
-                <p className="text-sm text-red-600 animate-fade-in">
+                <p className="text-lg text-red-600 animate-fade-in">
                   {errors.email}
                 </p>
               )}
@@ -281,7 +281,7 @@ const LoginPage: React.FC = () => {
             <div className="space-y-2">
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-[#0B2D4D]"
+                className="block text-lg font-medium text-[#0B2D4D]"
               >
                 Password
               </label>
@@ -313,7 +313,7 @@ const LoginPage: React.FC = () => {
                 </button>
               </div>
               {errors.password && (
-                <p className="text-sm text-red-600 animate-fade-in">
+                <p className="text-lg text-red-600 animate-fade-in">
                   {errors.password}
                 </p>
               )}
@@ -325,11 +325,11 @@ const LoginPage: React.FC = () => {
                   type="checkbox"
                   className="rounded border-gray-300 text-[#012e58] focus:ring-[#1a4b7a] focus:ring-2"
                 />
-                <span className="ml-2 text-sm text-[#1a4b7a]">Remember me</span>
+                <span className="ml-2 text-lg text-[#1a4b7a]">Remember me</span>
               </label>
               <a
                 href="#"
-                className="text-sm text-[#012e58] hover:text-[#1a4b7a] transition-colors"
+                className="text-lg text-[#012e58] hover:text-[#1a4b7a] transition-colors"
               >
                 Forgot password?
               </a>
@@ -350,7 +350,7 @@ const LoginPage: React.FC = () => {
             </button>
           </form>
           <div className="mt-6 text-center">
-            <p className="text-sm text-[#1a4b7a]">
+            <p className="text-lg text-[#1a4b7a]">
               Need help? Contact{" "}
               <a
                 href="#"

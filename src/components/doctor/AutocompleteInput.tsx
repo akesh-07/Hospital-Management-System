@@ -75,7 +75,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
           value={inputValue}
           onChange={handleInputChange}
           onFocus={() => setShowDropdown(true)}
-          className="p-2 border border-gray-300 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-sm"
+          className="p-2 border border-gray-300 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-lg"
           // MODIFIED: Use the passed placeholder
           placeholder={placeholder}
         />
@@ -95,7 +95,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
             <div
               key={index}
               onClick={() => handleSelectSymptom(symptom)}
-              className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+              className="px-4 py-2 text-lg text-gray-700 hover:bg-gray-100 cursor-pointer"
             >
               {symptom}
             </div>

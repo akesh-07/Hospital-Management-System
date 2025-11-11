@@ -63,10 +63,10 @@ export const Header: React.FC<HeaderProps> = ({ currentSection }) => {
               <User className="w-3.5 h-3.5 text-white" />
             </div>
             <div className="hidden sm:block">
-              <p className="text-sm font-medium text-white">
+              <p className="text-lg font-medium text-white">
                 {userName || "User"}
               </p>
-              <p className="text-xs text-white/70">{userRole || "Role"}</p>
+              <p className="text-md text-white/70">{userRole || "Role"}</p>
             </div>
           </div>
         </div>

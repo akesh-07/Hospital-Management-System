@@ -397,16 +397,16 @@ export const DrugInventory: React.FC = () => {
                         <p className="font-medium text-[#0B2D4D]">
                           {drug.drugName}
                         </p>
-                        <p className="text-sm text-[#1a4b7a]">
+                        <p className="text-lg text-[#1a4b7a]">
                           {drug.genericName} • {drug.brandName}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-md text-gray-500">
                           {drug.strength} • {drug.dosageForm}
                         </p>
                       </div>
                     </td>
                     <td className="py-4 px-4">
-                      <span className="px-2 py-1 bg-[#e0f7fa] text-[#012e58] text-xs rounded-full">
+                      <span className="px-2 py-1 bg-[#e0f7fa] text-[#012e58] text-md rounded-full">
                         {drug.category}
                       </span>
                     </td>
@@ -416,7 +416,7 @@ export const DrugInventory: React.FC = () => {
                           {drug.stockQuantity}
                         </span>
                         <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full border ${
+                          className={`px-2 py-1 text-md font-medium rounded-full border ${
                             getStockStatus(drug.stockQuantity).color
                           }`}
                         >
@@ -431,7 +431,7 @@ export const DrugInventory: React.FC = () => {
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm text-[#1a4b7a]">
+                        <span className="text-lg text-[#1a4b7a]">
                           {new Date(drug.expiryDate).toLocaleDateString()}
                         </span>
                         {isExpiringSoon(drug.expiryDate) && (
@@ -440,7 +440,7 @@ export const DrugInventory: React.FC = () => {
                       </div>
                     </td>
                     <td className="py-4 px-4">
-                      <span className="text-sm text-[#1a4b7a]">
+                      <span className="text-lg text-[#1a4b7a]">
                         {drug.supplierInfo}
                       </span>
                     </td>
@@ -483,18 +483,18 @@ export const DrugInventory: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#1a4b7a] transition-colors cursor-pointer">
               <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-[#1a4b7a] mb-1">Upload CSV/Excel</p>
-              <p className="text-xs text-gray-500">Bulk import inventory</p>
+              <p className="text-lg text-[#1a4b7a] mb-1">Upload CSV/Excel</p>
+              <p className="text-md text-gray-500">Bulk import inventory</p>
             </div>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#1a4b7a] transition-colors cursor-pointer">
               <Scan className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-[#1a4b7a] mb-1">Barcode Scanner</p>
-              <p className="text-xs text-gray-500">Quick stock updates</p>
+              <p className="text-lg text-[#1a4b7a] mb-1">Barcode Scanner</p>
+              <p className="text-md text-gray-500">Quick stock updates</p>
             </div>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#1a4b7a] transition-colors cursor-pointer">
               <Download className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-[#1a4b7a] mb-1">Export Data</p>
-              <p className="text-xs text-gray-500">Download inventory report</p>
+              <p className="text-lg text-[#1a4b7a] mb-1">Export Data</p>
+              <p className="text-md text-gray-500">Download inventory report</p>
             </div>
           </div>
         </div>

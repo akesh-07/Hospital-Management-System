@@ -551,11 +551,11 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
 
           {/* Patient Info */}
           <div className="bg-white rounded-lg border border-gray-200 p-4 text-right">
-            <p className="text-sm text-[#1a4b7a]">Current Patient</p>
+            <p className="text-lg text-[#1a4b7a]">Current Patient</p>
             <p className="font-semibold text-[#0B2D4D]">
               {selectedPatient?.fullName || "No Patient Selected"}
             </p>
-            <p className="text-sm text-[#1a4b7a]">
+            <p className="text-lg text-[#1a4b7a]">
               {selectedPatient ? (
                 <>
                   {selectedPatient.uhid} • {selectedPatient.age}Y •{" "}
@@ -666,7 +666,7 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
               {/* ✅ START: This is the conditional fix */}
               {(intakeData.complaints.length > 0 ||
                 intakeData.chronicConditions.length > 0) && (
-                <span className="text-sm text-gray-600">
+                <span className="text-lg text-gray-600">
                   **{intakeData.complaints.length}** complaints, **
                   {intakeData.chronicConditions.length}** conditions recorded
                 </span>
@@ -674,7 +674,7 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
               {/* ✅ END: This is the conditional fix */}
 
               {intakeData.complaints.some((c) => c.redFlagTriggered) && (
-                <span className="flex items-center text-red-600 bg-red-100 px-2 py-1 rounded-full text-xs font-semibold">
+                <span className="flex items-center text-red-600 bg-red-100 px-2 py-1 rounded-full text-md font-semibold">
                   <AlertTriangle className="w-3 h-3 mr-1" />
                   Red Flag Alert
                 </span>

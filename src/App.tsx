@@ -24,113 +24,115 @@ import LabTestQueue from "./components/LabModule/LabTestQueue"; // ⬅️ IMPORT
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<LoginPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/doctor" element={<DoctorForm />} />
-          <Route path="/sign" element={<SignupPage />} />
-          <Route path="/ai" element={<Ai />} />
+    <div className="text-lg">
+      <AuthProvider>
+        <Router>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<LoginPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/doctor" element={<DoctorForm />} />
+            <Route path="/sign" element={<SignupPage />} />
+            <Route path="/ai" element={<Ai />} />
 
-          {/* Protected routes wrapped with the Layout component */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Layout currentSection="dashboard">
-                  <Dashboard />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/registration"
-            element={
-              <ProtectedRoute allowedRoles={["receptionist"]}>
-                <Layout currentSection="registration">
-                  <PatientRegistration />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/pre-opd"
-            element={
-              <ProtectedRoute
-                allowedRoles={["receptionist", "doctor", "staff-nurse"]}
-              >
-                <Layout currentSection="queue">
-                  <PatientQueue />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            {/* Protected routes wrapped with the Layout component */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Layout currentSection="dashboard">
+                    <Dashboard />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/registration"
+              element={
+                <ProtectedRoute allowedRoles={["receptionist"]}>
+                  <Layout currentSection="registration">
+                    <PatientRegistration />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pre-opd"
+              element={
+                <ProtectedRoute
+                  allowedRoles={["receptionist", "doctor", "staff-nurse"]}
+                >
+                  <Layout currentSection="queue">
+                    <PatientQueue />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          {/* NEW: IPD Queue Route */}
-          <Route
-            path="/ipd-queue"
-            element={
-              <ProtectedRoute
-                allowedRoles={["doctor", "staff-nurse", "receptionist"]}
-              >
-                <Layout currentSection="ipd-queue">
-                  <IPDQueue />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            {/* NEW: IPD Queue Route */}
+            <Route
+              path="/ipd-queue"
+              element={
+                <ProtectedRoute
+                  allowedRoles={["doctor", "staff-nurse", "receptionist"]}
+                >
+                  <Layout currentSection="ipd-queue">
+                    <IPDQueue />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          {/* 🟢 Lab Requests Route for Technician */}
-          <Route
-            path="/lab-requests"
-            element={
-              <ProtectedRoute allowedRoles={["technician"]}>
-                <Layout currentSection="lab-requests">
-                  <LabTestQueue />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            {/* 🟢 Lab Requests Route for Technician */}
+            <Route
+              path="/lab-requests"
+              element={
+                <ProtectedRoute allowedRoles={["technician"]}>
+                  <Layout currentSection="lab-requests">
+                    <LabTestQueue />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/doctor-module"
-            element={
-              <ProtectedRoute allowedRoles={["doctor"]}>
-                <Layout currentSection="doctor">
-                  <DoctorModule />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/pharmacy"
-            element={
-              <ProtectedRoute allowedRoles={["pharmacist"]}>
-                <Layout currentSection="pharmacy">
-                  <PharmacyModule />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/staff"
-            element={
-              <ProtectedRoute allowedRoles={["staff-nurse"]}>
-                <Layout currentSection="staff">
-                  <StaffDashboard />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/doctor-module"
+              element={
+                <ProtectedRoute allowedRoles={["doctor"]}>
+                  <Layout currentSection="doctor">
+                    <DoctorModule />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pharmacy"
+              element={
+                <ProtectedRoute allowedRoles={["pharmacist"]}>
+                  <Layout currentSection="pharmacy">
+                    <PharmacyModule />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/staff"
+              element={
+                <ProtectedRoute allowedRoles={["staff-nurse"]}>
+                  <Layout currentSection="staff">
+                    <StaffDashboard />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Catch-all route for unhandled paths */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+            {/* Catch-all route for unhandled paths */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </div>
   );
 }
 

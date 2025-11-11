@@ -200,7 +200,7 @@ const PainScaleSlider: React.FC<{
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between text-xs text-gray-500">
+      <div className="flex items-center justify-between text-md text-gray-500">
         <span>No Pain</span>
         <span>Worst Pain</span>
       </div>
@@ -213,7 +213,7 @@ const PainScaleSlider: React.FC<{
           onChange={(e) => onChange(e.target.value)}
           className="w-full h-2 bg-gradient-to-r from-green-200 via-yellow-200 to-red-200 rounded-lg appearance-none cursor-pointer slider"
         />
-        <div className="flex justify-between text-xs mt-1">
+        <div className="flex justify-between text-md mt-1">
           {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
             <span
               key={num}
@@ -232,7 +232,7 @@ const PainScaleSlider: React.FC<{
         </span>
       </div>
       {error && (
-        <span className="text-xs text-red-600 flex items-center gap-1 font-medium">
+        <span className="text-md text-red-600 flex items-center gap-1 font-medium">
           <AlertCircle size={12} />
           {error}
         </span>
@@ -255,11 +255,11 @@ const GCSDropdown: React.FC<{
       error ? "border-red-400 shadow-sm shadow-red-100" : "border-gray-200"
     }`}
   >
-    <h4 className="font-medium text-[#0B2D4D] mb-2 text-sm">{title}</h4>
+    <h4 className="font-medium text-[#0B2D4D] mb-2 text-lg">{title}</h4>
     <select
       value={value}
       onChange={(e) => onChange(field, e.target.value)}
-      className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] text-sm"
+      className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] text-lg"
     >
       <option value="">Select</option>
       {options.map((opt) => (
@@ -269,7 +269,7 @@ const GCSDropdown: React.FC<{
       ))}
     </select>
     {error && (
-      <span className="text-xs text-red-600 flex items-center gap-1 font-medium mt-1">
+      <span className="text-md text-red-600 flex items-center gap-1 font-medium mt-1">
         <AlertCircle size={12} />
         {error}
       </span>
@@ -706,11 +706,11 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
 
             {/* Dynamic Patient Info */}
             <div className="bg-white rounded-lg border border-gray-200 p-4 text-right">
-              <p className="text-sm text-[#1a4b7a]">Current Patient</p>
+              <p className="text-lg text-[#1a4b7a]">Current Patient</p>
               <p className="font-semibold text-[#0B2D4D]">
                 {selectedPatient?.fullName || "No Patient Selected"}
               </p>
-              <p className="text-sm text-[#1a4b7a]">
+              <p className="text-lg text-[#1a4b7a]">
                 {selectedPatient ? (
                   <>
                     {selectedPatient.uhid} • {selectedPatient.age}Y •{" "}
@@ -913,7 +913,7 @@ export const VitalsAssessment: React.FC<VitalsAssessmentProps> = ({
                     parseInt(vitals.gcsM)}
                 </span>
                 <span
-                  className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                  className={`px-2 py-1 text-md font-semibold rounded-full ${
                     parseInt(vitals.gcsE) +
                       parseInt(vitals.gcsV) +
                       parseInt(vitals.gcsM) <=
@@ -1116,7 +1116,7 @@ const VitalCard: React.FC<{
         </div>
         {category.label && (
           <span
-            className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getChipStyle(
+            className={`px-2 py-0.5 text-md font-semibold rounded-full ${getChipStyle(
               category.label
             )}`}
           >
@@ -1134,16 +1134,16 @@ const VitalCard: React.FC<{
           placeholder="—"
           autoComplete="off"
         />
-        <span className="absolute right-0 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+        <span className="absolute right-0 top-1/2 -translate-y-1/2 text-lg text-gray-500">
           {unit}
         </span>
       </div>
       <div className="flex items-center justify-between mt-2 h-4">
         {normal && (
-          <span className="text-xs text-gray-400">Normal: {normal}</span>
+          <span className="text-md text-gray-400">Normal: {normal}</span>
         )}
         {error && (
-          <span className="text-xs text-red-600 flex items-center gap-1 font-medium">
+          <span className="text-md text-red-600 flex items-center gap-1 font-medium">
             <AlertCircle size={12} />
             {error}
           </span>
@@ -1183,14 +1183,14 @@ const BMIResultCard: React.FC<{
     </div>
     <div className="relative">
       <div className="text-3xl font-bold text-[#0B2D4D]">{bmi || "—"}</div>
-      <span className="absolute right-0 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+      <span className="absolute right-0 top-1/2 -translate-y-1/2 text-lg text-gray-500">
         kg/m²
       </span>
     </div>
     <div className="flex items-center justify-end mt-2 h-4">
       {category && (
         <span
-          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${category.color
+          className={`text-md font-semibold px-2 py-0.5 rounded-full ${category.color
             .replace("text-", "bg-")
             .replace("-600", "-100")} ${category.color}`}
         >
@@ -1209,7 +1209,7 @@ const MAPResultCard: React.FC<{ map: string }> = ({ map }) => (
     </div>
     <div className="relative">
       <div className="text-3xl font-bold text-[#0B2D4D]">{map || "—"}</div>
-      <span className="absolute right-0 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+      <span className="absolute right-0 top-1/2 -translate-y-1/2 text-lg text-gray-500">
         mmHg
       </span>
     </div>
@@ -1296,7 +1296,7 @@ const AiSummaryModal: React.FC<{
               <p className="text-lg font-semibold text-[#0B2D4D]">
                 Analyzing Vitals...
               </p>
-              <p className="text-sm text-[#1a4b7a]">
+              <p className="text-lg text-[#1a4b7a]">
                 Please wait while our AI processes the information.
               </p>
             </div>
@@ -1309,7 +1309,7 @@ const AiSummaryModal: React.FC<{
         <div className="flex items-center justify-end p-4 border-t border-gray-200 bg-[#F8F9FA] rounded-b-xl">
           <button
             onClick={onClose}
-            className="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1a4b7a] transition-colors"
+            className="px-5 py-2 text-lg font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1a4b7a] transition-colors"
           >
             Close
           </button>

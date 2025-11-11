@@ -96,13 +96,13 @@ const ConsultationSummaryModal: React.FC<SummaryModalProps> = ({
 
       {/* Patient Info */}
       <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 print-card">
-        <p className="text-sm font-semibold text-[#1a4b7a]">Patient Details</p>
-        <p className="text-sm">
+        <p className="text-lg font-semibold text-[#1a4b7a]">Patient Details</p>
+        <p className="text-lg">
           Age: {patient.age}Y, Gender: {patient.gender}, Phone:{" "}
           {patient.contactNumber}
         </p>
-        <p className="text-sm">Assigned Doctor: {patient.doctorAssigned}</p>
-        <p className="text-sm">Visit Date/Time: {now.toLocaleString()}</p>
+        <p className="text-lg">Assigned Doctor: {patient.doctorAssigned}</p>
+        <p className="text-lg">Visit Date/Time: {now.toLocaleString()}</p>
       </div>
 
       {/* Diagnosis */}
@@ -111,7 +111,7 @@ const ConsultationSummaryModal: React.FC<SummaryModalProps> = ({
           <Brain className="w-4 h-4 text-purple-600" />
           Diagnosis
         </h4>
-        <p className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-sm">
+        <p className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-lg">
           {consultation.diagnosis?.trim() || "No formal diagnosis entered."}
         </p>
       </div>
@@ -123,7 +123,7 @@ const ConsultationSummaryModal: React.FC<SummaryModalProps> = ({
             <Activity className="w-4 h-4 text-red-600" />
             Chief Complaints
           </h4>
-          <ul className="list-disc list-inside p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm">
+          <ul className="list-disc list-inside p-3 bg-gray-50 rounded-lg border border-gray-200 text-lg">
             {consultation.symptoms?.filter((s) => s.symptom?.trim()).length ? (
               consultation.symptoms
                 .filter((s) => s.symptom?.trim())
@@ -143,7 +143,7 @@ const ConsultationSummaryModal: React.FC<SummaryModalProps> = ({
             <Activity className="w-4 h-4 text-green-600" />
             Doctor Notes
           </h4>
-          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm">
+          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-lg">
             <p>{consultation.notes?.trim() || "N/A"}</p>
           </div>
         </div>
@@ -157,7 +157,7 @@ const ConsultationSummaryModal: React.FC<SummaryModalProps> = ({
         </h4>
         <div className="border border-gray-300 rounded-lg overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-100 text-xs uppercase text-gray-600">
+            <thead className="bg-gray-100 text-md uppercase text-gray-600">
               <tr>
                 <th className="px-6 py-3 text-left">Medicine</th>
                 <th className="px-6 py-3 text-left">Dosage</th>
@@ -165,7 +165,7 @@ const ConsultationSummaryModal: React.FC<SummaryModalProps> = ({
                 <th className="px-6 py-3 text-left">Instructions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200 text-sm">
+            <tbody className="bg-white divide-y divide-gray-200 text-lg">
               {medications?.length ? (
                 medications.map((med) => (
                   <tr
@@ -196,7 +196,7 @@ const ConsultationSummaryModal: React.FC<SummaryModalProps> = ({
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={4} className="px-6 py-2 text-xs">
+                <td colSpan={4} className="px-6 py-2 text-md">
                   * Please follow up if symptoms persist or worsen.
                 </td>
               </tr>
@@ -212,7 +212,7 @@ const ConsultationSummaryModal: React.FC<SummaryModalProps> = ({
     <div className="print-only">
       <div className="print-header text-center">
         <div className="font-bold text-lg">Cryptera Multispeciality Clinic</div>
-        <div className="text-xs">
+        <div className="text-md">
           123 Health Ave, Coimbatore · +91-98765-43210 · hello@cryptera.health
         </div>
       </div>
@@ -255,7 +255,7 @@ const ConsultationSummaryModal: React.FC<SummaryModalProps> = ({
         <div className="modal-footer flex items-center justify-between p-4 border-t border-gray-200 bg-[#F8F9FA] rounded-b-xl">
           <button
             onClick={handleDownloadPdf}
-            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 text-lg font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
           >
             <Download className="w-4 h-4" />
             <span>Download PDF / Print</span>
@@ -263,7 +263,7 @@ const ConsultationSummaryModal: React.FC<SummaryModalProps> = ({
 
           <button
             onClick={onFinalComplete}
-            className="flex items-center space-x-2 px-6 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 transition-colors"
+            className="flex items-center space-x-2 px-6 py-2 text-lg font-semibold text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 transition-colors"
           >
             <CheckCircle className="w-4 h-4" />
             <span>Complete Consultation</span>

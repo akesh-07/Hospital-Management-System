@@ -79,9 +79,9 @@ export const BillingModule: React.FC = () => {
     <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-[#1a4b7a]">{title}</p>
+          <p className="text-lg font-medium text-[#1a4b7a]">{title}</p>
           <p className="text-2xl font-bold text-[#0B2D4D] mt-1">{value}</p>
-          {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+          {subtitle && <p className="text-lg text-gray-500 mt-1">{subtitle}</p>}
         </div>
         <div className={`p-3 rounded-lg ${color}`}>
           <Icon className="w-6 h-6 text-white" />
@@ -223,7 +223,7 @@ export const BillingModule: React.FC = () => {
                         {payment.services.map((service, index) => (
                           <span
                             key={index}
-                            className="px-2 py-1 bg-[#e0f7fa] text-[#012e58] text-xs rounded-full"
+                            className="px-2 py-1 bg-[#e0f7fa] text-[#012e58] text-md rounded-full"
                           >
                             {service}
                           </span>
@@ -232,7 +232,7 @@ export const BillingModule: React.FC = () => {
                     </td>
                     <td className="py-4 px-4">
                       <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${getPaymentModeColor(
+                        className={`px-2 py-1 text-md font-medium rounded-full ${getPaymentModeColor(
                           payment.paymentMode
                         )}`}
                       >
@@ -246,7 +246,7 @@ export const BillingModule: React.FC = () => {
                     </td>
                     <td className="py-4 px-4">
                       <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(
+                        className={`px-2 py-1 text-md font-medium rounded-full border ${getStatusColor(
                           payment.status
                         )}`}
                       >
@@ -254,7 +254,7 @@ export const BillingModule: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-4 px-4">
-                      <span className="text-sm text-[#1a4b7a]">
+                      <span className="text-lg text-[#1a4b7a]">
                         {new Date(payment.date).toLocaleDateString()}
                       </span>
                     </td>
@@ -330,25 +330,25 @@ export const BillingModule: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <button className="flex items-center space-x-2 p-4 border border-gray-200 rounded-lg hover:bg-[#e0f7fa] transition-colors">
                 <Receipt className="w-5 h-5 text-[#012e58]" />
-                <span className="text-sm font-medium text-[#0B2D4D]">
+                <span className="text-lg font-medium text-[#0B2D4D]">
                   Quick Receipt
                 </span>
               </button>
               <button className="flex items-center space-x-2 p-4 border border-gray-200 rounded-lg hover:bg-[#e0f7fa] transition-colors">
                 <FileText className="w-5 h-5 text-green-600" />
-                <span className="text-sm font-medium text-[#0B2D4D]">
+                <span className="text-lg font-medium text-[#0B2D4D]">
                   Full Receipt
                 </span>
               </button>
               <button className="flex items-center space-x-2 p-4 border border-gray-200 rounded-lg hover:bg-[#e0f7fa] transition-colors">
                 <DollarSign className="w-5 h-5 text-purple-600" />
-                <span className="text-sm font-medium text-[#0B2D4D]">
+                <span className="text-lg font-medium text-[#0B2D4D]">
                   Record Payment
                 </span>
               </button>
               <button className="flex items-center space-x-2 p-4 border border-gray-200 rounded-lg hover:bg-[#e0f7fa] transition-colors">
                 <TrendingUp className="w-5 h-5 text-orange-600" />
-                <span className="text-sm font-medium text-[#0B2D4D]">
+                <span className="text-lg font-medium text-[#0B2D4D]">
                   Revenue Report
                 </span>
               </button>

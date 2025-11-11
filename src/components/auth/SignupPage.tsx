@@ -18,8 +18,8 @@ import {
 } from "lucide-react";
 import { db } from "../../firebase";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
-import { v4 as uuidv4 } from 'uuid';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { v4 as uuidv4 } from "uuid";
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 
 interface StaffData {
   id: string;
@@ -74,7 +74,9 @@ const SignupPage: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const handleStaffInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleStaffInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value, files } = e.target;
     if (files) {
       setStaffData((prev) => ({ ...prev, [name]: files[0] }));
@@ -96,8 +98,12 @@ const SignupPage: React.FC = () => {
 
     try {
       // 1. Create user with email and password using Firebase Auth
-      await createUserWithEmailAndPassword(auth, staffData.email, staffData.password);
-      
+      await createUserWithEmailAndPassword(
+        auth,
+        staffData.email,
+        staffData.password
+      );
+
       // 2. If Auth is successful, save staff data to Firestore
       await addDoc(collection(db, "staff"), {
         id: staffData.id,
@@ -134,9 +140,9 @@ const SignupPage: React.FC = () => {
     } catch (error: any) {
       console.error("Error adding staff:", error);
       let errorMessage = "Failed to add staff. Please try again.";
-      if (error.code === 'auth/email-already-in-use') {
+      if (error.code === "auth/email-already-in-use") {
         errorMessage = "The email address is already in use.";
-      } else if (error.code === 'auth/weak-password') {
+      } else if (error.code === "auth/weak-password") {
         errorMessage = "Password is too weak. Please use a stronger password.";
       }
       setSaveError(errorMessage);
@@ -145,7 +151,9 @@ const SignupPage: React.FC = () => {
     }
   };
 
-  const selectedRoleLabel = userRoles.find(role => role.value === staffData.role)?.label || "Select Role";
+  const selectedRoleLabel =
+    userRoles.find((role) => role.value === staffData.role)?.label ||
+    "Select Role";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e0f7fa] via-white to-[#e0f2f1] flex items-center justify-center p-4">
@@ -164,12 +172,14 @@ const SignupPage: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-2xl p-8 backdrop-blur-sm border border-gray-100">
           {saveSuccess && (
             <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm text-green-600">Staff member added successfully!</p>
+              <p className="text-lg text-green-600">
+                Staff member added successfully!
+              </p>
             </div>
           )}
           {saveError && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{saveError}</p>
+              <p className="text-lg text-red-600">{saveError}</p>
             </div>
           )}
           <form onSubmit={handleStaffSubmit} className="space-y-6">
@@ -177,7 +187,7 @@ const SignupPage: React.FC = () => {
               <div className="space-y-2 col-span-2">
                 <label
                   htmlFor="sName"
-                  className="block text-sm font-medium text-[#0B2D4D]"
+                  className="block text-lg font-medium text-[#0B2D4D]"
                 >
                   Staff Name
                 </label>
@@ -198,7 +208,7 @@ const SignupPage: React.FC = () => {
               <div className="space-y-2">
                 <label
                   htmlFor="age"
-                  className="block text-sm font-medium text-[#0B2D4D]"
+                  className="block text-lg font-medium text-[#0B2D4D]"
                 >
                   Age
                 </label>
@@ -217,7 +227,7 @@ const SignupPage: React.FC = () => {
               <div className="space-y-2">
                 <label
                   htmlFor="gender"
-                  className="block text-sm font-medium text-[#0B2D4D]"
+                  className="block text-lg font-medium text-[#0B2D4D]"
                 >
                   Gender
                 </label>
@@ -235,9 +245,9 @@ const SignupPage: React.FC = () => {
                   <option value="Other">Other</option>
                 </select>
               </div>
-              
+
               <div className="space-y-2 col-span-2">
-                <label className="block text-sm font-medium text-[#0B2D4D]">
+                <label className="block text-lg font-medium text-[#0B2D4D]">
                   Role
                 </label>
                 <div className="relative" ref={dropdownRef}>
@@ -275,7 +285,7 @@ const SignupPage: React.FC = () => {
               <div className="space-y-2 col-span-2">
                 <label
                   htmlFor="email"
-                  className="block text-sm font-medium text-[#0B2D4D]"
+                  className="block text-lg font-medium text-[#0B2D4D]"
                 >
                   Email Address
                 </label>
@@ -297,7 +307,7 @@ const SignupPage: React.FC = () => {
               <div className="space-y-2 col-span-2">
                 <label
                   htmlFor="password"
-                  className="block text-sm font-medium text-[#0B2D4D]"
+                  className="block text-lg font-medium text-[#0B2D4D]"
                 >
                   Password
                 </label>
@@ -330,7 +340,7 @@ const SignupPage: React.FC = () => {
               <div className="space-y-2 col-span-2">
                 <label
                   htmlFor="qualification"
-                  className="block text-sm font-medium text-[#0B2D4D]"
+                  className="block text-lg font-medium text-[#0B2D4D]"
                 >
                   Qualification
                 </label>
@@ -352,7 +362,7 @@ const SignupPage: React.FC = () => {
               <div className="space-y-2 col-span-2">
                 <label
                   htmlFor="experience"
-                  className="block text-sm font-medium text-[#0B2D4D]"
+                  className="block text-lg font-medium text-[#0B2D4D]"
                 >
                   Experience
                 </label>
@@ -374,7 +384,7 @@ const SignupPage: React.FC = () => {
               <div className="space-y-2 col-span-2">
                 <label
                   htmlFor="mobileNumber"
-                  className="block text-sm font-medium text-[#0B2D4D]"
+                  className="block text-lg font-medium text-[#0B2D4D]"
                 >
                   Mobile Number
                 </label>
@@ -396,7 +406,7 @@ const SignupPage: React.FC = () => {
               <div className="space-y-2 col-span-2">
                 <label
                   htmlFor="adharNumber"
-                  className="block text-sm font-medium text-[#0B2D4D]"
+                  className="block text-lg font-medium text-[#0B2D4D]"
                 >
                   Aadhar Number
                 </label>
@@ -418,7 +428,7 @@ const SignupPage: React.FC = () => {
               <div className="space-y-2 col-span-2">
                 <label
                   htmlFor="photo"
-                  className="block text-sm font-medium text-[#0B2D4D]"
+                  className="block text-lg font-medium text-[#0B2D4D]"
                 >
                   Photo Upload
                 </label>
@@ -433,12 +443,12 @@ const SignupPage: React.FC = () => {
                   />
                   <div className="flex flex-col items-center justify-center">
                     <Camera className="w-8 h-8 text-gray-400 mb-2" />
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-lg font-medium text-gray-600">
                       Drag & drop your photo or{" "}
                       <span className="text-[#012e58]">browse</span>
                     </p>
                     {staffData.photo && (
-                      <p className="mt-1 text-xs text-gray-500">
+                      <p className="mt-1 text-md text-gray-500">
                         {staffData.photo.name}
                       </p>
                     )}
@@ -449,7 +459,7 @@ const SignupPage: React.FC = () => {
               <div className="space-y-2 col-span-2">
                 <label
                   htmlFor="degreeCertificate"
-                  className="block text-sm font-medium text-[#0B2D4D]"
+                  className="block text-lg font-medium text-[#0B2D4D]"
                 >
                   Degree Certificate Upload
                 </label>
@@ -464,12 +474,12 @@ const SignupPage: React.FC = () => {
                   />
                   <div className="flex flex-col items-center justify-center">
                     <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-lg font-medium text-gray-600">
                       Drag & drop your certificate or{" "}
                       <span className="text-[#012e58]">browse</span>
                     </p>
                     {staffData.degreeCertificate && (
-                      <p className="mt-1 text-xs text-gray-500">
+                      <p className="mt-1 text-md text-gray-500">
                         {staffData.degreeCertificate.name}
                       </p>
                     )}
