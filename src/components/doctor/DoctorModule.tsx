@@ -577,7 +577,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     generalExamination: [] as string[],
     systemicExamination: [] as string[],
     investigations: [] as string[],
-    diagnosis: "", // Keeping this field as a placeholder in the consultation state
+    diagnosis: "", // placeholder
     notes: "",
   });
 
@@ -944,7 +944,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
           </h2>
 
           <div className="grid grid-cols-1 gap-4">
-            {/* Vitals Snapshot - NOW 3 columns wide */}
+            {/* Vitals Snapshot */}
             <div className="lg:col-span-3 bg-white p-4 rounded-lg border border-gray-200 shadow-md">
               <SectionHeader icon={Activity} title="Current Vitals Snapshot" />
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -979,7 +979,26 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
               )}
             </div>
 
-            {/* REMOVED: File Upload/Review Past Records section */}
+            {/* ✅ MOVED HERE: PRE-OPD SUMMARIES right after VITALS */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold text-[#0B2D4D] tracking-tight flex items-center space-x-2 mt-2">
+                <Brain className="w-6 h-6 text-purple-600" />
+                <span>Pre-OPD AI Summary & History</span>
+              </h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <SummaryCard
+                  title="Clinical Status (Vitals + Complaints)"
+                  summary={preOpdClinicalSummary}
+                  isLoading={isPreOpdLoading}
+                />
+                <SummaryCard
+                  title="Medical History (Records + Checklist)"
+                  summary={preOpdHistorySummary}
+                  isLoading={isPreOpdLoading}
+                />
+              </div>
+            </div>
+            {/* END MOVED BLOCK */}
           </div>
 
           {/* Chief Complaints / HPI */}
@@ -1105,7 +1124,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
             </div>
           </div>
 
-          {/* Examination Section (Left) & Notes/Diagnosis (Right) */}
+          {/* Examination + Notes */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-md">
               <SectionHeader
@@ -1113,7 +1132,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                 title="General & Systemic Examination"
               />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                {/* General Examination (Checkboxes) */}
+                {/* General Examination */}
                 <div className="col-span-1">
                   <label className="text-md font-medium text-[#1a4b7a] mb-2 block">
                     General Findings
@@ -1144,7 +1163,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                   </div>
                 </div>
 
-                {/* Systemic Examination (Textareas) */}
+                {/* Systemic Examination */}
                 <div className="col-span-1 space-y-2">
                   {[
                     { label: "CNS", placeholder: "CNS findings" },
@@ -1189,7 +1208,6 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
               <textarea
                 rows={4}
                 placeholder="Enter final notes, diagnosis, or impression here before running AI analysis..."
-                // Bind to local state for future persistence
                 value={consultation.notes}
                 onChange={(e) =>
                   setConsultation((prev) => ({
@@ -1199,30 +1217,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent text-lg resize-none"
               />
-              {/* REMOVED: Final Diagnosis Input Field as requested */}
             </div>
-          </div>
-        </div>
-
-        {/* --- NEW SECTION: PRE-OPD SUMMARIES (AI-FETCHED) --- */}
-        <div className="space-y-4 pt-6 pb-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-[#0B2D4D] tracking-tight flex items-center space-x-2">
-            <Brain className="w-6 h-6 text-purple-600" />
-            <span>Pre-OPD AI Summary & History</span>
-          </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Clinical Summary */}
-            <SummaryCard
-              title="Clinical Status (Vitals + Complaints)"
-              summary={preOpdClinicalSummary}
-              isLoading={isPreOpdLoading}
-            />
-            {/* History Summary */}
-            <SummaryCard
-              title="Medical History (Records + Checklist)"
-              summary={preOpdHistorySummary}
-              isLoading={isPreOpdLoading}
-            />
           </div>
         </div>
 
@@ -1232,7 +1227,6 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
             <Brain className="w-6 h-6" />
             <span>AI Diagnostic & Treatment Assist</span>
           </h2>
-          {/* Render the Ai component directly */}
           <Ai
             consultation={consultation}
             selectedPatient={selectedPatient}
@@ -1241,13 +1235,12 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
           />
         </div>
 
-        {/* --- PRESCRIPTION SECTION (PREVIOUSLY A TAB) --- */}
+        {/* --- PRESCRIPTION SECTION --- */}
         <div className="space-y-4 pt-6">
           <h2 className="text-xl font-bold text-[#0B2D4D] tracking-tight flex items-center space-x-2">
             <Pill className="w-6 h-6" />
             <span>Medication & Advice</span>
           </h2>
-          {/* Render the PrescriptionModule component directly */}
           <PrescriptionModule
             selectedPatient={selectedPatient}
             consultation={consultation}
@@ -1262,7 +1255,6 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
               Save Draft
             </button>
 
-            {/* Add to In-Patient Button */}
             <button
               onClick={handleAddToInPatient}
               className="group flex items-center px-4 py-2 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300 text-lg"
@@ -1272,7 +1264,6 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
             </button>
           </div>
 
-          {/* UPDATED BUTTON: Calls the review modal handler */}
           <button
             onClick={handleReviewAndComplete}
             className="group flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 transition-all duration-300 text-lg"
@@ -1283,7 +1274,6 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
         </div>
       </div>
 
-      {/* In-Patient Admission Modal Renderer */}
       {showAdmissionModal && selectedPatient && (
         <InPatientAdmissionModal
           patient={selectedPatient}
@@ -1292,15 +1282,13 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
         />
       )}
 
-      {/* 🚨 UPDATED MODAL: Passes the lifted finalDiagnosis state to the summary modal */}
       {selectedPatient && (
         <ConsultationSummaryModal
           isOpen={showSummaryModal}
           onClose={() => setShowSummaryModal(false)}
-          onFinalComplete={handleFinalComplete} // Handles final status update
+          onFinalComplete={handleFinalComplete}
           patient={selectedPatient}
           medications={medications}
-          // Pass consultation state, but overwrite the diagnosis with the final one from Ai.tsx
           consultation={{ ...consultation, diagnosis: finalDiagnosis }}
         />
       )}
