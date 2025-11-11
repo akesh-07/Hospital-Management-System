@@ -98,21 +98,21 @@ export const PharmacyBilling: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Total Revenue"
-            value={`$${totalRevenue.toLocaleString()}`}
+            value={`₹${totalRevenue.toLocaleString()}`}
             icon={DollarSign}
             color="bg-green-500"
             subtitle="All sales today"
           />
           <StatCard
             title="Total Discounts"
-            value={`$${totalDiscount.toLocaleString()}`}
+            value={`₹${totalDiscount.toLocaleString()}`}
             icon={Percent}
             color="bg-blue-500"
             subtitle="Discounts given"
           />
           <StatCard
             title="Average Order"
-            value={`$${averageOrderValue.toFixed(2)}`}
+            value={`₹${averageOrderValue.toFixed(2)}`}
             icon={TrendingUp}
             color="bg-purple-500"
             subtitle="Per transaction"
@@ -214,11 +214,11 @@ export const PharmacyBilling: React.FC = () => {
                         <td className="py-4 px-4">
                           <div>
                             <p className="font-semibold text-gray-900">
-                              ${sale.finalAmount.toFixed(2)}
+                              ₹{sale.finalAmount.toFixed(2)}
                             </p>
                             {sale.discount > 0 && (
                               <p className="text-md text-green-600">
-                                -${sale.discount.toFixed(2)} discount
+                                -₹{sale.discount.toFixed(2)} discount
                               </p>
                             )}
                           </div>
@@ -278,7 +278,7 @@ export const PharmacyBilling: React.FC = () => {
                             {med.drugName} x{med.quantity}
                           </span>
                           <span className="font-medium">
-                            ${med.totalPrice.toFixed(2)}
+                            ₹{med.totalPrice.toFixed(2)}
                           </span>
                         </div>
                       ))}
@@ -288,17 +288,17 @@ export const PharmacyBilling: React.FC = () => {
                   <div className="border-t border-gray-200 pt-4 space-y-2">
                     <div className="flex justify-between text-lg">
                       <span className="text-gray-600">Subtotal:</span>
-                      <span>${selectedSale.totalAmount.toFixed(2)}</span>
+                      <span>₹{selectedSale.totalAmount.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-lg">
                       <span className="text-gray-600">Discount:</span>
                       <span className="text-green-600">
-                        -${selectedSale.discount.toFixed(2)}
+                        -₹{selectedSale.discount.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between font-semibold">
                       <span>Total:</span>
-                      <span>${selectedSale.finalAmount.toFixed(2)}</span>
+                      <span>₹{selectedSale.finalAmount.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
