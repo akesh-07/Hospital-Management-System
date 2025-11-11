@@ -115,10 +115,10 @@ const PrescriptionModule: React.FC<{
       {/* Medications Section */}
       <div className="bg-white rounded-lg border border-gray-200 p-3">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-[#0B2D4D]">Medications</h3>
+          <h3 className="text-lg font-semibold text-[#0B2D4D]">Medications</h3>
           <button
             onClick={addMedication}
-            className="flex items-center space-x-1 px-2 py-1 bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors text-xs"
+            className="flex items-center space-x-1 px-2 py-1 bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors text-md"
           >
             <Plus className="w-3 h-3" />
             <span>Add</span>
@@ -132,7 +132,7 @@ const PrescriptionModule: React.FC<{
               className="border border-gray-200 rounded-md p-2 bg-[#F8F9FA]"
             >
               <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium text-xs text-[#0B2D4D]">
+                <h4 className="font-medium text-md text-[#0B2D4D]">
                   Med {index + 1}
                 </h4>
                 {medications.length > 1 && (
@@ -147,7 +147,7 @@ const PrescriptionModule: React.FC<{
 
               <div className="grid grid-cols-5 gap-2">
                 <div>
-                  <label className="block text-xs font-medium text-[#1a4b7a] mb-1">
+                  <label className="block text-md font-medium text-[#1a4b7a] mb-1">
                     Name
                   </label>
                   <input
@@ -157,7 +157,7 @@ const PrescriptionModule: React.FC<{
                     onChange={(e) =>
                       updateMedication(medication.id, "name", e.target.value)
                     }
-                    className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#1a4b7a] focus:border-transparent text-xs"
+                    className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#1a4b7a] focus:border-transparent text-md"
                     placeholder="Medication"
                   />
                   <datalist id={`medications-${medication.id}`}>
@@ -168,7 +168,7 @@ const PrescriptionModule: React.FC<{
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#1a4b7a] mb-1">
+                  <label className="block text-md font-medium text-[#1a4b7a] mb-1">
                     Dosage
                   </label>
                   <input
@@ -178,7 +178,7 @@ const PrescriptionModule: React.FC<{
                     onChange={(e) =>
                       updateMedication(medication.id, "dosage", e.target.value)
                     }
-                    className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#1a4b7a] focus:border-transparent text-xs"
+                    className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#1a4b7a] focus:border-transparent text-md"
                     placeholder="500mg"
                   />
                   <datalist id={`dosage-${medication.id}`}>
@@ -189,7 +189,7 @@ const PrescriptionModule: React.FC<{
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#1a4b7a] mb-1">
+                  <label className="block text-md font-medium text-[#1a4b7a] mb-1">
                     Frequency
                   </label>
                   <select
@@ -201,7 +201,7 @@ const PrescriptionModule: React.FC<{
                         e.target.value
                       )
                     }
-                    className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#1a4b7a] focus:border-transparent text-xs"
+                    className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#1a4b7a] focus:border-transparent text-md"
                   >
                     <option value="">Select</option>
                     {frequencyOptions.map((freq) => (
@@ -213,7 +213,7 @@ const PrescriptionModule: React.FC<{
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#1a4b7a] mb-1">
+                  <label className="block text-md font-medium text-[#1a4b7a] mb-1">
                     Duration
                   </label>
                   <select
@@ -225,7 +225,7 @@ const PrescriptionModule: React.FC<{
                         e.target.value
                       )
                     }
-                    className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#1a4b7a] focus:border-transparent text-xs"
+                    className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#1a4b7a] focus:border-transparent text-md"
                   >
                     <option value="">Select</option>
                     {durationOptions.map((dur) => (
@@ -237,7 +237,7 @@ const PrescriptionModule: React.FC<{
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#1a4b7a] mb-1">
+                  <label className="block text-md font-medium text-[#1a4b7a] mb-1">
                     Instructions
                   </label>
                   <input
@@ -250,7 +250,7 @@ const PrescriptionModule: React.FC<{
                         e.target.value
                       )
                     }
-                    className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#1a4b7a] focus:border-transparent text-xs"
+                    className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#1a4b7a] focus:border-transparent text-md"
                     placeholder="After meals"
                   />
                 </div>
@@ -265,10 +265,10 @@ const PrescriptionModule: React.FC<{
         {/* General Advice Section */}
         <div className="bg-white rounded-lg border border-gray-200 p-3">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-[#0B2D4D]">
+            <h3 className="text-lg font-semibold text-[#0B2D4D]">
               General Advice
             </h3>
-            <button className="flex items-center space-x-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors text-xs">
+            <button className="flex items-center space-x-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors text-md">
               <Bot className="w-3 h-3" />
               <span>AI Suggest</span>
             </button>
@@ -281,7 +281,7 @@ const PrescriptionModule: React.FC<{
                 general: e.target.value,
               }))
             }
-            className="w-full px-2 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#1a4b7a] focus:border-transparent text-xs resize-none"
+            className="w-full px-2 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#1a4b7a] focus:border-transparent text-md resize-none"
             rows={4}
             placeholder="Enter general advice for the patient..."
           />
@@ -289,7 +289,7 @@ const PrescriptionModule: React.FC<{
 
         {/* Diet Plan Section */}
         <div className="bg-white rounded-lg border border-gray-200 p-3">
-          <h3 className="text-sm font-semibold text-[#0B2D4D] mb-2">
+          <h3 className="text-lg font-semibold text-[#0B2D4D] mb-2">
             Diet Plan
           </h3>
           <div className="space-y-1.5">
@@ -304,7 +304,7 @@ const PrescriptionModule: React.FC<{
                   onChange={() => toggleAdvice("diet", plan)}
                   className="mt-0.5 w-3 h-3 text-[#012e58] border-gray-300 rounded focus:ring-[#1a4b7a]"
                 />
-                <span className="text-xs text-[#1a4b7a] leading-tight">
+                <span className="text-md text-[#1a4b7a] leading-tight">
                   {plan}
                 </span>
               </label>
@@ -315,7 +315,7 @@ const PrescriptionModule: React.FC<{
 
       {/* Follow-up Section */}
       <div className="bg-white rounded-lg border border-gray-200 p-3">
-        <h3 className="text-sm font-semibold text-[#0B2D4D] mb-2">
+        <h3 className="text-lg font-semibold text-[#0B2D4D] mb-2">
           Follow-up Schedule
         </h3>
         <div className="flex items-center space-x-3">
@@ -334,7 +334,7 @@ const PrescriptionModule: React.FC<{
               }
               className="w-3 h-3 text-[#012e58] border-gray-300 rounded focus:ring-[#1a4b7a]"
             />
-            <span className="text-xs text-[#1a4b7a]">Schedule follow-up</span>
+            <span className="text-md text-[#1a4b7a]">Schedule follow-up</span>
           </label>
 
           {advice.followUp.enabled && (
@@ -352,7 +352,7 @@ const PrescriptionModule: React.FC<{
                     },
                   }))
                 }
-                className="w-16 px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#1a4b7a] focus:border-transparent text-xs"
+                className="w-16 px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#1a4b7a] focus:border-transparent text-md"
                 placeholder="1"
               />
               <select
@@ -366,7 +366,7 @@ const PrescriptionModule: React.FC<{
                     },
                   }))
                 }
-                className="px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#1a4b7a] focus:border-transparent text-xs"
+                className="px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#1a4b7a] focus:border-transparent text-md"
               >
                 <option value="Days">Days</option>
                 <option value="Months">Months</option>

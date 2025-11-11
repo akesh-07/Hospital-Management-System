@@ -39,11 +39,11 @@ const PatientCard: React.FC<{ patient: Patient }> = ({ patient }) => (
         <h3 className="font-semibold text-lg text-[#0B2D4D]">
           {patient.fullName}
         </h3>
-        <p className="text-sm text-gray-500">
+        <p className="text-lg text-gray-500">
           Room: N/A | Ward: N/A (Data needs to be fetched from IPD record)
         </p>
       </div>
-      <span className="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+      <span className="px-3 py-1 text-md font-medium rounded-full bg-blue-100 text-blue-800 border border-blue-200">
         Admitted
       </span>
     </div>

@@ -84,7 +84,7 @@ export const AiSummaryModal: React.FC<AiSummaryModalProps> = ({
               <p className="text-lg font-semibold text-[#0B2D4D]">
                 Analyzing History...
               </p>
-              <p className="text-sm text-[#1a4b7a]">
+              <p className="text-lg text-[#1a4b7a]">
                 Please wait while our AI processes the information.
               </p>
             </div>
@@ -95,7 +95,7 @@ export const AiSummaryModal: React.FC<AiSummaryModalProps> = ({
         <div className="flex items-center justify-end p-4 border-t border-gray-200 bg-[#F8F9FA] rounded-b-xl">
           <button
             onClick={onClose}
-            className="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1a4b7a] transition-colors"
+            className="px-5 py-2 text-lg font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1a4b7a] transition-colors"
           >
             Close
           </button>

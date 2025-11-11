@@ -120,16 +120,16 @@ export const PrescriptionFulfillment: React.FC = () => {
             <h3 className="font-semibold text-[#0B2D4D]">
               {prescription.patientName}
             </h3>
-            <p className="text-sm text-[#1a4b7a]">
+            <p className="text-lg text-[#1a4b7a]">
               UHID: {prescription.uhid} • {prescription.patientType}
             </p>
-            <p className="text-sm text-[#1a4b7a]">
+            <p className="text-lg text-[#1a4b7a]">
               Dr. {prescription.doctorName}
             </p>
           </div>
         </div>
         <span
-          className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(
+          className={`px-2 py-1 text-md font-medium rounded-full border ${getStatusColor(
             prescription.status
           )}`}
         >
@@ -138,7 +138,7 @@ export const PrescriptionFulfillment: React.FC = () => {
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between text-lg">
           <span className="text-[#1a4b7a]">
             Medications: {prescription.medications.length}
           </span>
@@ -147,7 +147,7 @@ export const PrescriptionFulfillment: React.FC = () => {
             {prescription.medications.filter((med) => med.dispensed).length}
           </span>
         </div>
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between text-lg">
           <span className="text-[#1a4b7a]">
             Total Amount: ${prescription.totalAmount.toFixed(2)}
           </span>

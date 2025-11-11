@@ -148,7 +148,7 @@ const AutocompleteInput: React.FC<{
           value={inputValue}
           onChange={handleInputChange}
           onFocus={() => setShowDropdown(true)}
-          className="p-2 border border-gray-300 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-sm"
+          className="p-2 border border-gray-300 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-lg"
           placeholder={placeholder}
         />
         {showAddButton && (
@@ -167,7 +167,7 @@ const AutocompleteInput: React.FC<{
             <div
               key={index}
               onClick={() => handleSelectSymptom(symptom)}
-              className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+              className="px-4 py-2 text-lg text-gray-700 hover:bg-gray-100 cursor-pointer"
             >
               {symptom}
             </div>
@@ -267,7 +267,7 @@ const AiSummaryModal: React.FC<{
               <p className="text-lg font-semibold text-[#0B2D4D]">
                 Analyzing Documents...
               </p>
-              <p className="text-sm text-[#1a4b7a]">
+              <p className="text-lg text-[#1a4b7a]">
                 Please wait while our AI processes the historical information.
               </p>
             </div>
@@ -280,7 +280,7 @@ const AiSummaryModal: React.FC<{
         <div className="flex items-center justify-end p-4 border-t border-gray-200 bg-[#F8F9FA] rounded-b-xl">
           <button
             onClick={onClose}
-            className="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1a4b7a] transition-colors"
+            className="px-5 py-2 text-lg font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1a4b7a] transition-colors"
           >
             Close
           </button>
@@ -368,7 +368,7 @@ const InPatientAdmissionModal: React.FC<{
   };
 
   const inputStyle = (hasError: boolean) =>
-    `w-full px-3 py-2 border rounded-md text-sm transition-colors ${
+    `w-full px-3 py-2 border rounded-md text-lg transition-colors ${
       hasError
         ? "border-red-500 focus:ring-red-500"
         : "border-gray-300 focus:ring-[#012e58] focus:border-[#012e58]"
@@ -407,7 +407,7 @@ const InPatientAdmissionModal: React.FC<{
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Room Number */}
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-md font-medium text-gray-700 mb-1">
                   Room Number *
                 </label>
                 <input
@@ -419,7 +419,7 @@ const InPatientAdmissionModal: React.FC<{
                   placeholder="e.g., 301"
                 />
                 {formErrors.roomNumber && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-red-500 text-md mt-1">
                     {formErrors.roomNumber}
                   </p>
                 )}
@@ -427,7 +427,7 @@ const InPatientAdmissionModal: React.FC<{
 
               {/* Ward Number */}
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-md font-medium text-gray-700 mb-1">
                   Ward Number *
                 </label>
                 <select
@@ -443,7 +443,7 @@ const InPatientAdmissionModal: React.FC<{
                   <option value="Pediatrics">Pediatrics</option>
                 </select>
                 {formErrors.wardNumber && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-red-500 text-md mt-1">
                     {formErrors.wardNumber}
                   </p>
                 )}
@@ -451,7 +451,7 @@ const InPatientAdmissionModal: React.FC<{
 
               {/* Admission Date */}
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-md font-medium text-gray-700 mb-1">
                   Admission Date *
                 </label>
                 <input
@@ -462,7 +462,7 @@ const InPatientAdmissionModal: React.FC<{
                   className={inputStyle(!!formErrors.admissionDate)}
                 />
                 {formErrors.admissionDate && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-red-500 text-md mt-1">
                     {formErrors.admissionDate}
                   </p>
                 )}
@@ -470,7 +470,7 @@ const InPatientAdmissionModal: React.FC<{
 
               {/* Attending Doctor */}
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-md font-medium text-gray-700 mb-1">
                   Attending Doctor *
                 </label>
                 <input
@@ -482,7 +482,7 @@ const InPatientAdmissionModal: React.FC<{
                   placeholder="Doctor Name"
                 />
                 {formErrors.attendingDoctor && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-red-500 text-md mt-1">
                     {formErrors.attendingDoctor}
                   </p>
                 )}
@@ -490,7 +490,7 @@ const InPatientAdmissionModal: React.FC<{
 
               {/* Assigned Nurse */}
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-md font-medium text-gray-700 mb-1">
                   Assigned Nurse *
                 </label>
                 <input
@@ -502,7 +502,7 @@ const InPatientAdmissionModal: React.FC<{
                   placeholder="Nurse Name"
                 />
                 {formErrors.assignedNurse && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-red-500 text-md mt-1">
                     {formErrors.assignedNurse}
                   </p>
                 )}
@@ -510,7 +510,7 @@ const InPatientAdmissionModal: React.FC<{
 
               {/* Expected Discharge Date */}
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-md font-medium text-gray-700 mb-1">
                   Expected Discharge Date *
                 </label>
                 <input
@@ -521,7 +521,7 @@ const InPatientAdmissionModal: React.FC<{
                   className={inputStyle(!!formErrors.expectedDischargeDate)}
                 />
                 {formErrors.expectedDischargeDate && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-red-500 text-md mt-1">
                     {formErrors.expectedDischargeDate}
                   </p>
                 )}
@@ -530,7 +530,7 @@ const InPatientAdmissionModal: React.FC<{
 
             {/* Reason for Admission */}
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+              <label className="block text-md font-medium text-gray-700 mb-1">
                 Reason for Admission *
               </label>
               <textarea
@@ -542,7 +542,7 @@ const InPatientAdmissionModal: React.FC<{
                 placeholder="Detailed reason for patient admission"
               ></textarea>
               {formErrors.reasonForAdmission && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-red-500 text-md mt-1">
                   {formErrors.reasonForAdmission}
                 </p>
               )}
@@ -550,7 +550,7 @@ const InPatientAdmissionModal: React.FC<{
 
             {/* Additional Notes */}
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+              <label className="block text-md font-medium text-gray-700 mb-1">
                 Additional Notes (Optional)
               </label>
               <textarea
@@ -934,7 +934,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
   };
 
   const inputStyle =
-    "p-2 border border-gray-300 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-sm";
+    "p-2 border border-gray-300 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-lg";
 
   // *****************************************************************
   // ** START FIX: Client-Side Sorting to avoid Composite Index Error **
@@ -1054,7 +1054,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
           <div className="flex items-center space-x-3">
             <button
               onClick={onBack}
-              className="flex items-center space-x-1.5 px-3 py-1.5 text-[#1a4b7a] hover:text-[#0B2D4D] hover:bg-gray-100 rounded-md transition-colors border border-gray-200 text-sm"
+              className="flex items-center space-x-1.5 px-3 py-1.5 text-[#1a4b7a] hover:text-[#0B2D4D] hover:bg-gray-100 rounded-md transition-colors border border-gray-200 text-lg"
             >
               <ArrowLeft className="w-4 h-4" />
               <span className="font-medium">Back to Queue</span>
@@ -1063,7 +1063,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
           <div className="bg-gradient-to-r from-[#012e58]/5 to-[#1a4b7a]/5 rounded-lg border border-gray-200 p-3 shadow-sm">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-[#012e58] rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-sm">
+                <span className="text-white font-bold text-lg">
                   {selectedPatient.fullName
                     ?.split(" ")
                     .map((n) => n[0])
@@ -1071,10 +1071,10 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                 </span>
               </div>
               <div>
-                <p className="font-bold text-sm text-[#0B2D4D]">
+                <p className="font-bold text-lg text-[#0B2D4D]">
                   {selectedPatient.fullName}
                 </p>
-                <p className="text-[#1a4b7a] font-medium text-xs">
+                <p className="text-[#1a4b7a] font-medium text-md">
                   {selectedPatient.uhid} • {selectedPatient.age}Y •{" "}
                   {selectedPatient.gender}
                 </p>
@@ -1100,14 +1100,14 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                     key={vital.label}
                     className="text-center p-3 bg-gradient-to-b from-gray-50 to-white rounded-md border border-gray-100"
                   >
-                    <p className="text-xs font-medium text-gray-500 mb-1">
+                    <p className="text-md font-medium text-gray-500 mb-1">
                       {vital.label}
                     </p>
                     <p className="font-bold text-lg text-[#0B2D4D]">
                       {vital.value}
                     </p>
                     {vital.unit && (
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-md text-gray-400 mt-0.5">
                         {vital.unit}
                       </p>
                     )}
@@ -1116,7 +1116,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
               </div>
               {vitals && (
                 <div className="mt-3 pt-2 border-t border-gray-200">
-                  <p className="text-xs text-gray-600">
+                  <p className="text-md text-gray-600">
                     Last recorded:{" "}
                     {vitals.recordedAt && (vitals.recordedAt as any).toDate
                       ? (vitals.recordedAt as any).toDate().toLocaleString()
@@ -1147,7 +1147,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                           name as keyof typeof fileInputRefs
                         ].current?.click()
                       }
-                      className="flex items-center space-x-2 w-full px-3 py-2 text-xs bg-gradient-to-r from-[#012e58]/5 to-[#012e58]/10 hover:from-[#012e58]/10 hover:to-[#012e58]/15 rounded-md border border-gray-200 transition-all duration-200 group"
+                      className="flex items-center space-x-2 w-full px-3 py-2 text-md bg-gradient-to-r from-[#012e58]/5 to-[#012e58]/10 hover:from-[#012e58]/10 hover:to-[#012e58]/15 rounded-md border border-gray-200 transition-all duration-200 group"
                     >
                       <Upload className="w-3 h-3 text-[#012e58] group-hover:scale-110 transition-transform" />
                       <span className="font-medium text-[#0B2D4D]">{name}</span>
@@ -1169,7 +1169,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                   ) : (
                     <Brain className="w-3 h-3" />
                   )}
-                  <span className="text-xs font-semibold">
+                  <span className="text-md font-semibold">
                     {isAiSummaryLoading
                       ? "Generating Document Summary..."
                       : "AI Assisted Document Summary"}
@@ -1186,7 +1186,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
               title="History of Present Illness (HPI) & Complaints"
             />
             <div className="mb-4">
-              <label className="text-xs font-medium text-[#1a4b7a] mb-2 block">
+              <label className="text-md font-medium text-[#1a4b7a] mb-2 block">
                 Quick Symptom Selection
               </label>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
@@ -1210,7 +1210,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                         }}
                         className="rounded border-gray-300 text-[#012e58] focus:ring-[#012e58] focus:ring-2"
                       />
-                      <span className="text-xs font-medium text-[#0B2D4D]">
+                      <span className="text-md font-medium text-[#0B2D4D]">
                         {symptom}
                       </span>
                     </label>
@@ -1222,16 +1222,16 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
               <table className="w-full">
                 <thead>
                   <tr className="bg-gradient-to-r from-[#012e58] to-[#1a4b7a] text-white">
-                    <th className="p-2 text-left font-semibold text-xs">
+                    <th className="p-2 text-left font-semibold text-md">
                       Symptom
                     </th>
-                    <th className="p-2 text-left font-semibold text-xs">
+                    <th className="p-2 text-left font-semibold text-md">
                       Duration
                     </th>
-                    <th className="p-2 text-left font-semibold text-xs">
+                    <th className="p-2 text-left font-semibold text-md">
                       Aggravating/Relieving Factors
                     </th>
-                    <th className="p-2 text-center font-semibold text-xs">
+                    <th className="p-2 text-center font-semibold text-md">
                       Action
                     </th>
                   </tr>
@@ -1294,7 +1294,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
               </table>
               <button
                 onClick={addSymptomRow}
-                className="w-full mt-2 flex items-center justify-center space-x-1.5 p-2 text-xs font-medium text-[#012e58] bg-gray-100 hover:bg-gray-200 rounded-md"
+                className="w-full mt-2 flex items-center justify-center space-x-1.5 p-2 text-md font-medium text-[#012e58] bg-gray-100 hover:bg-gray-200 rounded-md"
               >
                 <Plus className="w-3 h-3" />
                 <span>Add Symptom</span>
@@ -1312,7 +1312,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                 {/* General Examination (Checkboxes) */}
                 <div className="col-span-1">
-                  <label className="text-xs font-medium text-[#1a4b7a] mb-2 block">
+                  <label className="text-md font-medium text-[#1a4b7a] mb-2 block">
                     General Findings
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -1332,7 +1332,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                             }
                             className="rounded border-gray-300 text-[#012e58] focus:ring-[#012e58] focus:ring-2"
                           />
-                          <span className="text-xs font-medium text-[#0B2D4D]">
+                          <span className="text-md font-medium text-[#0B2D4D]">
                             {item}
                           </span>
                         </label>
@@ -1359,11 +1359,11 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
 
                     return (
                       <div key={system.label} className="space-y-1">
-                        <label className="text-xs font-semibold text-[#1a4b7a] block">
+                        <label className="text-md font-semibold text-[#1a4b7a] block">
                           {system.label}
                         </label>
                         <textarea
-                          className="w-full p-2 border border-gray-300 rounded-md bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 resize-none text-sm"
+                          className="w-full p-2 border border-gray-300 rounded-md bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 resize-none text-lg"
                           rows={1}
                           placeholder={system.placeholder}
                           value={currentValue}
@@ -1394,7 +1394,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
                     notes: e.target.value,
                   }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent text-sm resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent text-lg resize-none"
               />
               {/* REMOVED: Final Diagnosis Input Field as requested */}
             </div>
@@ -1432,7 +1432,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
         {/* --- ACTION FOOTER --- */}
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
           <div className="flex items-center space-x-3">
-            <button className="group flex items-center px-4 py-2 border border-[#012e58] rounded-md text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-sm font-medium">
+            <button className="group flex items-center px-4 py-2 border border-[#012e58] rounded-md text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#012e58] transition-all duration-300 text-lg font-medium">
               <Save className="w-4 h-4 mr-1.5 transition-transform duration-300 group-hover:scale-110" />
               Save Draft
             </button>
@@ -1440,7 +1440,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
             {/* Add to In-Patient Button */}
             <button
               onClick={handleAddToInPatient}
-              className="group flex items-center px-4 py-2 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300 text-sm"
+              className="group flex items-center px-4 py-2 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300 text-lg"
             >
               <Hospital className="w-4 h-4 mr-1.5" />
               <span>Add to In-Patient</span>
@@ -1450,7 +1450,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
           {/* UPDATED BUTTON: Calls the review modal handler */}
           <button
             onClick={handleReviewAndComplete}
-            className="group flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 transition-all duration-300 text-sm"
+            className="group flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 transition-all duration-300 text-lg"
           >
             <span>Complete Consultation & Review</span>
             <CheckCircle className="w-4 h-4 ml-1.5" />

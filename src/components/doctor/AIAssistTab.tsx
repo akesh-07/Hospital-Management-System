@@ -100,7 +100,7 @@ Additional Symptoms from examination: ${
                 {" "}
                 AI Diagnostic Assistant{" "}
               </h3>{" "}
-              <p className="text-sm text-[#1a4b7a]">
+              <p className="text-lg text-[#1a4b7a]">
                 {" "}
                 Get AI-powered insights and recommendations based on patient
                 data{" "}
@@ -109,7 +109,7 @@ Additional Symptoms from examination: ${
           </div>{" "}
           <button
             onClick={handleAutoFill}
-            className="flex items-center space-x-2 px-3 py-2 bg-[#e0f7fa] text-[#012e58] rounded-lg hover:bg-[#b3e5fc] transition-colors text-sm"
+            className="flex items-center space-x-2 px-3 py-2 bg-[#e0f7fa] text-[#012e58] rounded-lg hover:bg-[#b3e5fc] transition-colors text-lg"
           >
             <CheckCircle className="w-4 h-4" />{" "}
             <span>Auto-fill from Examination</span>{" "}
@@ -121,7 +121,7 @@ Additional Symptoms from examination: ${
           <h4 className="font-medium text-[#0B2D4D] mb-2">
             Patient Context
           </h4>{" "}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-lg">
             {" "}
             <div>
               <span className="text-[#1a4b7a]">Name:</span>{" "}
@@ -144,7 +144,7 @@ Additional Symptoms from examination: ${
             selectedPatient.chronicConditions.length > 0 && (
               <div className="mt-3">
                 {" "}
-                <span className="text-[#1a4b7a] text-sm">
+                <span className="text-[#1a4b7a] text-lg">
                   {" "}
                   Chronic Conditions:{" "}
                 </span>{" "}
@@ -153,7 +153,7 @@ Additional Symptoms from examination: ${
                   {selectedPatient.chronicConditions.map((condition, index) => (
                     <span
                       key={index}
-                      className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full"
+                      className="px-2 py-1 bg-red-100 text-red-700 text-md rounded-full"
                     >
                       {" "}
                       {condition}{" "}
@@ -168,7 +168,7 @@ Additional Symptoms from examination: ${
           {" "}
           <div>
             {" "}
-            <label className="block text-sm font-medium text-[#0B2D4D] mb-2">
+            <label className="block text-lg font-medium text-[#0B2D4D] mb-2">
               {" "}
               Current Symptoms{" "}
             </label>{" "}
@@ -182,7 +182,7 @@ Additional Symptoms from examination: ${
           </div>{" "}
           <div>
             {" "}
-            <label className="block text-sm font-medium text-[#0B2D4D] mb-2">
+            <label className="block text-lg font-medium text-[#0B2D4D] mb-2">
               {" "}
               Duration & Timeline{" "}
             </label>{" "}
@@ -228,7 +228,7 @@ Additional Symptoms from examination: ${
                 {" "}
                 Possible Diagnosis{" "}
               </h4>{" "}
-              <p className="text-sm text-[#1a4b7a]">
+              <p className="text-lg text-[#1a4b7a]">
                 {" "}
                 AI-generated diagnosis based on symptoms and duration{" "}
               </p>{" "}
@@ -243,7 +243,7 @@ Additional Symptoms from examination: ${
           </div>{" "}
           <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
             {" "}
-            <div className="flex items-center space-x-2 text-sm text-gray-500">
+            <div className="flex items-center space-x-2 text-lg text-gray-500">
               <AlertCircle className="w-4 h-4" />{" "}
               <span>
                 {" "}

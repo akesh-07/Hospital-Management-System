@@ -70,11 +70,11 @@ const DoctorForm: React.FC = () => {
 
       // Step 2: Create a new object for Firestore, without the password
       const { password, ...doctorData } = doctor;
-      
+
       // Add a role field for role-based access control
       const dataToStore = {
         ...doctorData,
-        role: "doctor"
+        role: "doctor",
       };
 
       // Step 3: Use the user's UID to set the document in Firestore
@@ -127,7 +127,7 @@ const DoctorForm: React.FC = () => {
   };
 
   const inputStyle =
-    "p-2.5 border border-gray-300 rounded-lg w-full bg-gray-50 focus:ring-2 focus:ring-accent-blue focus:border-accent-blue transition duration-200 ease-in-out text-primary-light placeholder:text-gray-500 text-sm";
+    "p-2.5 border border-gray-300 rounded-lg w-full bg-gray-50 focus:ring-2 focus:ring-accent-blue focus:border-accent-blue transition duration-200 ease-in-out text-primary-light placeholder:text-gray-500 text-lg";
 
   return (
     <div className="p-4 bg-gray-100 min-h-screen font-sans">
@@ -136,9 +136,7 @@ const DoctorForm: React.FC = () => {
         {showSuccess && (
           <div className="mb-4 bg-accent-blue/10 border-l-4 border-accent-blue text-blue-900 p-3 rounded-r-lg flex items-center space-x-3">
             <CheckCircle className="w-5 h-5 text-accent-blue" />
-            <span className="font-medium">
-              Doctor registered successfully!
-            </span>
+            <span className="font-medium">Doctor registered successfully!</span>
           </div>
         )}
 

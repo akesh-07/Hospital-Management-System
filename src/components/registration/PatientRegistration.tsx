@@ -59,7 +59,7 @@ const StyledInput: React.FC<any> = ({
     )}
     {isSelect ? (
       <select
-        className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-1 focus:ring-[#1a4b7a] focus:border-[#1a4b7a] transition-all duration-200 text-sm appearance-none ${
+        className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-1 focus:ring-[#1a4b7a] focus:border-[#1a4b7a] transition-all duration-200 text-lg appearance-none ${
           Icon ? "pl-10" : ""
         } ${className} ${
           props.value === "" ? "text-gray-500" : "text-[#0B2D4D]"
@@ -75,7 +75,7 @@ const StyledInput: React.FC<any> = ({
       <input
         type="text"
         placeholder={placeholder + (isRequired ? " *" : "")}
-        className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-1 focus:ring-[#1a4b7a] focus:border-[#1a4b7a] transition-all duration-200 text-sm ${
+        className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-1 focus:ring-[#1a4b7a] focus:border-[#1a4b7a] transition-all duration-200 text-lg ${
           Icon ? "pl-10" : ""
         } ${className}`}
         {...props}
@@ -130,7 +130,7 @@ const ManagePackageForm: React.FC<{
 
   return (
     <div className="p-4 border border-green-300 rounded-lg bg-green-50 mt-4 space-y-3">
-      <h4 className="text-sm font-bold text-green-800 flex justify-between items-center">
+      <h4 className="text-lg font-bold text-green-800 flex justify-between items-center">
         {isEditing ? "Edit Package" : "Add New Consultation Package"}
         <button
           type="button"
@@ -165,7 +165,7 @@ const ManagePackageForm: React.FC<{
         type="button"
         onClick={handleSave}
         disabled={disabled || !name || !duration}
-        className="w-full flex items-center justify-center space-x-1.5 px-3 py-2 bg-[#012e58] text-white rounded-lg hover:bg-[#1a4b7a] transition-colors text-sm font-medium disabled:opacity-50"
+        className="w-full flex items-center justify-center space-x-1.5 px-3 py-2 bg-[#012e58] text-white rounded-lg hover:bg-[#1a4b7a] transition-colors text-lg font-medium disabled:opacity-50"
       >
         <Save className="w-4 h-4" />
         <span>{isEditing ? "Update Package" : "Save New Package"}</span>
@@ -201,7 +201,7 @@ const ConsultationPackagesSection: React.FC<ConsultationPackagesProps> = ({
         <button
           type="button"
           onClick={onAddClick}
-          className="flex items-center space-x-1.5 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium"
+          className="flex items-center space-x-1.5 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-md font-medium"
           disabled={disabled}
         >
           <Plus className="w-3 h-3" />
@@ -229,9 +229,9 @@ const ConsultationPackagesSection: React.FC<ConsultationPackagesProps> = ({
                 className="w-4 h-4 text-[#012e58] border-gray-300 focus:ring-[#1a4b7a]"
                 disabled={disabled}
               />
-              <div className="text-sm">
+              <div className="text-lg">
                 <p className="font-semibold text-[#0B2D4D]">{pkg.name}</p>
-                <p className="text-xs text-[#1a4b7a]">{pkg.duration}</p>
+                <p className="text-md text-[#1a4b7a]">{pkg.duration}</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -522,7 +522,7 @@ export const PatientRegistration: React.FC = () => {
   const ActionFooter = () => (
     <div className="flex-shrink-0 flex justify-between space-x-4 mt-6 pt-4 border-t border-gray-200 sticky bottom-0 bg-white/90 backdrop-blur-sm z-10">
       {/* Last Sync Indicator */}
-      <p className="text-left text-xs text-gray-500 flex items-center">
+      <p className="text-left text-md text-gray-500 flex items-center">
         <span className="w-2 h-2 bg-green-500 rounded-full mr-1.5 animate-pulse"></span>
         Last Sync: {new Date().toLocaleTimeString()}
       </p>
@@ -600,7 +600,7 @@ export const PatientRegistration: React.FC = () => {
                   {/* Registration Date & Time & UHID (Read-Only Boxes) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                     <div>
-                      <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
+                      <label className="text-md font-medium text-[#1a4b7a] mb-1 block">
                         Reg Date & Time
                       </label>
                       <StyledInput
@@ -623,7 +623,7 @@ export const PatientRegistration: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
+                      <label className="text-md font-medium text-[#1a4b7a] mb-1 block">
                         UHID
                       </label>
                       <StyledInput
@@ -669,7 +669,7 @@ export const PatientRegistration: React.FC = () => {
                   {/* DOB | Age | Sex */}
                   <div className="grid grid-cols-3 gap-3 mt-3">
                     <div>
-                      <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
+                      <label className="text-md font-medium text-[#1a4b7a] mb-1 block">
                         DOB
                       </label>
                       <StyledInput
@@ -682,7 +682,7 @@ export const PatientRegistration: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
+                      <label className="text-md font-medium text-[#1a4b7a] mb-1 block">
                         Age *
                       </label>
                       <StyledInput
@@ -696,7 +696,7 @@ export const PatientRegistration: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
+                      <label className="text-md font-medium text-[#1a4b7a] mb-1 block">
                         Gender *
                       </label>
                       <StyledInput
@@ -719,7 +719,7 @@ export const PatientRegistration: React.FC = () => {
 
                   {/* Mobile Number */}
                   <div className="mt-3">
-                    <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
+                    <label className="text-md font-medium text-[#1a4b7a] mb-1 block">
                       Primary Mobile Number *
                     </label>
                     <StyledInput
@@ -738,7 +738,7 @@ export const PatientRegistration: React.FC = () => {
                   {/* Registration Type & Doctor */}
                   <div className="grid grid-cols-2 gap-3 mt-3">
                     <div>
-                      <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
+                      <label className="text-md font-medium text-[#1a4b7a] mb-1 block">
                         Registration Type (Optional)
                       </label>
                       <StyledInput
@@ -757,7 +757,7 @@ export const PatientRegistration: React.FC = () => {
                       </StyledInput>
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-[#1a4b7a] mb-1 block">
+                      <label className="text-md font-medium text-[#1a4b7a] mb-1 block">
                         Consulting Doctor *
                       </label>
                       {/* ✅ START: This is the fix */}
@@ -907,7 +907,7 @@ export const PatientRegistration: React.FC = () => {
                   <div className="mt-4 pt-3 border-t border-gray-200">
                     <button
                       type="button"
-                      className="flex items-center space-x-1.5 text-[#1a4b7a] hover:text-[#012e58] font-medium text-xs transition-colors"
+                      className="flex items-center space-x-1.5 text-[#1a4b7a] hover:text-[#012e58] font-medium text-md transition-colors"
                       onClick={() => setShowMoreFields(!showMoreFields)}
                     >
                       <ListPlus className="w-3 h-3" />
@@ -976,7 +976,7 @@ export const PatientRegistration: React.FC = () => {
                       {/* File Upload (Styled) */}
                       <label className="block cursor-pointer">
                         <div className="w-full px-4 py-2.5 border border-dashed border-gray-300 rounded-lg bg-gray-50 flex items-center justify-between text-gray-500 hover:border-[#1a4b7a] transition-all duration-200">
-                          <span className="truncate text-sm">
+                          <span className="truncate text-lg">
                             {formData.files && formData.files.length > 0
                               ? `${formData.files.length} file(s) selected`
                               : "Click or drag to upload past medical documents"}

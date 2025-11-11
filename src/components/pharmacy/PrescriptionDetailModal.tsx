@@ -35,12 +35,12 @@ export const PrescriptionDetailModal: React.FC<
             <h2 className="text-2xl font-bold text-[#0B2D4D]">
               Prescription Details
             </h2>
-            <p className="text-sm text-[#1a4b7a]">
+            <p className="text-lg text-[#1a4b7a]">
               Patient:{" "}
               <span className="font-medium">{prescription.patientName}</span>{" "}
               (UHID: {prescription.uhid})
             </p>
-            <p className="text-sm text-[#1a4b7a]">
+            <p className="text-lg text-[#1a4b7a]">
               Prescribed by Dr. {prescription.doctorName} on{" "}
               {new Date(prescription.prescriptionDate).toLocaleDateString()}
             </p>
@@ -59,8 +59,8 @@ export const PrescriptionDetailModal: React.FC<
             Medications to Dispense
           </h3>
           <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="w-full text-sm text-left text-[#1a4b7a]">
-              <thead className="text-xs text-[#0B2D4D] uppercase bg-[#F8F9FA]">
+            <table className="w-full text-lg text-left text-[#1a4b7a]">
+              <thead className="text-md text-[#0B2D4D] uppercase bg-[#F8F9FA]">
                 <tr>
                   <th scope="col" className="px-6 py-3">
                     Dispense
@@ -97,35 +97,35 @@ export const PrescriptionDetailModal: React.FC<
                     </td>
                     <td className="px-6 py-4 font-medium text-[#0B2D4D]">
                       {med.drugName}
-                      <p className="text-xs text-gray-500 font-normal">
+                      <p className="text-md text-gray-500 font-normal">
                         {med.dosage}
                       </p>
                     </td>
                     <td className="px-6 py-4">
                       {med.frequency} &bull; {med.duration}
-                      <p className="text-xs text-[#012e58]">
+                      <p className="text-md text-[#012e58]">
                         {med.instructions}
                       </p>
                     </td>
                     <td className="px-6 py-4">
                       Qty: {med.quantity}
-                      <p className="text-xs text-gray-500">
+                      <p className="text-md text-gray-500">
                         ${med.unitPrice.toFixed(2)} each
                       </p>
                     </td>
                     <td className="px-6 py-4">
                       {!med.dispensed ? (
                         <div className="flex items-center space-x-2">
-                          <button className="flex items-center space-x-1 px-2 py-1 bg-[#e0f7fa] text-[#012e58] text-xs rounded-full hover:bg-[#b3e5fc]">
+                          <button className="flex items-center space-x-1 px-2 py-1 bg-[#e0f7fa] text-[#012e58] text-md rounded-full hover:bg-[#b3e5fc]">
                             <RefreshCw className="w-3 h-3" />
                             <span>Suggest</span>
                           </button>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-md text-gray-500">
                             {suggestSubstitute(med.drugName)[0]}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-400">-</span>
+                        <span className="text-md text-gray-400">-</span>
                       )}
                     </td>
                   </tr>
@@ -139,15 +139,15 @@ export const PrescriptionDetailModal: React.FC<
         <div className="flex items-center justify-end space-x-4 p-6 border-t border-gray-200 bg-[#F8F9FA] rounded-b-lg">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100"
+            className="px-4 py-2 text-lg font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100"
           >
             Close
           </button>
-          <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-[#1a4b7a] rounded-lg hover:bg-[#012e58]">
+          <button className="flex items-center space-x-2 px-4 py-2 text-lg font-medium text-white bg-[#1a4b7a] rounded-lg hover:bg-[#012e58]">
             <Printer className="w-4 h-4" />
             <span>Print Slip</span>
           </button>
-          <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-[#012e58] rounded-lg hover:bg-[#1a4b7a]">
+          <button className="flex items-center space-x-2 px-4 py-2 text-lg font-medium text-white bg-[#012e58] rounded-lg hover:bg-[#1a4b7a]">
             <CheckCircle className="w-4 h-4" />
             <span>Complete Dispensing</span>
           </button>
