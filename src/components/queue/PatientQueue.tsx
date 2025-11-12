@@ -1,4 +1,5 @@
-// PatientQueue.tsx
+// src/components/queue/PatientQueue.tsx
+
 import Cookies from "js-cookie";
 import React, { useEffect, useState, useMemo } from "react";
 import {
@@ -17,6 +18,10 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarDays,
+  ClipboardList, // <--- NEW IMPORT
+  FileText,
+  Brain, // <--- NEW IMPORT
+  X, // <--- NEW IMPORT
 } from "lucide-react";
 import {
   collection,
@@ -26,13 +31,16 @@ import {
   setDoc,
   orderBy,
   Timestamp,
+  where, // <--- NEW IMPORT
+  getDocs, // <--- NEW IMPORT
+  limit, // <--- NEW IMPORT
 } from "firebase/firestore";
 import { db } from "../../firebase";
 import { PreOPDIntake } from "../vitals/PreOPDIntake";
 import { DoctorModule } from "../doctor/DoctorModule";
 import { Patient } from "../../types";
 
-// --- Date & Time Helper Functions ---
+// --- Date & Time Helper Functions (UNCHANGED) ---
 
 /**
  * Normalizes a Date or string to the start of its day (UTC)
@@ -219,7 +227,7 @@ const PaginationControls: React.FC<{
   const getPaginationItems = () => {
     const pageItems: (number | string)[] = [];
     const siblingCount = 1;
-    const totalPageNumbers = siblingCount + 5; // 1 start, 1 end, 1 current, 2 siblings, 2 ellipsis
+    const totalPageNumbers = 7; // 1 start, 1 end, 1 current, 2 siblings, 2 ellipsis
 
     if (totalPages <= totalPageNumbers) {
       // No ellipsis needed
@@ -237,7 +245,7 @@ const PaginationControls: React.FC<{
       const shouldShowRightDots = rightSiblingIndex < totalPages - 1;
 
       // Add first page
-      pageItems.push(1);
+      if (leftSiblingIndex !== 1) pageItems.push(1);
 
       // Add left ellipsis
       if (shouldShowLeftDots) {
@@ -245,12 +253,11 @@ const PaginationControls: React.FC<{
       }
 
       // Add pages around current
-      for (
-        let i = shouldShowLeftDots ? leftSiblingIndex : 2;
-        i <= (shouldShowRightDots ? rightSiblingIndex : totalPages - 1);
-        i++
-      ) {
-        pageItems.push(i);
+      const start = shouldShowLeftDots ? leftSiblingIndex : 2;
+      const end = shouldShowRightDots ? rightSiblingIndex : totalPages - 1;
+
+      for (let i = start; i <= end; i++) {
+        if (i !== 1 && i !== totalPages) pageItems.push(i);
       }
 
       // Add right ellipsis
@@ -259,9 +266,9 @@ const PaginationControls: React.FC<{
       }
 
       // Add last page
-      pageItems.push(totalPages);
+      if (rightSiblingIndex !== totalPages) pageItems.push(totalPages);
     }
-    return pageItems;
+    return [...new Set(pageItems)];
   };
 
   const pageItems = getPaginationItems();
@@ -315,6 +322,177 @@ const PaginationControls: React.FC<{
 };
 // --- End Pagination Component ---
 
+// --- NEW HELPER: FormattedAiSummary Component (Copied from PreOPDIntakeSections.tsx) ---
+const FormattedAiSummary: React.FC<{ summary: string }> = ({ summary }) => {
+  const lines = summary.split("\n").filter((line) => line.trim() !== "");
+  return (
+    <div className="space-y-3 text-[#1a4b7a]">
+      {lines.map((line, index) => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith("**") && trimmed.endsWith("**")) {
+          return (
+            <h3 key={index} className="text-base font-bold text-[#0B2D4D] pt-1">
+              {trimmed.slice(2, -2)}
+            </h3>
+          );
+        }
+        if (trimmed.startsWith("# ") || trimmed.startsWith("## ")) {
+          return (
+            <h3 key={index} className="text-base font-bold text-[#0B2D4D] pt-1">
+              {trimmed.replace(/^#+\s*/, "")}
+            </h3>
+          );
+        }
+        if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+          return (
+            <ul key={index} className="list-disc list-inside pl-4">
+              <li>{trimmed.slice(2)}</li>
+            </ul>
+          );
+        }
+        if (trimmed.includes(":")) {
+          const parts = trimmed.split(":");
+          const key = parts[0];
+          const value = parts.slice(1).join(":");
+          return (
+            <div key={index} className="flex">
+              <span className="font-semibold w-1/3">{key}:</span>
+              <span className="w-2/3">{value}</span>
+            </div>
+          );
+        }
+        return (
+          <p key={index} className="text-lg text-gray-800">
+            {trimmed}
+          </p>
+        );
+      })}
+    </div>
+  );
+};
+
+// --- NEW COMPONENT: PreviousVisitSummaryModal ---
+interface PreviousVisitSummaryModalProps {
+  patient: Patient;
+  onClose: () => void;
+}
+
+const PreviousVisitSummaryModal: React.FC<PreviousVisitSummaryModalProps> = ({
+  patient,
+  onClose,
+}) => {
+  const [summary, setSummary] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSummary = async () => {
+      if (!patient.uhid) {
+        setSummary(
+          "Patient UHID is missing. Cannot fetch previous visit data."
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // 1. Query without orderBy/limit to avoid composite index error (AS IN DOCTOR MODULE)
+        const intakeQuery = query(
+          collection(db, "preOPDIntake"),
+          where("patientUhid", "==", patient.uhid)
+        );
+
+        const querySnapshot = await getDocs(intakeQuery);
+
+        if (!querySnapshot.empty) {
+          // 2. Client-side sort and get latest (AS IN DOCTOR MODULE)
+          const docs = querySnapshot.docs
+            .map((d) => d.data() as any)
+            .map((d) => ({
+              ...d,
+              // Safely handle timestamp conversion and default to a Date object
+              recordedAt:
+                d.recordedAt?.toDate?.() ??
+                (typeof d.recordedAt === "string"
+                  ? new Date(d.recordedAt)
+                  : new Date(0)),
+            }))
+            .sort((a, b) => b.recordedAt.getTime() - a.recordedAt.getTime()); // DESC sort by recordedAt
+
+          const latest = docs[0];
+
+          setSummary(
+            latest?.aiClinicalSummary ||
+              "AI Clinical Summary was not generated for this visit."
+          );
+        } else {
+          setSummary(
+            "No previous Pre-OPD Intake record found for this patient."
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching previous visit summary:", error);
+        setSummary("An error occurred while fetching the visit summary.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSummary();
+  }, [patient.uhid]);
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between p-5 border-b border-gray-200 bg-[#F8F9FA] rounded-t-xl">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-purple-100 rounded-full">
+              <ClipboardList className="w-6 h-6 text-purple-600" />
+            </div>
+            <h2 className="text-xl font-bold text-[#0B2D4D]">
+              Latest Clinical Summary
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto flex-grow">
+          <p className="text-lg text-[#1a4b7a] mb-4">
+            Summary for <span className="font-medium">{patient.fullName}</span>{" "}
+            (UHID: {patient.uhid})
+          </p>
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center h-full min-h-[150px] text-center">
+              <Loader className="w-8 h-8 text-purple-600 animate-spin mb-3" />
+              <p className="text-lg font-semibold text-[#0B2D4D]">
+                Fetching Previous Visit Data...
+              </p>
+            </div>
+          ) : (
+            <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              <FormattedAiSummary summary={summary} />
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end p-4 border-t border-gray-200 bg-[#F8F9FA] rounded-b-xl">
+          <button
+            onClick={onClose}
+            className="px-5 py-2 text-lg font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+// --- END NEW COMPONENT: PreviousVisitSummaryModal ---
+
 const PatientQueue: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>([]); // Raw data
   const [paginatedPatients, setPaginatedPatients] = useState<Patient[]>([]);
@@ -326,6 +504,11 @@ const PatientQueue: React.FC = () => {
   const [vitalsPatient, setVitalsPatient] = useState<Patient | null>(null);
   const [showDoctor, setShowDoctor] = useState(false);
   const [doctorPatient, setDoctorPatient] = useState<Patient | null>(null);
+
+  // --- NEW STATE FOR MODAL ---
+  const [selectedPatientForSummary, setSelectedPatientForSummary] =
+    useState<Patient | null>(null);
+  // --- END NEW STATE ---
 
   // Search and Filter States
   const [searchTerm, setSearchTerm] = useState("");
@@ -351,7 +534,7 @@ const PatientQueue: React.FC = () => {
       ? "Receptionist"
       : "";
 
-  // Debounce hook
+  // Debounce hook (UNCHANGED)
   const useDebounce = (value: string, delay: number) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
     useEffect(() => {
@@ -367,7 +550,7 @@ const PatientQueue: React.FC = () => {
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // 1. Fetch Patients from Firestore
+  // 1. Fetch Patients from Firestore (UNCHANGED)
   useEffect(() => {
     const patientsQuery = query(
       collection(db, "patients"),
@@ -407,7 +590,7 @@ const PatientQueue: React.FC = () => {
     return () => unsubscribe();
   }, [storedRole, name]);
 
-  // 2. Client-Side Filtering (All filters combined)
+  // 2. Client-Side Filtering (All filters combined) (UNCHANGED)
   useEffect(() => {
     setIsSearching(true);
     const term = debouncedSearchTerm.toLowerCase();
@@ -478,14 +661,14 @@ const PatientQueue: React.FC = () => {
     monthYear,
   ]);
 
-  // 3. Client-Side Pagination Effect
+  // 3. Client-Side Pagination Effect (UNCHANGED)
   useEffect(() => {
     const startIndex = (currentPage - 1) * PATIENTS_PER_PAGE;
     const endIndex = startIndex + PATIENTS_PER_PAGE;
     setPaginatedPatients(filteredAndSortedPatients.slice(startIndex, endIndex));
   }, [currentPage, filteredAndSortedPatients]);
 
-  // Status Counts (based on the full 'patients' list, not filtered)
+  // Status Counts (based on the full 'patients' list, not filtered) (UNCHANGED)
   const statusCounts = patients.reduce(
     (acc, patient) => {
       if (patient.status === "Completed") acc.completed++;
@@ -540,7 +723,18 @@ const PatientQueue: React.FC = () => {
     setDoctorPatient(null);
   };
 
-  // PatientCard component (Updated to show time)
+  // --- NEW HANDLER for Previous Visit Button ---
+  const handlePreviousVisitClick = (patient: Patient, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!patient.uhid) {
+      alert("Patient UHID is missing. Cannot fetch previous visit summary.");
+      return;
+    }
+    setSelectedPatientForSummary(patient);
+  };
+  // --- END NEW HANDLER ---
+
+  // PatientCard component (Updated to show Previous Visit button)
   const PatientCard: React.FC<{
     patient: Patient;
     isOpen: boolean;
@@ -631,26 +825,25 @@ const PatientQueue: React.FC = () => {
             {patient.abhaId ? "ABHA Linked" : "No ABHA"}
           </span>
         </div>
-        <div className="">
-          <span className="font-medium text-[#0B2D4D]">
-            Chronic Conditions:
-          </span>
-          <div className="flex flex-wrap gap-1 mt-1">
-            {patient.chronicConditions?.map((condition, index) => (
-              <span
-                key={index}
-                className="px-2 py-1 bg-orange-100 text-orange-700 text-md rounded-full"
-              >
-                {condition}
-              </span>
-            ))}
-          </div>
-        </div>
         <div
           className={`flex gap-2 transition-all duration-300 ease-in-out ${
             isOpen ? "mt-3 pt-3 opacity-100" : "max-h-0 opacity-0"
           }`}
         >
+          {/* --- START NEW BUTTON --- */}
+          {patient.status === "Completed" && (
+            <button
+              onClick={(e) => handlePreviousVisitClick(patient, e)}
+              className="flex-1 px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200"
+            >
+              <div className="flex items-center justify-center space-x-1">
+                <Brain className="w-4 h-4" />
+                <span>Previous Visit</span>
+              </div>
+            </button>
+          )}
+          {/* --- END NEW BUTTON --- */}
+
           {(currentUserRole === "Nurse" ||
             currentUserRole === "Receptionist") && (
             <button
@@ -800,7 +993,7 @@ const PatientQueue: React.FC = () => {
         </div>
       </div>
 
-      {/* ✅ START: CONDITIONAL DATE PICKERS */}
+      {/* ✅ START: CONDITIONAL DATE PICKERS (UNCHANGED) */}
       <div className="mb-4">
         {timeFilter === "specific" && (
           <div className="flex items-center space-x-2">
@@ -900,12 +1093,21 @@ const PatientQueue: React.FC = () => {
         </div>
       </div>
 
-      {/* ✅ NEW: Pagination Controls */}
+      {/* ✅ NEW: Pagination Controls (UNCHANGED) */}
       <PaginationControls
         currentPage={currentPage}
         totalPatients={filteredAndSortedPatients.length}
         onPageChange={setCurrentPage}
       />
+
+      {/* --- NEW MODAL RENDER --- */}
+      {selectedPatientForSummary && (
+        <PreviousVisitSummaryModal
+          patient={selectedPatientForSummary}
+          onClose={() => setSelectedPatientForSummary(null)}
+        />
+      )}
+      {/* --- END NEW MODAL RENDER --- */}
     </div>
   );
 };
