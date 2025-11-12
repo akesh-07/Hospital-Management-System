@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
-import Cookies from "js-cookie"; // Import the Cookies library
+import Cookies from "js-cookie";
+import React, { useEffect, useState } from "react";
 import { User, Bell, Settings, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
+// Removed: import { useAuth } from "../../contexts/AuthContext";
 
 interface HeaderProps {
   currentSection: string;
@@ -12,7 +12,7 @@ export const Header: React.FC<HeaderProps> = ({ currentSection }) => {
   const [userName, setUserName] = useState<string | null>(null); // State to hold the user's name
   const [userRole, setUserRole] = useState<string | null>(null); // State to hold the user's role
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  // Removed: const { logout } = useAuth();
 
   // Use useEffect to read the cookie when the component mounts
   useEffect(() => {
@@ -47,8 +47,8 @@ export const Header: React.FC<HeaderProps> = ({ currentSection }) => {
               <Settings className="w-5 h-5" />
             </button>
             <button
-              onClick={async () => {
-                await logout();
+              // Changed handler to remove async and the logout() call
+              onClick={() => {
                 navigate("/login", { replace: true });
               }}
               className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
