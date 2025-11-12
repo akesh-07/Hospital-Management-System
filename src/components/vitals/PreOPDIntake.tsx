@@ -696,7 +696,7 @@ export const PreOPDIntake: React.FC<PreOPDIntakeProps> = ({
                 className="flex items-center space-x-2 px-6 py-2 rounded-lg font-semibold transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed bg-[#012e58] text-white hover:bg-[#1a4b7a]"
               >
                 <Save className="w-4 h-4" />
-                <span>{status.isSaving ? "Saving..." : "Submit Intake"}</span>
+                <span>{status.isSaving ? "Saving..." : "Submit"}</span>
               </button>
             </div>
           </div>

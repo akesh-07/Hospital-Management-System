@@ -192,8 +192,7 @@ export const PresentingComplaintsSection: React.FC<
           <div className="flex items-center space-x-2">
             <List className="w-5 h-5 text-[#012e58]" />
             <h2 className="text-lg font-semibold text-[#0B2D4D]">
-              2. Presenting Complaint(s){" "}
-              {data.length > 0 && `(${data.length}/5)`}
+              2. Present Complaint(s) {data.length > 0 && `(${data.length}/5)`}
             </h2>
           </div>
           <button
