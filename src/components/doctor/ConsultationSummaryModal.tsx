@@ -211,9 +211,9 @@ const ConsultationSummaryModal: React.FC<SummaryModalProps> = ({
   const PrintClone = (
     <div className="print-only">
       <div className="print-header text-center">
-        <div className="font-bold text-lg">Cryptera Multispeciality Clinic</div>
+        <div className="font-bold text-lg">Clinexa Multispeciality Clinic</div>
         <div className="text-md">
-          123 Health Ave, Coimbatore · +91-98765-43210 · hello@cryptera.health
+          123 Health Ave, Coimbatore · +91-98765-43210 · hello@clinexa.health
         </div>
       </div>
       {SummaryBody}
