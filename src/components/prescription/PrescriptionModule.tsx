@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Medication } from "../../types";
 import { Patient } from "../../types";
-import { FileText } from "lucide-react";
+import { FileText, X } from "lucide-react"; // Added X
 import { Plus } from "lucide-react";
 import { Trash2 } from "lucide-react";
 import { Bot } from "lucide-react";
@@ -22,6 +22,9 @@ const PrescriptionModule: React.FC<{
       unit: "Days" as "Days" | "Months" | "Years",
     },
   });
+
+  // ✅ NEW: State for the custom diet input
+  const [customDiet, setCustomDiet] = useState("");
 
   const commonMedications = [
     "Paracetamol",
@@ -101,14 +104,35 @@ const PrescriptionModule: React.FC<{
     );
   };
 
-  const toggleAdvice = (category: "diet", item: string) => {
+  // ✅ START: --- NEW DIET HANDLERS ---
+
+  // For quick-add chips
+  const addQuickDietPlan = (plan: string) => {
+    if (!advice.diet.includes(plan)) {
+      setAdvice((prev) => ({ ...prev, diet: [...prev.diet, plan] }));
+    }
+  };
+
+  // For adding from the custom input field
+  const handleAddCustomDiet = () => {
+    const newAdvice = customDiet.trim();
+    if (newAdvice && !advice.diet.includes(newAdvice)) {
+      setAdvice((prev) => ({
+        ...prev,
+        diet: [...prev.diet, newAdvice],
+      }));
+      setCustomDiet(""); // Clear input after adding
+    }
+  };
+
+  // For deleting any chip from the added list
+  const handleRemoveDiet = (plan: string) => {
     setAdvice((prev) => ({
       ...prev,
-      [category]: prev[category].includes(item)
-        ? prev[category].filter((i) => i !== item)
-        : [...prev[category], item],
+      diet: prev.diet.filter((d) => d !== plan),
     }));
   };
+  // ✅ END: --- NEW DIET HANDLERS ---
 
   return (
     <div className="space-y-3">
@@ -287,30 +311,86 @@ const PrescriptionModule: React.FC<{
           />
         </div>
 
-        {/* Diet Plan Section */}
+        {/* ✅ START: UPDATED DIET PLAN SECTION */}
         <div className="bg-white rounded-lg border border-gray-200 p-3">
           <h3 className="text-lg font-semibold text-[#0B2D4D] mb-2">
             Diet Plan
           </h3>
-          <div className="space-y-1.5">
-            {dietPlans.map((plan) => (
-              <label
-                key={plan}
-                className="flex items-start space-x-2 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={advice.diet.includes(plan)}
-                  onChange={() => toggleAdvice("diet", plan)}
-                  className="mt-0.5 w-3 h-3 text-[#012e58] border-gray-300 rounded focus:ring-[#1a4b7a]"
-                />
-                <span className="text-md text-[#1a4b7a] leading-tight">
+
+          {/* Quick Add Chips */}
+          <div className="flex flex-wrap gap-2 mb-4 p-2 border border-gray-100 rounded-md bg-[#F8F9FA]">
+            {dietPlans.map((plan) => {
+              const isSelected = advice.diet.includes(plan);
+              return (
+                <button
+                  key={plan}
+                  type="button"
+                  onClick={() => addQuickDietPlan(plan)}
+                  disabled={isSelected} // Disable if already added
+                  className={`px-3 py-1 text-xs rounded-full border transition-all duration-150 text-left bg-white text-gray-700 border-gray-300 hover:bg-gray-200 disabled:opacity-50 disabled:bg-green-100 disabled:text-green-800`}
+                >
+                  {isSelected ? "✓ " : "+ "}
                   {plan}
-                </span>
-              </label>
-            ))}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Custom Diet Plan Input */}
+          <div className="flex items-stretch gap-2 mb-4">
+            <input
+              type="text"
+              value={customDiet}
+              onChange={(e) => setCustomDiet(e.target.value)}
+              placeholder="Enter custom diet advice (e.g., Gluten-Free)"
+              className="flex-grow px-3 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#1a4b7a] focus:border-transparent text-sm"
+              onKeyPress={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleAddCustomDiet();
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleAddCustomDiet}
+              className="flex-shrink-0 px-3 py-1.5 text-sm bg-[#012e58] text-white rounded-md hover:bg-[#1a4b7a] transition-colors"
+            >
+              Add Custom
+            </button>
+          </div>
+
+          {/* Added Diet Plans (as deletable chips) */}
+          <div className="space-y-2">
+            <h4 className="text-md font-medium text-[#1a4b7a] mb-1">
+              Selected Diet Advice:
+            </h4>
+            {advice.diet.length === 0 ? (
+              <p className="text-sm text-gray-500 italic">
+                No diet advice added yet.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {advice.diet.map((plan) => (
+                  <span
+                    key={plan}
+                    className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full border border-blue-200"
+                  >
+                    {plan}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveDiet(plan)}
+                      className="ml-1.5 text-blue-600 hover:text-red-500"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
+        {/* ✅ END: UPDATED DIET PLAN SECTION */}
       </div>
 
       {/* Follow-up Section */}
