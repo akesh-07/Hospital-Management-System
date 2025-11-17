@@ -8,7 +8,7 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { auth, db } from "../../firebase";
 import { useAuth } from "../../contexts/AuthContext";
 
-// Interface for the form data without the name field
+// Interface for the form data
 interface LoginForm {
   email: string;
   password: string;
@@ -16,44 +16,20 @@ interface LoginForm {
 }
 
 const userRoles = [
-  {
-    value: "doctor",
-    label: "Login as Doctor",
-    icon: "👨‍⚕️",
-    route: "/pre-opd", // Corrected route for Doctor
-  },
-  {
-    value: "pharmacist",
-    label: "Login as Pharmacist",
-    icon: "💊",
-    route: "/pharmacy", // Corrected route for Pharmacist
-  },
-  {
-    value: "technician",
-    label: "Login as Technician",
-    icon: "🔬",
-    route: "/lab-requests", // ⬅️ Technician is routed to Lab Requests
-  },
-  {
-    value: "receptionist",
-    label: "Login as Receptionist",
-    icon: "📋",
-    route: "/registration", // Corrected route for Receptionist
-  },
-  {
-    value: "staff-nurse",
-    label: "Login as Staff Nurse",
-    icon: "👩‍⚕️",
-    route: "/pre-opd", // Corrected route for Staff Nurse
-  },
+  { value: "doctor", label: "Login as Doctor", icon: "👨‍⚕️", route: "/pre-opd" },
+  { value: "pharmacist", label: "Login as Pharmacist", icon: "💊", route: "/pharmacy" },
+  { value: "technician", label: "Login as Technician", icon: "🔬", route: "/lab-requests" },
+  { value: "receptionist", label: "Login as Receptionist", icon: "📋", route: "/registration" },
+  { value: "staff-nurse", label: "Login as Staff Nurse", icon: "👩‍⚕️", route: "/pre-opd" }
 ];
 
 const LoginPage: React.FC = () => {
   const [formData, setFormData] = useState<LoginForm>({
     email: "",
     password: "",
-    role: "",
+    role: ""
   });
+
   const [showPassword, setShowPassword] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [errors, setErrors] = useState<Partial<LoginForm>>({});
@@ -65,38 +41,33 @@ const LoginPage: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({ ...prev, [name]: value }));
 
     if (errors[name as keyof LoginForm]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
-    if (loginError) {
-      setLoginError("");
-    }
+    if (loginError) setLoginError("");
   };
 
   const handleRoleSelect = (role: string) => {
     setFormData((prev) => ({ ...prev, role }));
     setIsDropdownOpen(false);
+
     if (errors.role) {
       setErrors((prev) => ({ ...prev, role: "" }));
-    }
-    if (loginError) {
-      setLoginError("");
     }
   };
 
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginForm> = {};
 
-    if (!formData.role) {
-      newErrors.role = "Please select your role";
-    }
+    if (!formData.role) newErrors.role = "Please select your role";
 
     if (!formData.email) {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
+      newErrors.email = "Please enter a valid email";
     }
 
     if (!formData.password) {
@@ -111,53 +82,71 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     setIsLoading(true);
     setLoginError("");
 
     try {
+      const normalizedEmail = formData.email.trim().toLowerCase();
+
       const userCredential = await signInWithEmailAndPassword(
         auth,
-        formData.email,
+        normalizedEmail,
         formData.password
       );
 
-      let userName = "User";
+      // Default username
+      let userName =
+        userCredential.user.displayName ||
+        normalizedEmail.split("@")[0] ||
+        "User";
+
+      // Fetch doctor name if role = doctor
       if (formData.role === "doctor") {
         const q = query(
           collection(db, "doctors"),
-          where("email", "==", formData.email)
+          where("email", "==", normalizedEmail)
         );
         const querySnapshot = await getDocs(q);
+
         if (!querySnapshot.empty) {
-          const doctorData = querySnapshot.docs[0].data();
-          userName = (doctorData as any).doc_name;
+          const doctorData = querySnapshot.docs[0].data() as any;
+          userName = doctorData.doc_name || userName;
         }
       }
 
-      Cookies.set("userRole", formData.role, { expires: 7 });
-      Cookies.set("userName", userName, { expires: 7 });
+      // Store secure cookies
+      Cookies.set("userRole", formData.role, {
+        expires: 7,
+        secure: true,
+        sameSite: "Strict",
+      });
 
+      Cookies.set("userName", userName, {
+        expires: 7,
+        secure: true,
+        sameSite: "Strict",
+      });
+
+      // Update global auth context
       setUser({
         id: userCredential.user.uid,
-        email: formData.email,
+        email: normalizedEmail,
         role: formData.role,
         name: userName,
       });
 
-      const selectedRole = userRoles.find(
-        (role) => role.value === formData.role
-      );
+      const selectedRole = userRoles.find((r) => r.value === formData.role);
 
       if (selectedRole) {
-        navigate(selectedRole.route);
+        navigate(selectedRole.route, { replace: true });
       } else {
-        navigate("/dashboard");
+        navigate("/dashboard", { replace: true });
       }
     } catch (error: any) {
       let errorMessage = "Login failed. Please try again.";
+
       if (
         error.code === "auth/invalid-email" ||
         error.code === "auth/wrong-password" ||
@@ -167,6 +156,7 @@ const LoginPage: React.FC = () => {
       } else if (error.code === "auth/network-request-failed") {
         errorMessage = "Network error. Please check your connection.";
       }
+
       setLoginError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -192,19 +182,21 @@ const LoginPage: React.FC = () => {
               <p className="text-lg text-red-600">{loginError}</p>
             </div>
           )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* ROLE FIRST */}
+            {/* ROLE FIELD */}
             <div className="space-y-2">
               <label className="block text-lg font-medium text-[#0B2D4D]">
                 Select Your Role
               </label>
+
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className={`w-full flex items-center justify-between pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
+                  className={`w-full flex items-center justify-between pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] transition-all duration-200 ${
                     errors.role ? "border-red-500 bg-red-50" : "border-gray-300"
-                  } ${formData.role ? "text-[#0B2D4D]" : "text-gray-500"}`}
+                  }`}
                 >
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <span className="flex items-center gap-2">
@@ -223,14 +215,15 @@ const LoginPage: React.FC = () => {
                     }`}
                   />
                 </button>
+
                 {isDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 animate-fade-in">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                     {userRoles.map((role) => (
                       <button
                         key={role.value}
                         type="button"
                         onClick={() => handleRoleSelect(role.value)}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#e0f7fa] transition-colors duration-150 first:rounded-t-lg last:rounded-b-lg"
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#e0f7fa] transition-colors first:rounded-t-lg last:rounded-b-lg"
                       >
                         <span className="text-lg">{role.icon}</span>
                         <span className="text-[#0B2D4D]">{role.label}</span>
@@ -239,71 +232,65 @@ const LoginPage: React.FC = () => {
                   </div>
                 )}
               </div>
+
               {errors.role && (
-                <p className="text-lg text-red-600 animate-fade-in">
-                  {errors.role}
-                </p>
+                <p className="text-lg text-red-600">{errors.role}</p>
               )}
             </div>
 
-            {/* THEN EMAIL */}
+            {/* EMAIL FIELD */}
             <div className="space-y-2">
-              <label
-                htmlFor="email"
-                className="block text-lg font-medium text-[#0B2D4D]"
-              >
+              <label className="block text-lg font-medium text-[#0B2D4D]">
                 Email Address
               </label>
+
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="email"
-                  id="email"
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
-                    errors.email
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-300"
+                  autoComplete="email"
+                  className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] ${
+                    errors.email ? "border-red-500 bg-red-50" : "border-gray-300"
                   }`}
                   placeholder="Enter your email"
                 />
               </div>
+
               {errors.email && (
-                <p className="text-lg text-red-600 animate-fade-in">
-                  {errors.email}
-                </p>
+                <p className="text-lg text-red-600">{errors.email}</p>
               )}
             </div>
 
-            {/* THEN PASSWORD */}
+            {/* PASSWORD FIELD */}
             <div className="space-y-2">
-              <label
-                htmlFor="password"
-                className="block text-lg font-medium text-[#0B2D4D]"
-              >
+              <label className="block text-lg font-medium text-[#0B2D4D]">
                 Password
               </label>
+
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type={showPassword ? "text" : "password"}
-                  id="password"
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className={`w-full pl-11 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] focus:border-transparent transition-all duration-200 ${
+                  autoComplete="current-password"
+                  className={`w-full pl-11 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-[#1a4b7a] ${
                     errors.password
                       ? "border-red-500 bg-red-50"
                       : "border-gray-300"
                   }`}
                   placeholder="Enter your password"
                 />
+
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                 >
                   {showPassword ? (
                     <EyeOff className="w-5 h-5" />
@@ -312,37 +299,40 @@ const LoginPage: React.FC = () => {
                   )}
                 </button>
               </div>
+
               {errors.password && (
-                <p className="text-lg text-red-600 animate-fade-in">
-                  {errors.password}
-                </p>
+                <p className="text-lg text-red-600">{errors.password}</p>
               )}
             </div>
 
+            {/* REMEMBER + FORGOT */}
             <div className="flex items-center justify-between">
               <label className="flex items-center">
                 <input
                   type="checkbox"
-                  className="rounded border-gray-300 text-[#012e58] focus:ring-[#1a4b7a] focus:ring-2"
+                  className="rounded border-gray-300 text-[#012e58]"
                 />
                 <span className="ml-2 text-lg text-[#1a4b7a]">Remember me</span>
               </label>
-              <a
-                href="#"
-                className="text-lg text-[#012e58] hover:text-[#1a4b7a] transition-colors"
+
+              <Link
+                to="/forgot-password"
+                className="text-lg text-[#012e58] hover:text-[#1a4b7a]"
               >
                 Forgot password?
-              </a>
+              </Link>
             </div>
+
+            {/* SUBMIT BUTTON */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-[#012e58] to-[#1a4b7a] hover:from-[#1a4b7a] hover:to-[#012e58] text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-[#1a4b7a] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
+              className="w-full bg-gradient-to-r from-[#012e58] to-[#1a4b7a] text-white py-3 px-4 rounded-lg shadow-lg transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Signing In...</span>
+                  Signing In...
                 </div>
               ) : (
                 "Sign In"
@@ -350,13 +340,12 @@ const LoginPage: React.FC = () => {
             </button>
           </form>
 
-          {/* Added Sign Up link (no logic changes) */}
           <div className="mt-4 text-center">
             <p className="text-lg text-[#1a4b7a]">
               Don't have an account?{" "}
               <Link
                 to="/signup"
-                className="text-[#012e58] hover:text-[#1a4b7a] font-medium transition-colors"
+                className="text-[#012e58] hover:text-[#1a4b7a] font-medium"
               >
                 Sign Up
               </Link>
@@ -366,10 +355,7 @@ const LoginPage: React.FC = () => {
           <div className="mt-6 text-center">
             <p className="text-lg text-[#1a4b7a]">
               Need help? Contact{" "}
-              <a
-                href="#"
-                className="text-[#012e58] hover:text-[#1a4b7a] transition-colors"
-              >
+              <a href="#" className="text-[#012e58] hover:text-[#1a4b7a]">
                 IT Support
               </a>
             </p>
