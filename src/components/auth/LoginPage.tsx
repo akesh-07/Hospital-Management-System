@@ -116,6 +116,17 @@ const LoginPage: React.FC = () => {
         }
       }
 
+
+       const q = query(collection(db, "staff"), where("email", "==", normalizedEmail));
+  const snap = await getDocs(q);
+
+  if (!snap.empty) {
+    // If there are multiple docs for the same email, you might want to pick the first,
+    // or handle duplicates explicitly.
+    const docData = snap.docs[0].data() as any;
+  userName=docData.sName;
+  }
+
       // Store secure cookies
       Cookies.set("userRole", formData.role, {
         expires: 7,
