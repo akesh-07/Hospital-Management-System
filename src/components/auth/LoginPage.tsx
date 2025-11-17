@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Cookies from "js-cookie";
 import { Eye, EyeOff, User, Lock, Mail, ChevronDown } from "lucide-react";
 import HMS_LOGO from "../layout/hms-logo.png";
@@ -349,6 +349,20 @@ const LoginPage: React.FC = () => {
               )}
             </button>
           </form>
+
+          {/* Added Sign Up link (no logic changes) */}
+          <div className="mt-4 text-center">
+            <p className="text-lg text-[#1a4b7a]">
+              Don't have an account?{" "}
+              <Link
+                to="/signup"
+                className="text-[#012e58] hover:text-[#1a4b7a] font-medium transition-colors"
+              >
+                Sign Up
+              </Link>
+            </p>
+          </div>
+
           <div className="mt-6 text-center">
             <p className="text-lg text-[#1a4b7a]">
               Need help? Contact{" "}

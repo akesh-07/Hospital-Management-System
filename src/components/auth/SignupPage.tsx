@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   User,
   ChevronDown,
@@ -495,6 +495,17 @@ const SignupPage: React.FC = () => {
             >
               {isSaving ? "Adding Staff..." : "Add Staff"}
             </button>
+
+            {/* Added Login link (no logic changes) */}
+            <p className="text-center text-sm text-gray-500 mt-4">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="text-[#012e58] hover:text-[#1a4b7a] font-medium transition-colors"
+              >
+                Go to Login
+              </Link>
+            </p>
           </form>
         </div>
       </div>
