@@ -591,7 +591,7 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     notes: "",
   });
 
-  const [quickSymptoms, setQuickSymptoms] = useState<string[]>([]);
+  // REMOVED: const [quickSymptoms, setQuickSymptoms] = useState<string[]>([]);
   const [symptomOptions, setSymptomOptions] = useState<string[]>([
     "Fever",
     "Cold",
@@ -1052,39 +1052,9 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
               icon={ClipboardList}
               title="History of Present Illness (HPI) & Complaints"
             />
-            <div className="mb-4">
-              <label className="text-md font-medium text-[#1a4b7a] mb-2 block">
-                Quick Symptom Selection
-              </label>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                {["Fever", "Cold", "Cough", "Diarrhea", "Vomiting"].map(
-                  (symptom) => (
-                    <label
-                      key={symptom}
-                      className="flex items-center space-x-1.5 p-2 bg-gray-50 rounded-md border border-gray-200 hover:bg-[#012e58]/5 transition-colors cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={quickSymptoms.includes(symptom)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setQuickSymptoms((prev) => [...prev, symptom]);
-                          } else {
-                            setQuickSymptoms((prev) =>
-                              prev.filter((s) => s !== symptom)
-                            );
-                          }
-                        }}
-                        className="rounded border-gray-300 text-[#012e58] focus:ring-[#012e58] focus:ring-2"
-                      />
-                      <span className="text-md font-medium text-[#0B2D4D]">
-                        {symptom}
-                      </span>
-                    </label>
-                  )
-                )}
-              </div>
-            </div>
+
+            {/* Quick Symptom Selection Checkboxes REMOVED */}
+
             <div className="overflow-x-auto bg-gray-50 rounded-md border border-gray-200">
               <table className="w-full">
                 <thead>
