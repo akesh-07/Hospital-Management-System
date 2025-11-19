@@ -52,20 +52,7 @@ interface LabInvestigationData {
   };
 }
 
-interface MedicationRow {
-  id: string;
-  sno: number;
-  aiMedication: string;
-  aiDosage: string;
-  aiFrequency: string;
-  aiDuration: string;
-  aiInstructions: string;
-  doctorMedication: string;
-  doctorDosage: string;
-  doctorFrequency: string;
-  doctorDuration: string;
-  doctorInstructions: string;
-}
+// 🚨 REMOVED: MedicationRow interface is no longer needed
 
 interface MedicalDashboardProps {
   consultation: ConsultationData; // Using the explicit type
@@ -99,12 +86,14 @@ const MedicalDashboard: React.FC<MedicalDashboardProps> = ({
       doctorTests: { cbc: false, lft: false, rft: false },
     });
 
-  const [medicationRows, setMedicationRows] = useState<MedicationRow[]>([]);
+  // 🚨 REMOVED: const [medicationRows, setMedicationRows] = useState<MedicationRow[]>([]);
 
   const [isLoading, setIsLoading] = useState(false); // Used for AI generation
   const [isSendingLab, setIsSendingLab] = useState(false); // State for lab submission
 
   const labResults = ["ECG", "X-RAY", "TCA-troraric", "In-xity coavortiatric"];
+
+  // 🚨 REMOVED: handleCopyPrescription function
 
   const handleGenerateSuggestions = async () => {
     // ⚠️ Prefer storing your key on the server; this inline usage is only for local testing.
@@ -127,7 +116,6 @@ const MedicalDashboard: React.FC<MedicalDashboardProps> = ({
 
 Do not include any explanatory text or markdown formatting outside of the JSON object.`;
 
-    // 🟢 FIXED: Map symptoms array to a readable string format
     const formattedSymptoms = consultation.symptoms
       .filter((s) => s.symptom.trim() !== "")
       .map(
@@ -172,7 +160,6 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
               { role: "system", content: systemPrompt },
               { role: "user", content: userPrompt },
             ],
-            //
             response_format: { type: "json_object" },
           }),
         }
@@ -213,27 +200,25 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
             }));
           }
 
-          if (Array.isArray(aiResponse.medications)) {
-            const newMedicationRows = aiResponse.medications.map(
-              (med: any, index: number) => ({
-                id: String(index + 1),
-                sno: index + 1,
-                aiMedication: med.name || "",
-                aiDosage: med.dosage || "",
-                aiFrequency: med.frequency || "",
-                aiDuration: med.duration || "",
-                aiInstructions: med.instructions || "",
-                doctorMedication: "",
-                doctorDosage: "",
-                doctorFrequency: "",
-                doctorDuration: "",
-                doctorInstructions: "",
-              })
-            );
-            if (newMedicationRows.length > 0) {
-              setMedicationRows(newMedicationRows);
-            }
+          // ----------------------------------------------------------------------
+          // 🟢 CRITICAL CHANGE: DIRECTLY ADD TO PRESCRIPTION CONTEXT
+          // ----------------------------------------------------------------------
+          if (
+            Array.isArray(aiResponse.medications) &&
+            aiResponse.medications.length > 0
+          ) {
+            const medicationsToCopy: Omit<Medication, "id">[] =
+              aiResponse.medications.map((med: any) => ({
+                name: med.name || "",
+                dosage: med.dosage || "",
+                frequency: med.frequency || "",
+                duration: med.duration || "",
+                instructions: med.instructions || "",
+              }));
+            addMedications(medicationsToCopy);
+            console.log("AI prescription suggestions automatically added.");
           }
+          // ----------------------------------------------------------------------
         } catch (e) {
           console.error(
             "Failed to parse AI response JSON. Raw content:",
@@ -256,48 +241,16 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
     }
   };
 
-  const handleCopyPrescription = () => {
-    const medicationsToCopy: Omit<Medication, "id">[] = medicationRows.map(
-      (row) => ({
-        name: row.aiMedication,
-        dosage: row.aiDosage,
-        frequency: row.aiFrequency,
-        duration: row.aiDuration,
-        instructions: row.aiInstructions,
-      })
-    );
-    addMedications(medicationsToCopy);
-    alert("Prescription copied successfully!");
-  };
-
   const copyToField = (
     aiValue: string,
     field: "diagnosis" | "labInvestigation"
   ) => {
     if (field === "diagnosis") {
       setDiagnosis((prev) => ({ ...prev, doctorEntry: aiValue }));
-      onDiagnosisUpdate(aiValue); // 🚨 CALL PROP HERE
+      onDiagnosisUpdate(aiValue);
     } else if (field === "labInvestigation") {
       setLabInvestigation((prev) => ({ ...prev, doctorEntry: aiValue }));
     }
-  };
-
-  const copyMedicationField = (
-    rowId: string,
-    field: "medication" | "dosage" | "frequency" | "duration" | "instructions",
-    aiValue: string
-  ) => {
-    setMedicationRows((prev) =>
-      prev.map((row) =>
-        row.id === rowId
-          ? {
-              ...row,
-              [`doctor${field.charAt(0).toUpperCase() + field.slice(1)}`]:
-                aiValue,
-            }
-          : row
-      )
-    );
   };
 
   const copyAiTests = () => {
@@ -307,9 +260,14 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
     }));
   };
 
-  // 🟢 CORRECTED HANDLER: Parses Doctor's Manual Input and adds items to the 'tests' array
+  const handleTestChange = (test: "cbc" | "lft" | "rft") => {
+    setLabInvestigation((prev) => ({
+      ...prev,
+      doctorTests: { ...prev.doctorTests, [test]: !prev.doctorTests[test] },
+    }));
+  };
+
   const handleSendLabOrder = async () => {
-    // 1. Determine the patient ID using patId or generic id.
     const patientIdentifier = selectedPatient.patId || selectedPatient.id;
 
     if (!patientIdentifier) {
@@ -319,7 +277,6 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
       return;
     }
 
-    // 2. Identify specific selected test codes (CBC, LFT, etc.)
     const specificTests = (
       Object.keys(labInvestigation.doctorTests) as Array<
         keyof typeof labInvestigation.doctorTests
@@ -328,7 +285,6 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
       .filter((key) => labInvestigation.doctorTests[key])
       .map((test) => test.toUpperCase());
 
-    // 3. PARSE DOCTOR'S MANUAL INPUT
     let manualTests: string[] = [];
     if (labInvestigation.doctorEntry) {
       manualTests = labInvestigation.doctorEntry
@@ -337,7 +293,6 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
         .filter((item) => item.length > 0);
     }
 
-    // 4. Construct the final tests array: specific test codes + parsed manual text
     const finalTestsArray = [...new Set([...specificTests, ...manualTests])];
 
     if (finalTestsArray.length === 0) {
@@ -350,7 +305,6 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
     setIsSendingLab(true);
 
     try {
-      // 5. Prepare the data payload
       const labRequestPayload = {
         patId: patientIdentifier,
         tests: finalTestsArray,
@@ -358,7 +312,6 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
         requestedAt: new Date(),
       };
 
-      // 6. Send data to the Firestore 'labRequests' collection
       const labRequestsCollection = collection(db, "labRequests");
       await addDoc(labRequestsCollection, labRequestPayload);
 
@@ -376,57 +329,13 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
     }
   };
 
-  // Handlers
   const handleDiagnosisChange = (value: string) => {
     setDiagnosis((prev) => ({ ...prev, doctorEntry: value }));
-    onDiagnosisUpdate(value); // 🚨 CALL PROP HERE to update DoctorModule state
+    onDiagnosisUpdate(value);
   };
 
   const handleLabInvestigationChange = (value: string) => {
     setLabInvestigation((prev) => ({ ...prev, doctorEntry: value }));
-  };
-
-  // 🔄 Handler to toggle test state when the tag is clicked
-  const handleTestChange = (test: "cbc" | "lft" | "rft") => {
-    setLabInvestigation((prev) => ({
-      ...prev,
-      doctorTests: { ...prev.doctorTests, [test]: !prev.doctorTests[test] },
-    }));
-  };
-
-  // Handlers for Doctor's manual medication table, for future implementation
-  const handleDoctorMedicationChange = (
-    rowId: string,
-    field: keyof MedicationRow,
-    value: string
-  ) => {
-    setMedicationRows((prev) =>
-      prev.map((row) => (row.id === rowId ? { ...row, [field]: value } : row))
-    );
-  };
-
-  const addManualMedicationRow = () => {
-    setMedicationRows((prev) => [
-      ...prev,
-      {
-        id: String(Date.now()),
-        sno: prev.length + 1,
-        aiMedication: "",
-        aiDosage: "",
-        aiFrequency: "",
-        aiDuration: "",
-        aiInstructions: "",
-        doctorMedication: "",
-        doctorDosage: "",
-        doctorFrequency: "",
-        doctorDuration: "",
-        doctorInstructions: "",
-      },
-    ]);
-  };
-
-  const removeMedicationRow = (rowId: string) => {
-    setMedicationRows((prev) => prev.filter((row) => row.id !== rowId));
   };
 
   return (
@@ -645,183 +554,7 @@ Do not include any explanatory text or markdown formatting outside of the JSON o
           ))}
         </div>
       </div>
-      {/* AI-Suggested Medication Table */}
-      <div className="w-full bg-white p-2 rounded shadow border border-gray-200">
-        <div className="p-2 border-b border-gray-200 flex justify-between items-center">
-          <h3 className="text-lg font-bold text-[#0B2D4D] tracking-tight">
-            AI-Suggested Medication Table
-          </h3>
-          <button
-            onClick={handleCopyPrescription}
-            disabled={medicationRows.length === 0}
-            className="flex items-center space-x-2 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-md disabled:opacity-50"
-          >
-            <Copy className="w-3 h-3" />
-            <span>Copy All Suggestions</span>
-          </button>
-        </div>
-        <div className="p-2 overflow-x-auto">
-          <table className="w-full text-md border-collapse border border-gray-300">
-            <thead className="bg-gradient-to-r from-[#012e58] to-[#1a4b7a] text-white">
-              <tr>
-                <th className="p-1 border border-gray-300 font-semibold text-md min-w-[100px]">
-                  Name (AI)
-                </th>
-                <th className="p-1 border border-gray-300 font-semibold text-md min-w-[70px]">
-                  Dosage (AI)
-                </th>
-                <th className="p-1 border border-gray-300 font-semibold text-md min-w-[70px]">
-                  Freq (AI)
-                </th>
-                <th className="p-1 border border-gray-300 font-semibold text-md min-w-[70px]">
-                  Duration (AI)
-                </th>
-                <th className="p-1 border border-gray-300 font-semibold text-md min-w-[120px]">
-                  Instructions (AI)
-                </th>
-                <th className="p-1 border border-gray-300 font-semibold text-md min-w-[100px]">
-                  Name (Dr. Entry)
-                </th>
-                <th className="p-1 border border-gray-300 font-semibold text-md text-center min-w-[30px]">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {medicationRows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="hover:bg-[#012e58]/5 transition-colors"
-                >
-                  <td className="p-1 border border-gray-300">
-                    <div className="flex gap-1 items-center">
-                      <span className="flex-1 text-[#0B2D4D] font-medium text-md">
-                        {row.aiMedication}
-                      </span>
-                      <button
-                        onClick={() =>
-                          copyMedicationField(
-                            row.id,
-                            "medication",
-                            row.aiMedication
-                          )
-                        }
-                        className="p-0.5 border border-[#012e58] rounded text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-1 focus:ring-[#012e58] transition-all duration-300"
-                      >
-                        <Copy size={10} />
-                      </button>
-                    </div>
-                  </td>
-                  <td className="p-1 border border-gray-300">
-                    <div className="flex gap-1 items-center">
-                      <span className="flex-1 text-[#0B2D4D] font-medium text-md">
-                        {row.aiDosage}
-                      </span>
-                      <button
-                        onClick={() =>
-                          copyMedicationField(row.id, "dosage", row.aiDosage)
-                        }
-                        className="p-0.5 border border-[#012e58] rounded text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-1 focus:ring-[#012e58] transition-all duration-300"
-                      >
-                        <Copy size={10} />
-                      </button>
-                    </div>
-                  </td>
-                  <td className="p-1 border border-gray-300">
-                    <div className="flex gap-1 items-center">
-                      <span className="flex-1 text-[#0B2D4D] font-medium text-md">
-                        {row.aiFrequency}
-                      </span>
-                      <button
-                        onClick={() =>
-                          copyMedicationField(
-                            row.id,
-                            "frequency",
-                            row.aiFrequency
-                          )
-                        }
-                        className="p-0.5 border border-[#012e58] rounded text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-1 focus:ring-[#012e58] transition-all duration-300"
-                      >
-                        <Copy size={10} />
-                      </button>
-                    </div>
-                  </td>
-                  <td className="p-1 border border-gray-300">
-                    <div className="flex gap-1 items-center">
-                      <span className="flex-1 text-[#0B2D4D] font-medium text-md">
-                        {row.aiDuration}
-                      </span>
-                      <button
-                        onClick={() =>
-                          copyMedicationField(
-                            row.id,
-                            "duration",
-                            row.aiDuration
-                          )
-                        }
-                        className="p-0.5 border border-[#012e58] rounded text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-1 focus:ring-[#012e58] transition-all duration-300"
-                      >
-                        <Copy size={10} />
-                      </button>
-                    </div>
-                  </td>
-                  <td className="p-1 border border-gray-300">
-                    <div className="flex gap-1 items-center">
-                      <span className="flex-1 text-[#0B2D4D] font-medium text-md">
-                        {row.aiInstructions}
-                      </span>
-                      <button
-                        onClick={() =>
-                          copyMedicationField(
-                            row.id,
-                            "instructions",
-                            row.aiInstructions
-                          )
-                        }
-                        className="p-0.5 border border-[#012e58] rounded text-[#012e58] bg-white hover:bg-[#012e58] hover:text-white focus:outline-none focus:ring-1 focus:ring-[#012e58] transition-all duration-300"
-                      >
-                        <Copy size={10} />
-                      </button>
-                    </div>
-                  </td>
-                  {/* Doctor Entry Column (Only Name field shown here for compactness) */}
-                  <td className="p-1 border border-gray-300">
-                    <input
-                      type="text"
-                      value={row.doctorMedication}
-                      onChange={(e) =>
-                        handleDoctorMedicationChange(
-                          row.id,
-                          "doctorMedication",
-                          e.target.value
-                        )
-                      }
-                      className="w-full p-1 border border-gray-200 rounded text-md focus:ring-1 focus:ring-blue-300"
-                      placeholder="Dr. Name"
-                    />
-                  </td>
-                  {/* Action Column */}
-                  <td className="p-1 border border-gray-300 text-center">
-                    <button
-                      onClick={() => removeMedicationRow(row.id)}
-                      className="text-red-500 hover:text-red-700 p-1"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <button
-            onClick={addManualMedicationRow}
-            className="mt-2 flex items-center gap-1 px-3 py-1 text-md bg-gray-200 text-[#0B2D4D] rounded hover:bg-gray-300 transition-colors"
-          >
-            <Plus size={12} />
-            Add Manual Row
-          </button>
-        </div>
-      </div>
+      {/* 🚨 REMOVED: AI-Suggested Medication Section JSX */}
     </div>
   );
 };
