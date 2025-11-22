@@ -24,10 +24,8 @@ import {
   onSnapshot,
   doc,
   setDoc,
-  // ADDED: Imports for saving the prescription
   addDoc,
   Timestamp,
-  // ADDED: Imports for fetching symptoms
   getDocs,
   orderBy,
 } from "firebase/firestore";
@@ -40,9 +38,7 @@ import {
   usePrescription,
 } from "../../contexts/PrescriptionContext";
 import Ai from "./Ai";
-import { useAuth } from "../../contexts/AuthContext"; // ADDED IMPORT
-
-// 🚨 NEW IMPORT
+import { useAuth } from "../../contexts/AuthContext";
 import ConsultationSummaryModal from "./ConsultationSummaryModal";
 
 // --- INTERFACES ---
@@ -63,7 +59,7 @@ interface AdmissionData {
   additionalNotes: string;
 }
 
-// ... existing AutocompleteInput component ...
+// --- AUTOCOMPLETE INPUT WITH SMALL ADD BUTTON ---
 const AutocompleteInput: React.FC<{
   symptomId: number;
   value: string;
@@ -82,6 +78,11 @@ const AutocompleteInput: React.FC<{
   const [inputValue, setInputValue] = useState(value);
   const [showDropdown, setShowDropdown] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Sync internal state if parent value changes
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -103,8 +104,9 @@ const AutocompleteInput: React.FC<{
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-    onChange(symptomId, e.target.value);
+    const newVal = e.target.value;
+    setInputValue(newVal);
+    onChange(symptomId, newVal);
     setShowDropdown(true);
   };
 
@@ -114,13 +116,16 @@ const AutocompleteInput: React.FC<{
     setShowDropdown(false);
   };
 
-  const handleAddSymptom = () => {
-    if (inputValue && !symptomOptions.includes(inputValue)) {
-      addSymptomOption(inputValue);
-      handleSelectSymptom(inputValue);
+  // Handler for the small add button
+  const handleAddSymptom = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Stop click from closing dropdown immediately
+    if (inputValue.trim()) {
+      addSymptomOption(inputValue.trim());
+      handleSelectSymptom(inputValue.trim());
     }
   };
 
+  // Logic to show button: text is typed AND it's NOT in the list
   const showAddButton =
     inputValue &&
     !symptomOptions.some((s) => s.toLowerCase() === inputValue.toLowerCase());
@@ -133,21 +138,23 @@ const AutocompleteInput: React.FC<{
           value={inputValue}
           onChange={handleInputChange}
           onFocus={() => setShowDropdown(true)}
-          className="p-2 border border-gray-300 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-lg"
+          className="p-2 pr-10 border border-gray-300 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-lg"
           placeholder={placeholder}
         />
+        {/* --- SMALL ADD BUTTON --- */}
         {showAddButton && (
           <button
             type="button"
             onClick={handleAddSymptom}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 bg-gray-200 rounded-full hover:bg-gray-300"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-green-100 hover:bg-green-200 text-green-700 rounded-full transition-colors flex items-center justify-center shadow-sm border border-green-200"
+            title="Add new symptom to database"
           >
-            <Plus className="w-4 h-4 text-gray-600" />
+            <Plus className="w-4 h-4" />
           </button>
         )}
       </div>
       {showDropdown && filteredSymptoms.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
           {filteredSymptoms.map((symptom, index) => (
             <div
               key={index}
@@ -163,7 +170,7 @@ const AutocompleteInput: React.FC<{
   );
 };
 
-// Helper component for section headers to maintain consistency
+// Helper component for section headers
 const SectionHeader: React.FC<{ icon: React.ElementType; title: string }> = ({
   icon: Icon,
   title,
@@ -176,7 +183,7 @@ const SectionHeader: React.FC<{ icon: React.ElementType; title: string }> = ({
   </div>
 );
 
-// Component for rendering formatted AI summary (Copied from AiSummaryModal.tsx)
+// Component for rendering formatted AI summary
 const FormattedAiSummary: React.FC<{ summary: string }> = ({ summary }) => {
   const lines = summary.split("\n").filter((line) => line.trim() !== "");
 
@@ -214,7 +221,7 @@ const FormattedAiSummary: React.FC<{ summary: string }> = ({ summary }) => {
   );
 };
 
-// --- NEW HELPER: Summary Card to display fetched Pre-OPD AI results ---
+// Summary Card Helper
 const SummaryCard: React.FC<{
   title: string;
   summary: string;
@@ -558,29 +565,19 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
   onBack,
   onCompleteConsultation,
 }) => {
-  // 1. Get prescription data from context
   const { medications } = usePrescription();
-
-  // ADDED: Get Doctor Name/ID from context
   const { user } = useAuth();
   const doctorId = user?.id || "UnknownDoctorId";
   const doctorName =
     user?.name || selectedPatient?.doctorAssigned || "Unknown Doctor";
   const patientType = selectedPatient?.patientType || "OPD";
 
-  // --- Original state initialization from DoctorModule.tsx ---
   const [vitals, setVitals] = useState<Vitals | null>(null);
   const [showAdmissionModal, setShowAdmissionModal] = useState(false);
-
-  // 🚨 LIFTED STATE: Stores the final diagnosis entered in the Ai tab.
   const [finalDiagnosis, setFinalDiagnosis] = useState("");
-
-  // --- NEW STATE: Fetched Pre-OPD Intake Summaries ---
   const [preOpdClinicalSummary, setPreOpdClinicalSummary] = useState("");
   const [preOpdHistorySummary, setPreOpdHistorySummary] = useState("");
   const [isPreOpdLoading, setIsPreOpdLoading] = useState(true);
-
-  // 🚨 NEW STATE for the summary modal
   const [showSummaryModal, setShowSummaryModal] = useState(false);
 
   const [consultation, setConsultation] = useState({
@@ -590,15 +587,13 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
     generalExamination: [] as string[],
     systemicExamination: [] as string[],
     investigations: [] as string[],
-    diagnosis: "", // placeholder
+    diagnosis: "",
     notes: "",
   });
 
-  // REMOVED: const [quickSymptoms, setQuickSymptoms] = useState<string[]>([]);
-  // MODIFIED: Initialize as empty, populate via useEffect below
   const [symptomOptions, setSymptomOptions] = useState<string[]>([]);
 
-  // 🚨 NEW EFFECT: Fetch symptoms from Firestore
+  // FETCH SYMPTOMS EFFECT
   useEffect(() => {
     const fetchSymptoms = async () => {
       try {
@@ -607,32 +602,18 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
         const querySnapshot = await getDocs(q);
 
         const options = querySnapshot.docs.map((doc) => doc.data().name);
-console.log(options);
+
         if (options.length > 0) {
           setSymptomOptions(options);
         } else {
-          // Fallback if DB is empty
           setSymptomOptions([
-            "Fever",
-            "Cold",
-            "Cough",
-            "Diarrhea",
-            "Vomiting",
-            "Headache",
-            "Back Pain",
+            "Fever", "Cold", "Cough", "Diarrhea", "Vomiting", "Headache", "Back Pain",
           ]);
         }
       } catch (error) {
         console.error("Error fetching symptoms:", error);
-        // Fallback on error
         setSymptomOptions([
-          "Fever",
-          "Cold",
-          "Cough",
-          "Diarrhea",
-          "Vomiting",
-          "Headache",
-          "Back Pain",
+          "Fever", "Cold", "Cough", "Diarrhea", "Vomiting", "Headache", "Back Pain",
         ]);
       }
     };
@@ -640,13 +621,39 @@ console.log(options);
     fetchSymptoms();
   }, []);
 
-  const addSymptomOption = (symptom: string) => {
-    if (!symptomOptions.includes(symptom)) {
-      setSymptomOptions((prev) => [...prev, symptom]);
+  // 🚨 UPDATED: Function to add new symptom to Firestore
+  const addSymptomOption = async (symptom: string) => {
+    const trimmedSymptom = symptom.trim();
+    if (!trimmedSymptom) return;
+
+    // 1. Update Local State immediately (Optimistic UI)
+    if (!symptomOptions.some((s) => s.toLowerCase() === trimmedSymptom.toLowerCase())) {
+      setSymptomOptions((prev) => [...prev, trimmedSymptom]);
+    }
+
+    // 2. Save to Firestore
+    try {
+      // Create a clean ID: "Severe Headache" -> "severe_headache"
+      const docId = trimmedSymptom.toLowerCase().replace(/[^a-z0-9]/g, "_");
+      const symptomRef = doc(db, "symptoms", docId);
+      
+      await setDoc(
+        symptomRef,
+        {
+          name: trimmedSymptom,
+          searchKey: trimmedSymptom.toLowerCase(),
+          category: "Custom",
+          createdAt: Timestamp.now(),
+        },
+        { merge: true }
+      );
+      console.log(`Symptom "${trimmedSymptom}" saved to database.`);
+    } catch (error) {
+      console.error("Error adding symptom to database:", error);
+      // Optional: Revert local state if needed, but rarely necessary for this simple case
     }
   };
 
-  // 🚨 NEW HANDLER: Receives diagnosis from Ai.tsx child component
   const handleDiagnosisUpdate = useCallback((diagnosis: string) => {
     setFinalDiagnosis(diagnosis);
   }, []);
@@ -781,9 +788,7 @@ console.log(options);
   const inputStyle =
     "p-2 border border-gray-300 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-[#012e58] focus:border-[#012e58] transition duration-200 ease-in-out text-[#0B2D4D] placeholder:text-gray-500 text-lg";
 
-  // *****************************************************************
-  // ** Vitals Fetching Logic (Unchanged - uses patientUhid) **
-  // *****************************************************************
+  // Vitals Fetching
   useEffect(() => {
     if (!selectedPatient?.uhid) {
       setVitals(null);
@@ -818,9 +823,7 @@ console.log(options);
     return () => unsubscribe();
   }, [selectedPatient]);
 
-  // ------------------------------------------------------------------------------------------------
-  // --- UPDATED LOGIC: Fetch Pre-OPD Intake Summaries without composite index (client-side sort) ---
-  // ------------------------------------------------------------------------------------------------
+  // Pre-OPD Intake Fetching
   useEffect(() => {
     if (!selectedPatient?.uhid) {
       setPreOpdClinicalSummary("No patient selected.");
@@ -831,7 +834,6 @@ console.log(options);
 
     setIsPreOpdLoading(true);
 
-    // Equality filter only (no orderBy, no limit) -> no composite index required
     const intakeQuery = query(
       collection(db, "preOPDIntake"),
       where("patientUhid", "==", selectedPatient.uhid)
@@ -880,9 +882,7 @@ console.log(options);
 
     return () => unsubscribe();
   }, [selectedPatient]);
-  // ------------------------------------------------------------------------------------------------
 
-  // --- ADMISSION LOGIC (Unchanged) ---
   const handleAddToInPatient = () => {
     if (selectedPatient) {
       setShowAdmissionModal(true);
@@ -896,46 +896,40 @@ console.log(options);
     );
     setShowAdmissionModal(false);
   };
-  // --- END ADMISSION LOGIC ---
 
-  // 🚨 UPDATED FUNCTION: Saves Prescription & Completes Consultation
   const handleFinalComplete = async () => {
     if (!selectedPatient || !selectedPatient.uhid) return;
 
-    // 1. Prepare Prescription Data for Pharmacy
     const prescriptionData = {
       patientId: selectedPatient.id,
       uhid: selectedPatient.uhid,
       patientName: selectedPatient.fullName,
       doctorName: doctorName,
       doctorId: doctorId,
-      prescriptionDate: Timestamp.now(), // Use Timestamp for consistent sorting/storage
+      prescriptionDate: Timestamp.now(),
       medications: medications.map((med) => ({
         id: med.id,
-        drugName: med.name, // Mapping from context type to Pharmacy type
+        drugName: med.name,
         dosage: med.dosage,
         frequency: med.frequency,
         duration: med.duration,
         instructions: med.instructions,
-        // Default values for Pharmacy
         quantity: 0,
         unitPrice: 0.0,
         totalPrice: 0.0,
         dispensed: false,
       })),
-      status: "Pending", // Always Pending initially
+      status: "Pending",
       patientType: patientType,
       consultationNotes: consultation.notes,
       finalDiagnosis: finalDiagnosis,
-      totalAmount: 0, // Calculated by Pharmacy on dispense
+      totalAmount: 0,
     };
 
     try {
-      // 2. Save Prescription to Firebase 'prescriptions' collection
       const prescriptionsRef = collection(db, "prescriptions");
       await addDoc(prescriptionsRef, prescriptionData);
 
-      // 3. Update Patient Status to "Completed"
       const patientRef = doc(db, "patients", selectedPatient.id);
       await setDoc(
         patientRef,
@@ -945,7 +939,6 @@ console.log(options);
         { merge: true }
       );
 
-      // 4. Close Modal and Notify Parent
       setShowSummaryModal(false);
       onCompleteConsultation(selectedPatient.id);
     } catch (error) {
@@ -960,7 +953,6 @@ console.log(options);
     }
   };
 
-  // 🚨 UPDATED FUNCTION: Opens the summary modal for review
   const handleReviewAndComplete = () => {
     if (!selectedPatient) {
       alert("No patient selected to complete consultation.");
@@ -977,15 +969,12 @@ console.log(options);
   };
 
   if (!selectedPatient) {
-    // Fallback if no patient is selected
     return <PatientQueue />;
   }
 
-  // --- SINGLE PAGE RENDER ---
   return (
     <div className="p-2 bg-gray-100 min-h-screen font-sans">
       <div className="w-full bg-white p-4 rounded-lg shadow-lg border border-gray-200">
-        {/* Header Section */}
         <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
           <div className="flex items-center space-x-3">
             <button
@@ -1019,7 +1008,7 @@ console.log(options);
           </div>
         </div>
 
-        {/* --- ASSESSMENT & HISTORY SECTION (COMBINED) --- */}
+        {/* --- ASSESSMENT & HISTORY SECTION --- */}
         <div className="space-y-6 pb-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-[#0B2D4D] tracking-tight flex items-center space-x-2">
             <Stethoscope className="w-6 h-6" />
@@ -1062,7 +1051,6 @@ console.log(options);
               )}
             </div>
 
-            {/* ✅ MOVED HERE: PRE-OPD SUMMARIES right after VITALS */}
             <div className="space-y-4">
               <h2 className="text-xl font-bold text-[#0B2D4D] tracking-tight flex items-center space-x-2 mt-2">
                 <Brain className="w-6 h-6 text-purple-600" />
@@ -1081,17 +1069,13 @@ console.log(options);
                 />
               </div>
             </div>
-            {/* END MOVED BLOCK */}
           </div>
 
-          {/* Chief Complaints / HPI */}
           <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-md">
             <SectionHeader
               icon={ClipboardList}
               title="History of Present Illness (HPI) & Complaints"
             />
-
-            {/* Quick Symptom Selection Checkboxes REMOVED */}
 
             <div className="overflow-x-auto bg-gray-50 rounded-md border border-gray-200">
               <table className="w-full">
@@ -1177,7 +1161,6 @@ console.log(options);
             </div>
           </div>
 
-          {/* Examination + Notes */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-md">
               <SectionHeader
@@ -1185,7 +1168,6 @@ console.log(options);
                 title="General & Systemic Examination"
               />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                {/* General Examination */}
                 <div className="col-span-1">
                   <label className="text-md font-medium text-[#1a4b7a] mb-2 block">
                     General Findings
@@ -1216,7 +1198,6 @@ console.log(options);
                   </div>
                 </div>
 
-                {/* Systemic Examination */}
                 <div className="col-span-1 space-y-2">
                   {[
                     { label: "CNS", placeholder: "CNS findings" },
