@@ -27,6 +27,9 @@ import {
   // ADDED: Imports for saving the prescription
   addDoc,
   Timestamp,
+  // ADDED: Imports for fetching symptoms
+  getDocs,
+  orderBy,
 } from "firebase/firestore";
 import { Vitals } from "../../types";
 import PatientQueue from "../queue/PatientQueue";
@@ -592,15 +595,50 @@ const DoctorModuleContent: React.FC<DoctorModuleProps> = ({
   });
 
   // REMOVED: const [quickSymptoms, setQuickSymptoms] = useState<string[]>([]);
-  const [symptomOptions, setSymptomOptions] = useState<string[]>([
-    "Fever",
-    "Cold",
-    "Cough",
-    "Diarrhea",
-    "Vomiting",
-    "Headache",
-    "Back Pain",
-  ]);
+  // MODIFIED: Initialize as empty, populate via useEffect below
+  const [symptomOptions, setSymptomOptions] = useState<string[]>([]);
+
+  // 🚨 NEW EFFECT: Fetch symptoms from Firestore
+  useEffect(() => {
+    const fetchSymptoms = async () => {
+      try {
+        const symptomsRef = collection(db, "symptoms");
+        const q = query(symptomsRef, orderBy("name"));
+        const querySnapshot = await getDocs(q);
+
+        const options = querySnapshot.docs.map((doc) => doc.data().name);
+console.log(options);
+        if (options.length > 0) {
+          setSymptomOptions(options);
+        } else {
+          // Fallback if DB is empty
+          setSymptomOptions([
+            "Fever",
+            "Cold",
+            "Cough",
+            "Diarrhea",
+            "Vomiting",
+            "Headache",
+            "Back Pain",
+          ]);
+        }
+      } catch (error) {
+        console.error("Error fetching symptoms:", error);
+        // Fallback on error
+        setSymptomOptions([
+          "Fever",
+          "Cold",
+          "Cough",
+          "Diarrhea",
+          "Vomiting",
+          "Headache",
+          "Back Pain",
+        ]);
+      }
+    };
+
+    fetchSymptoms();
+  }, []);
 
   const addSymptomOption = (symptom: string) => {
     if (!symptomOptions.includes(symptom)) {
